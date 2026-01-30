@@ -43,7 +43,7 @@ class cell_DJCPB: public table_cell{
     table_cell(op_cost, k_, op_){};
   
   void print() override{
-    std::cout<<'['<<optimal_cost<<' '<<k<<' '<<operation<<"]\n";
+    std::cout<<"[ "<<optimal_cost<<' '<<k<<' '<<operation<<" ]\n";
   }
 };
 
@@ -55,6 +55,6 @@ class cell_MFDJCPB: public table_cell{
   std::size_t memory;
 
   void print() override{
-    std::cout<<'['<<optimal_cost<<' '<<k<<' '<<operation<< ' '<<memory<<"]\n";
+    std::cout<<"[ "<<optimal_cost<<' '<<k<<' '<<operation<< ' '<<memory<<" ]\n";
   }
 };

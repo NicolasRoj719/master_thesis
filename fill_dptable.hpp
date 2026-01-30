@@ -2,7 +2,6 @@
 #include "jacobian.hpp"
 #include "table_cell.hpp"
 
-
 template<class Cell_type, class Jacobian_type>
 class behaviour_fill_dptable{
  public:
