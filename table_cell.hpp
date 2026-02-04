@@ -1,6 +1,9 @@
 #include <iostream>
 #include <cstdint>
 
+#ifndef TABLE_CELL_HPP
+#define TABLE_CELL_HPP
+
 enum class Operation: std::uint8_t{
   MULTIPLICATION = 0,
   TANGENT,
@@ -23,9 +26,9 @@ std::ostream& operator<<(std::ostream& os, Operation op){
   }
 }
 
-class table_cell{
+class Table_cell{
  public:
-  table_cell(std::size_t op_cost, std::size_t k_, Operation op_):
+  Table_cell(std::size_t op_cost, std::size_t k_, Operation op_):
     optimal_cost(op_cost), k(k_), operation(op_){}
 
   std::size_t optimal_cost;
@@ -37,20 +40,20 @@ class table_cell{
   virtual void print()=0;
 };
 
-class cell_DJCPB: public table_cell{
+class cell_DJCPB: public Table_cell{
  public:
   cell_DJCPB(std::size_t op_cost, std::size_t k_, Operation op_):
-    table_cell(op_cost, k_, op_){};
+    Table_cell(op_cost, k_, op_){};
   
   void print() override{
     std::cout<<"[ "<<optimal_cost<<' '<<k<<' '<<operation<<" ]\n";
   }
 };
 
-class cell_MFDJCPB: public table_cell{
+class cell_MFDJCPB: public Table_cell{
  public:
   cell_MFDJCPB(std::size_t op_cost, std::size_t k_, Operation op_,
-      std::size_t memory_): table_cell(op_cost, k_, op_), memory(memory_){}
+      std::size_t memory_): Table_cell(op_cost, k_, op_), memory(memory_){}
 
   std::size_t memory;
 
@@ -58,3 +61,5 @@ class cell_MFDJCPB: public table_cell{
     std::cout<<"[ "<<optimal_cost<<' '<<k<<' '<<operation<< ' '<<memory<<" ]\n";
   }
 };
+
+#endif

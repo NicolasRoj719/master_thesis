@@ -9,13 +9,20 @@ int main(int argc, char *v[]){
   std::size_t n_E_lb= static_cast<std::size_t>(std::stoi(v[4]));
   std::size_t n_E_ub= static_cast<std::size_t>(std::stoi(v[5]));
 
-  m_n_n_E_Generator gen{chain_len, dim_lb, dim_ub, n_E_lb, n_E_ub};
-  gen.print_problem();
-
-  std::cout<<"Jacobian chain length: "<<gen.chain_length<<'\n';
+  std::cout<<"Chain length: " <<chain_len<<'\n';
+  std::cout<<"Dimension range: [ "<<dim_lb<<" , "<<dim_ub<<" ]\n";
+  std::cout<<"Number of edges in the DAG range: [ "<<n_E_lb<<" , "<<n_E_ub<<" ]\n";
+  
+  std::cout<<"Using constructor n_m_n_E_Generator(chain_len, dim_lb, dim_ub, n_E_lb, n_E_ub).\n";
+  n_m_n_E_Generator gen{chain_len, dim_lb, dim_ub, n_E_lb, n_E_ub};
+  std::cout<<"Building problem.\n";
+  gen.build_problem();
+  std::cout<<"Printing problem.\n";
+  gen.print();
+  std::cout<<"Printing problem size: "<<gen.get_problem_size()<<'\n';
 
   std::size_t i = 0;
-  assert(i < gen.chain_length);
+  assert(i < chain_len);
 
   std::vector<size_t> F_i_desc{gen.read_Fi_description(i)};
   std::cout<<"jac_chain_info["<< i <<"] = [ ";
@@ -24,6 +31,7 @@ int main(int argc, char *v[]){
     std::cout<< data<<' ';
   }
   std::cout<<"]\n";
+
 
   return 0;
 }

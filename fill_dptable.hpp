@@ -1,20 +1,24 @@
 #include <vector>
 #include "jacobian.hpp"
 #include "table_cell.hpp"
+#include "dptable.hpp"
+
+#ifndef FILL_DPTABLE
+#define FILL_DPTABLE
 
 template<class Cell_type, class Jacobian_type>
 class behaviour_fill_dptable{
  public:
   virtual ~behaviour_fill_dptable() = default;
 
-  virtual void fill(std::vector<Cell_type>& table, std::vector<Jacobian_type>& elemental_jacs) = 0;
-  virtual void fill(std::vector<Cell_type>& table, std::vector<Jacobian_type>& elemental_jacs, std::size_t memory_limit) = 0;
+  virtual void fill(Table<Cell_type>& table, std::vector<Jacobian_type>& elemental_jacs) = 0;
+  virtual void fill(Table<Cell_type>& table, std::vector<Jacobian_type>& elemental_jacs, std::size_t memory_limit) = 0;
 };
 
 template<class Cell_type, class Jacobian_type>
 class fill_DJCPB: public behaviour_fill_dptable<Cell_type, Jacobian_type>{
  public:
-  void fill(std::vector<Cell_type>& table, std::vector<Jacobian_type>& elemental_jacs) override{
+  void fill(Table<Cell_type>& table, std::vector<Jacobian_type>& elemental_jacs) override{
     
     std::size_t j,i,s,k;
     std::size_t cost;
@@ -60,7 +64,7 @@ class fill_DJCPB: public behaviour_fill_dptable<Cell_type, Jacobian_type>{
 template<class Cell_type, class Jacobian_type>
 class fill_MFDJCP: public behaviour_fill_dptable<Cell_type, Jacobian_type>{
  public:
-  void fill(std::vector<Cell_type>& table, std::vector<Jacobian_type>& elemental_jacs, std::size_t memory_limit) override{
+  void fill(Table<Cell_type>& table, std::vector<Jacobian_type>& elemental_jacs, std::size_t memory_limit) override{
     // indices
     std::size_t j,i,s,k,kk;
     std::size_t cost;
@@ -135,3 +139,4 @@ class fill_MFDJCP: public behaviour_fill_dptable<Cell_type, Jacobian_type>{
     }
   } 
 };
+#endif
