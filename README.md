@@ -19,8 +19,8 @@ Run instructions:
         Inside tests directory run the following command.
         ./solver.cpp 4 1 50 10 120 300
         Chain length: 4.
-        Input and output dimension within the range [1,50].
-        Number of edges within the range [10 120].
+        Input and output dimension within the range [1 , 50].
+        Number of edges within the range [10 , 120].
         Memory limit: 300.
 
         Similarly outside tests directory simply run.
