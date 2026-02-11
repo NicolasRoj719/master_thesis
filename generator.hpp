@@ -19,7 +19,7 @@ class Generator{
   void print(){
     print_format();
     for(std::size_t i=0; i<chain_length; i++){
-      std::cout<<"F'_"<<i<<"[ ";
+      std::cout<<"F'_"<<i<<" [ ";
       for(std::size_t j=0; j<jac_chain_info[i].size(); j++){
         std::cout<<jac_chain_info[i][j]<<' ';
       }
@@ -33,10 +33,14 @@ class Generator{
 
   std::size_t get_problem_size(){return jac_chain_info.size();}
 
-  //This method will be used to build the elemental jacobians array.
-  std::vector<size_t> read_Fi_description(std::size_t i){
-    return(jac_chain_info[i]);
+  const std::vector<std::vector<std::size_t>> get_problem(){
+    return jac_chain_info;
   }
+
+  /* //This method will be used to build the elemental jacobians array. */
+  /* std::vector<size_t> read_Fi_description(std::size_t i){ */
+  /*   return(jac_chain_info[i]); */
+  /* } */
 
  protected:
   std::size_t const chain_length;

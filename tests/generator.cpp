@@ -1,5 +1,6 @@
-#include "./../generator.hpp"
 #include <cassert>
+#include <cstdint>
+#include "./../generator.hpp"
 
 int main(int argc, char *v[]){
   assert(argc == 6);
@@ -15,23 +16,35 @@ int main(int argc, char *v[]){
   
   std::cout<<"Using constructor n_m_n_E_Generator(chain_len, dim_lb, dim_ub, n_E_lb, n_E_ub).\n";
   n_m_n_E_Generator gen{chain_len, dim_lb, dim_ub, n_E_lb, n_E_ub};
+
   std::cout<<"Building problem.\n";
   gen.build_problem();
+
   std::cout<<"Printing problem.\n";
   gen.print();
+
   std::cout<<"Printing problem size: "<<gen.get_problem_size()<<'\n';
 
-  std::size_t i = 0;
-  assert(i < chain_len);
+  std::cout<<"Getting problem: get_problem()\n";
+  std::vector<std::vector<std::size_t>> problem = gen.get_problem();
 
-  std::vector<size_t> F_i_desc{gen.read_Fi_description(i)};
-  std::cout<<"jac_chain_info["<< i <<"] = [ ";
-
-  for(size_t data: F_i_desc){
-    std::cout<< data<<' ';
+  for(std::size_t i=0; i<gen.get_problem_size(); i++){
+    std::cout<< "F'_"<<i<<" [ ";
+    for(std::size_t j=0; j<problem[0].size(); j++){
+      std::cout<<problem[i][j]<<' ';
+    }
+    std::cout<<"]\n";
   }
-  std::cout<<"]\n";
 
+  /* std::size_t i = 0; */
+  /* assert(i < chain_len); */
 
+  /* std::vector<size_t> F_i_desc{gen.read_Fi_description(i)}; */
+  /* std::cout<<"jac_chain_info["<< i <<"] = [ "; */
+
+  /* for(size_t data: F_i_desc){ */
+  /*   std::cout<< data<<' '; */
+  /* } */
+  /* std::cout<<"]\n"; */
   return 0;
 }
