@@ -9,10 +9,12 @@
 class Generator{
  public:
   Generator(std::size_t chain_length_, std::size_t inner_size, std::size_t dim_lb_,
-      std::size_t dim_ub_, std::size_t n_E_lb_, std::size_t n_E_ub_):
+      std::size_t dim_ub_, std::size_t n_E_lb_, std::size_t n_E_ub_, bool is_deterministic_ = 0,
+      std::size_t seed_ = 0):
     chain_length(chain_length_),
     jac_chain_info(chain_length_, std::vector<std::size_t>(inner_size)),
-    dim_lb(dim_lb_), dim_ub(dim_ub_), n_E_lb(n_E_lb_), n_E_ub(n_E_ub_){}
+    dim_lb(dim_lb_), dim_ub(dim_ub_), n_E_lb(n_E_lb_), n_E_ub(n_E_ub_),
+    is_deterministic(is_deterministic_), seed(seed_){}
 
   virtual void print_format() = 0;
 
@@ -50,6 +52,10 @@ class Generator{
   std::size_t dim_lb, dim_ub;
   //lower and upper on the number of edges in the DAG
   std::size_t n_E_lb, n_E_ub;
+  //Flag is_deterministic
+  bool is_deterministic;
+  //seed
+  std::size_t seed;
 };
 
 // m_n_n_E_Generator populates jac_chain_info data structure
@@ -62,13 +68,25 @@ class n_m_n_E_Generator: public Generator{
  public:
   //Inner size is set to 3, corresponding to n,m,n_E.
   n_m_n_E_Generator(std::size_t chain_length_, std::size_t dim_lb_,
-    std::size_t dim_ub_, std::size_t n_E_lb_, std::size_t n_E_ub_):
-    Generator(chain_length_, 3, dim_lb_, dim_ub_, n_E_lb_, n_E_ub_){}
+    std::size_t dim_ub_, std::size_t n_E_lb_, std::size_t n_E_ub_,
+    bool is_deterministic_ = 0, std::size_t seed_ = 0):
+    Generator(chain_length_, 3, dim_lb_, dim_ub_, n_E_lb_, n_E_ub_,
+        is_deterministic_, seed_){}
 
   void build_problem(){
+    std::default_random_engine g;
+    
+    if(!is_deterministic){
+      std::random_device r;
+      g.seed(r());
+    }
 
-    std::random_device r;
-    std::default_random_engine g(r());
+    else{
+      g.seed(seed);
+    }
+
+    /* std::random_device r; */
+    /* std::default_random_engine g(r()); */
 
     std::uniform_int_distribution<std::size_t> d_dim_in_out(dim_lb, dim_ub);
     std::uniform_int_distribution<std::size_t> d_n_E(n_E_lb, n_E_ub);
@@ -90,7 +108,7 @@ class n_m_n_E_Generator: public Generator{
   }
 
   void print_format() override{
-    std::cout<<"Jacobian chain information: F'_i: [ n_i m_i n_E_i ]\n";
+    std::cout<<"Jacobian information: F'_i: [ n_i m_i n_E_i ]\n";
   }
 };
 

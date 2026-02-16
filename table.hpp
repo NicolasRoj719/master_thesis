@@ -49,6 +49,10 @@ class Table{
     table.clear();
   }
 
+  void reserve(std::size_t table_len){
+    table.reserve(table_len);
+  }
+
   size_t size(){
     return table.size();
   }

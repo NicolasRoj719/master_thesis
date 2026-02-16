@@ -18,8 +18,8 @@ int main(int argc, char *v[]){
   std::cout<<"Dimension range: [ "<<dim_lb<<" , "<<dim_ub<<" ]\n";
   std::cout<<"Number of edges in the DAG range: [ "<<n_E_lb<<" , "<<n_E_ub<<" ]\n";
 
-  std::cout<<"Using constructor n_m_n_E_Generator(chain_len, dim_lb, dim_ub, n_E_lb, n_E_ub).\n";
-  n_m_n_E_Generator gen{chain_len, dim_lb, dim_ub, n_E_lb, n_E_ub};
+  std::cout<<"Using constructor n_m_n_E_Generator(chain_len, dim_lb, dim_ub, n_E_lb, n_E_ub, is_deterministic = 0).\n";
+  n_m_n_E_Generator gen{chain_len, dim_lb, dim_ub, n_E_lb, n_E_ub, 0};
 
   std::cout<<"Building problem.\n";
   gen.build_problem();
@@ -34,14 +34,14 @@ int main(int argc, char *v[]){
   std::unique_ptr<behaviour_build_chain<Jacobian>> p_build_chain;
   p_build_chain = std::make_unique<build_chain_dense<Jacobian>>();
   p_build_chain-> build_chain(problem);
-  p_build_chain-> print_chain();
+  p_build_chain-> print();
 
   //Second try using jacobian.
   std::cout<<"Jacobian type: Dense_Jacobian.\n";
   std::unique_ptr<behaviour_build_chain<Dense_Jacobian>> p_build_chain_2;
   p_build_chain_2 = std::make_unique<build_chain_dense<Dense_Jacobian>>();
   p_build_chain_2-> build_chain(problem);
-  p_build_chain_2-> print_chain();
+  p_build_chain_2-> print();
 
   return 0;
 }

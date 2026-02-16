@@ -1,4 +1,5 @@
 #include <vector>
+#include <limits>
 #include "table_cell.hpp"
 #include "table.hpp"
 
@@ -49,7 +50,8 @@ class fill_DJCPB: public behaviour_fill_dptable<Cell_type, Jacobian_type>{
         else{
           Cell_type F_j_i{};
           for(k=i; k<j; k++){
-            cost = table(j,k+1).op_cost + table(k,i).op_cost + F_j.m() * F_i.m() * F_i.n();
+            auto& F_k= elemental_jacs[k];
+            cost = table(j,k+1).op_cost + table(k,i).op_cost + F_j.m() * F_k.m() * F_i.n();
             
             if(k==i || F_j_i.op_cost > cost){
               //F_j_i(optimal_cost, split_position, operation)
@@ -66,7 +68,8 @@ class fill_DJCPB: public behaviour_fill_dptable<Cell_type, Jacobian_type>{
 template<class Cell_type, class Jacobian_type>
 class fill_MFDJCPB: public behaviour_fill_dptable<Cell_type, Jacobian_type>{
  public:
-  fill_MFDJCPB(std::size_t mem_limit): memory_limit(mem_limit){};
+  fill_MFDJCPB(std::size_t mem_limit = std::numeric_limits<size_t>::max()): 
+    memory_limit(mem_limit){};
 
   void fill(Table<Cell_type>& table, std::vector<Jacobian_type>& elemental_jacs) override{
     // indices
@@ -108,8 +111,9 @@ class fill_MFDJCPB: public behaviour_fill_dptable<Cell_type, Jacobian_type>{
           Cell_type F_j_i{};
           for(k=i; k<j; k++){
 
+            auto& F_k= elemental_jacs[k];
             // Matrix matrix MULTIPLICATION
-            cost = table(j,k+1).op_cost + table(k,i).op_cost + F_j.m() * F_i.m() * F_i.n();
+            cost = table(j,k+1).op_cost + table(k,i).op_cost + F_j.m() * F_k.m() * F_i.n();
 
             if(k==i || F_j_i.op_cost > cost){
               //F_j_i(optimal_cost, split_position, operation, memory)
