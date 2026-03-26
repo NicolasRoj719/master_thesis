@@ -16,17 +16,47 @@ int main(){
   cell_MFDJCPB cell_0_3{40, 5, NONE, 20};
 
   //Testing print method.
-  std::cout<<"cell_0_0 {120, 2, TAN}";
+  std::cout<<"cell_0_0 {120, 2, TAN}\n";
   cell_0_0.print();
+  //Testing op_to_string
+  std::cout<<"cell_0_0 operation TAN\n";
+  std::cout<<"cell_0_0 operation "+cell_0_0.op_to_string()+'\n';
+  //Testing k_to_string
+  std::cout<<"cell_0_0 k=2\n";
+  std::cout<<"cell_0_0 k="+cell_0_0.k_to_string()+'\n';
 
   std::cout<<"cell_0_1 {100, 3, ADJ, 10}";
   cell_0_1.print();
+  //Testing op_to_string
+  std::cout<<"cell_0_1 operation ADJ\n";
+  std::cout<<"cell_0_1 operation "+cell_0_1.op_to_string()+'\n';
+  //Testing k_to_string
+  std::cout<<"cell_0_1 k=3\n";
+  std::cout<<"cell_0_1 k="+cell_0_1.k_to_string()+'\n';
+  //Testing mem_to_string
+  std::cout<<"cell_0_1 mem_req= 10\n";
+  std::cout<<"cell_0_1 mem_req= "+ cell_0_1.mem_to_string()+'\n';
 
   std::cout<<"cell_0_2 {80, 8, MUL}";
   cell_0_2.print();
+  //Testing op_to_string
+  std::cout<<"cell_0_2 operation MUL\n";
+  std::cout<<"cell_0_2 operation "+cell_0_2.op_to_string()+'\n';
+  //Testing k_to_string
+  std::cout<<"cell_0_2 k=8\n";
+  std::cout<<"cell_0_2 k="+cell_0_2.k_to_string()+'\n';
 
   std::cout<<"cell_0_3 {40, 5, NONE, 20}";
   cell_0_3.print();
+  //Testing op_to_string
+  std::cout<<"cell_0_3 operation NONE\n";
+  std::cout<<"cell_0_3 operation "+cell_0_3.op_to_string()+'\n';
+  //Testing k_to_string
+  std::cout<<"cell_0_3 k=5\n";
+  std::cout<<"cell_0_3 k="+cell_0_3.k_to_string()+'\n';
+  //Testing mem_to_string
+  std::cout<<"cell_0_3 mem_req= 20\n";
+  std::cout<<"cell_0_3 mem_req= "+ cell_0_3.mem_to_string()+'\n';
 
   //Checking default initialized objects.
   cell_DJCPB cell_1_0{};

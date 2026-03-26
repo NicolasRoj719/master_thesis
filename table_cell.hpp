@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstdint>
+#include <string>
 
 #ifndef TABLE_CELL_HPP
 #define TABLE_CELL_HPP
@@ -11,20 +12,25 @@ enum class Operation: std::uint8_t{
   NONE,
 };
 
-std::ostream& operator<<(std::ostream& os, Operation op){
+std::string to_string(Operation op){
   switch(op){
     case Operation::MULTIPLICATION:
-      return(os<<"MUL");
+      return "MUL";
     case Operation::TANGENT:
-      return(os<<"TAN");
+      return "TAN";
     case Operation::ADJOINT:
-      return(os<<"ADJ");
+      return "ADJ";
     case Operation::NONE:
-      return(os<<"NONE");
+      return "NONE";
     default:
-      return(os<<"NOT DEFINED");
+      return "NOT DEFINED";
   }
 }
+
+std::ostream& operator<<(std::ostream& os, Operation op){
+  return os << to_string(op);
+}
+
 
 class Table_cell{
  public:
@@ -35,6 +41,14 @@ class Table_cell{
     op_cost = op_cost_;
     k = k_;
     operation = op_;
+  }
+
+  std::string op_to_string(){
+    return to_string(operation);
+  }
+
+  std::string k_to_string(){
+    return std::to_string(k);
   }
 
   std::size_t op_cost;
@@ -72,6 +86,10 @@ class cell_MFDJCPB: public Table_cell{
   void operator()(std::size_t op_cost_, std::size_t k_, Operation op_, std::size_t memory_=0){
     Table_cell::operator()(op_cost_,k_,op_);
     memory = memory_;
+  }
+
+  std::string mem_to_string(){
+    return std::to_string(memory);
   }
 
   std::size_t memory;
