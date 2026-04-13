@@ -3,12 +3,16 @@
 #include <type_traits>
 #include <cassert>
 #include <limits>
+#include <fstream>
+#include <iostream>
 #include "jacobian.hpp"
 #include "table_cell.hpp"
 #include "generator.hpp"
 #include "table.hpp"
 #include "behaviour_build_chain.hpp"
 #include "behaviour_fill_table.hpp"
+#include "behaviour_opt_accumulation.hpp"
+#include "node.hpp"
 
 #ifndef SOLVER_HPP
 #define SOLVER_HPP
@@ -33,6 +37,19 @@ class DJCPB: public Solver<Cell_type, Jacobian_type>{
     fill_DJCPB<Cell_type, Jacobian_type> fill_beh;
     fill_beh.fill(table, jacobian_chain);
     table.print();
+    // Optimum sequence
+    std::vector<Node<Cell_type>> opt_acc_sequence;
+    get_accumulation_seq<Cell_type, Jacobian_type>(chain_len - 1, static_cast<std::size_t>(0),
+        opt_acc_sequence, table, jacobian_chain);
+    // out graph information to a file
+    std::ofstream out("graph_data");
+    if(out.is_open()){
+      graphviz_parser(out, opt_acc_sequence);
+      out.close();
+    }
+    else{
+      std::cout<<"Could not open file graph_data. \n";
+    }
   }
 };
 
@@ -56,6 +73,19 @@ class MFDJCPB: public Solver<Cell_type, Jacobian_type>{
     fill_MFDJCPB<Cell_type, Jacobian_type> fill_beh{memory_limit};
     fill_beh.fill(table, jacobian_chain);
     table.print();
+    // Optimum sequence.
+    std::vector<Node<Cell_type>> opt_acc_sequence;
+    get_accumulation_seq<Cell_type, Jacobian_type>(chain_len-1, static_cast<std::size_t>(0),
+        opt_acc_sequence, table, jacobian_chain);
+    // out graph information to a file
+    std::ofstream out("graph_data");
+    if(out.is_open()){
+      graphviz_parser(out, opt_acc_sequence);
+      out.close();
+    }
+    else{
+      std::cout<<"Could not open file graph_data. \n";
+    }
   }
 
  private:

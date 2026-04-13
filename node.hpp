@@ -1,52 +1,61 @@
 #include <memory>
-#include <vector>
 #include <cstdint>
 #include <type_traits>
 #include <string>
-#include <iostream>
+#include <fstream>
 #include "table_cell.hpp"
 
 #ifndef NODE_HPP
 #define NODE_HPP
 
+//Node_base class is not implemented to use polymorphism
+//it is used to avoid code repetition.
 class Node_base{
  public:
-  Node_base(Table_cell* p_ptr, Table_cell* c_ptr, Table_cell* i_ptr_,
-      std::size_t j_, std::size_t i_, std::size_t cost_):
-    parent_ptr(p_ptr), i_ptr(i_ptr_), j(j_), i(i_), cost(cost_){
-      children_ptr.push_back(c_ptr);
-    }
+  Node_base(Table_cell* i_ptr_, std::size_t j_,
+      std::size_t i_, std::size_t cost_, int idx_):
+    i_ptr(i_ptr_), j(j_), i(i_), cost(cost_), parent_idx(idx_){}
 
-  Node_base(Table_cell* p_ptr, Table_cell* c_ptr_0, Table_cell* c_ptr_1, Table_cell* i_ptr_,
-      std::size_t j_, std::size_t i_, std::size_t cost_):
-    parent_ptr(p_ptr), i_ptr(i_ptr_), j(j_), i(i_), cost(cost_){
-      children_ptr.push_back(c_ptr_0);
-      children_ptr.push_back(c_ptr_1);
-    }
+  Table_cell* get_i_ptr(){
+    return i_ptr;
+  }
+
+  std::size_t get_i(){
+    return i;
+  }
+
+  std::size_t get_j(){
+    return j;
+  }
+
+  std::size_t get_cost(){
+    return cost;
+  }
+
+  int get_parent_idx(){
+    return parent_idx;
+  }
 
  protected:
-  Table_cell* parent_ptr;
   Table_cell* i_ptr;
-  std::vector<Table_cell*> children_ptr;
   std::size_t j,i;
   std::size_t cost;
+  int parent_idx;
 };
 
 template<class Cell_type>
 class Node: public Node_base{
  public:
-  Node(Table_cell* p_ptr, Table_cell* c_ptr, Table_cell* i_ptr_,
-      std::size_t j_, std::size_t i_, std::size_t cost_): 
-    Node_base(p_ptr, c_ptr, i_ptr_, j_, i_, cost_){}
+  Node(Table_cell* i_ptr_, std::size_t j_, std::size_t i_,
+      std::size_t cost_, int idx_):
+    Node_base(i_ptr_, j_, i_, cost_, idx_){}
+  /* Node(Node_base* p_ptr, Table_cell* i_ptr_, */
+  /*     std::size_t j_, std::size_t i_, std::size_t cost_): */ 
+  /*   Node_base(p_ptr, i_ptr_, j_, i_, cost_){} */
 
-  Node(Table_cell* p_ptr, Table_cell* c_ptr_0, Table_cell* c_ptr_1, Table_cell* i_ptr_, 
-      std::size_t j_, std::size_t i_, std::size_t cost_): 
-    Node_base(p_ptr, c_ptr_0, c_ptr_1, i_ptr_, j_, i_, cost_){}
-  
-  friend std::ostream& operator<< (std::ostream& os, Node& node){
-    os << "\""+ cost +' '+ this->i_ptr->op_to_string + '('+ std::to_string(j) + ' ' +
-        this->i_ptr->k + ' ' + std::to_string(i) + " )\"";
-
+  friend std::ostream& operator<< (std::ostream& os, Node<Cell_type>& node){
+    os << "\"" << node.get_cost() << ' ' << node.get_i_ptr()->operation << " (" << node.get_j()
+      <<' ' << node.get_i_ptr()->k << ' ' << node.get_i() << ")\"";
     return os;
   }
 };
@@ -55,22 +64,21 @@ class Node: public Node_base{
 template<>
 class Node<cell_MFDJCPB>: public Node_base{
  public:
-  Node(Table_cell* p_ptr, Table_cell* c_ptr, Table_cell* i_ptr_,
-      std::size_t j_, std::size_t i_, std::size_t cost_, std::size_t memory_):
-    Node_base(p_ptr, c_ptr, i_ptr_, j_, i_, cost_), memory(memory_){}
+  Node(Table_cell* i_ptr_, std::size_t j_, std::size_t i_,
+      std::size_t cost_, std::size_t memory_, int idx_):
+    Node_base(i_ptr_, j_, i_, cost_, idx_), memory(memory_){}
 
-  Node(Table_cell* p_ptr, Table_cell* c_ptr_0, Table_cell* c_ptr_1, Table_cell* i_ptr_, 
-      std::size_t j_, std::size_t i_, std::size_t cost_, std::size_t memory_): 
-    Node_base(p_ptr, c_ptr_0, c_ptr_1, i_ptr_, j_, i_, cost_), memory(memory_){}
-
-  friend std::ostream& operator<< (std::ostream& os, Node& node){
-    os << "\""+ cost +' '+ this->i_ptr->op_to_string + '('+ std::to_string(j) + ' ' +
-        this->i_ptr->k + ' ' + std::to_string(i) + " ) " + this->i_ptr->memory;
-
+  friend std::ostream& operator<< (std::ostream& os, Node<cell_MFDJCPB>& node){
+    os << "\"" << node.get_cost() << ' ' << node.get_i_ptr()->operation << " (" << node.get_j()
+      <<' ' << node.get_i_ptr()->k << ' ' << node.get_i() << ") " << node.get_memory() << '\"';
     return os;
   }
- 
- protected:
+
+  std::size_t get_memory(){
+    return memory;
+  }
+
+ private:
   std::size_t memory;
 };
 #endif

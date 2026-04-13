@@ -44,19 +44,19 @@ int main(int argc, char *v[]){
 
   std::vector<std::vector<std::size_t>> problem = gen.get_problem();
 
-  {
-    std::cout<<"Running DJCPB solver.\n";
-    std::cout<<"Cell type: cell_DJCPB, Jacobian type: dense.\n";
-    DJCPB<cell_DJCPB, Dense_Jacobian> DJCPB_solver;
-    DJCPB_solver.solve(problem);
-  }
+  /* { */
+  /*   std::cout<<"Running DJCPB solver.\n"; */
+  /*   std::cout<<"Cell type: cell_DJCPB, Jacobian type: dense.\n"; */
+  /*   DJCPB<cell_DJCPB, Dense_Jacobian> DJCPB_solver; */
+  /*   DJCPB_solver.solve(problem); */
+  /* } */
 
-  {
-    std::cout<<"Running DJCPB solver.\n";
-    std::cout<<"Cell type: cell_MFDJCPB, Jacobian type: dense.\n";
-    DJCPB<cell_MFDJCPB, Dense_Jacobian> DJCPB_solver;
-    DJCPB_solver.solve(problem);
-  }
+  /* { */
+  /*   std::cout<<"Running DJCPB solver.\n"; */
+  /*   std::cout<<"Cell type: cell_MFDJCPB, Jacobian type: dense.\n"; */
+  /*   DJCPB<cell_MFDJCPB, Dense_Jacobian> DJCPB_solver; */
+  /*   DJCPB_solver.solve(problem); */
+  /* } */
 
   {
     std::cout<<"Running MFDJCPB solver without memory limit.\n";
@@ -65,12 +65,12 @@ int main(int argc, char *v[]){
     MFDJCPB_solver.solve(problem);
   }
 
-  {
-    std::cout<<"Running MFDJCPB solver with memory limit ("<<mem_lim<<").\n";
-    std::cout<<"Cell type: cell_MFDJCPB, Jacobian type: dense.\n";
-    MFDJCPB<cell_MFDJCPB, Dense_Jacobian> MFDJCPB_solver{mem_lim};
-    MFDJCPB_solver.solve(problem);
-  }
+  /* { */
+  /*   std::cout<<"Running MFDJCPB solver with memory limit ("<<mem_lim<<").\n"; */
+  /*   std::cout<<"Cell type: cell_MFDJCPB, Jacobian type: dense.\n"; */
+  /*   MFDJCPB<cell_MFDJCPB, Dense_Jacobian> MFDJCPB_solver{mem_lim}; */
+  /*   MFDJCPB_solver.solve(problem); */
+  /* } */
 
   /* { */
   /*   std::cout<<"Running MFDJCPB solver"; */
