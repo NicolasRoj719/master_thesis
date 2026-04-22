@@ -76,19 +76,34 @@ int main(){
       std::cin >> chain_len >> dim_lb >> dim_ub >> n_E_lb;
       std::cin >> n_E_ub >> den_lb >> den_ub >>is_deterministic >> seed;
 
-      std::cout<< "Calling the constructor.";
+      std::cout<< "Calling the constructor.\n";
       n_m_n_E_nnz_Generator gen{chain_len, dim_lb, dim_ub, n_E_lb, n_E_ub, 
           den_lb, den_ub, is_deterministic, seed};
 
-      std::cout<< "Do you want to test build_problem? [0/1]\n";
+      std::cout<< "Do you want to test build_sparse_problem? [0/1]\n";
       std::cin >> answer;
       if(answer){
-        gen.build_problem();
+        gen.build_sparse_problem();
         gen.print();
-        break;
       }
       else{break;}
+
+      std::cout << "Do you want to test build_sparse_structure? [0/1]\n";
+      std::cin >> answer;
+      if(answer){
+        gen.build_sparse_structure();
       }
+      else{break;}
+
+      std::cout<< "Do you want to check if the generator is deterministic? [0/1]\n";
+      std::cin >> answer;
+      if(answer){
+        std::cout<< "Calling build problem for the second time.\n";
+        gen.build_problem();
+        gen.print();
+      }
+      break;
+    }
 
     case GeneratorType::UNKOWN: {
       std::cout<<"Invalid generator type.\n";

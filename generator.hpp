@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <stdexcept>
+#include <fstream>
 
 #ifndef GENERATOR_HPP
 #define GENERATOR_HPP
@@ -124,14 +125,14 @@ class n_m_n_E_Generator: public Generator{
 // m_n_n_E_nnz_Generator populates jac_chain_info data structure
 // following the following format. Inner size equals 4.
 // n_0 m_0 n_E_0 nnz_0
-// with n,m and n_E taken randomely form a uniform distribution.
+// with n,m, n_E, nnz taken randomly form a uniform distribution.
 // Additionally the m_n_n_E_nnz_Generator generates non zero
 // coordinate file following the format
-// #matrix 1
+// #sparse matrix structure 0 [n_0 m_0 nnz_0]
 // r_0 c_0
 // ...
 // r_last c_last
-// #matrix 2
+// #sparse matrix structure 1 [n_1 m_1 nnz_1]
 // r_0 c_0
 // ...
 //
@@ -150,7 +151,7 @@ class n_m_n_E_nnz_Generator: public Generator{
       }
     }
 
-  void build_problem(){
+  void build_sparse_problem(){
     std::default_random_engine g;
     
     if(!is_deterministic){
@@ -212,6 +213,55 @@ class n_m_n_E_nnz_Generator: public Generator{
 
   void print_format() override{
     std::cout<<"Jacobian information: F'_i: [ n_i m_i n_E_i nnz ]\n";
+  }
+
+  void build_sparse_structure(){
+    if(jac_chain_info.empty()){
+      throw std::logic_error("Precondition: build_sparse_problem needs to be called first.");
+    }
+
+    std::ofstream outFile("sparse_data");
+    if(!outFile){
+      std::cerr << "Error opening file."<< std::endl;
+    }
+
+    std::default_random_engine g;
+
+    if(!is_deterministic){
+      std::random_device r;
+      g.seed(r());
+    }
+
+    else{
+      g.seed(seed);
+    }
+
+    std::size_t matrix_idx, row_idx, entry_idx;
+    std::size_t n = 0, m = 1, nnz = 3;
+    std::uniform_int_distribution<std::size_t> d_col_idx;
+    std::uniform_int_distribution<std::size_t> d_row_idx;
+    
+    for(matrix_idx = 0; matrix_idx < jac_chain_info.size(); matrix_idx++){
+      outFile << "#sparse matrix structure "<< matrix_idx << ' ';
+      outFile << "[ " << jac_chain_info[matrix_idx][n] << ' ' << jac_chain_info[matrix_idx][m];
+      outFile << ' ' << jac_chain_info[matrix_idx][nnz] << " ]\n";
+      std::uniform_int_distribution<std::size_t>::param_type p_col(0, jac_chain_info[matrix_idx][m]-1);
+    
+      for(row_idx = 0; row_idx < jac_chain_info[matrix_idx][0]; row_idx++){
+        outFile << row_idx << ' ' << d_col_idx(g,p_col) << '\n';
+      }
+      std::uniform_int_distribution<std::size_t>::param_type p_row(0, jac_chain_info[matrix_idx][n]-1);
+      
+      for(entry_idx = 0; entry_idx < jac_chain_info[matrix_idx][nnz] - jac_chain_info[matrix_idx][n]; entry_idx++){
+        outFile << d_row_idx(g, p_row) << ' ' << d_col_idx(g,p_col) << '\n';
+      } 
+    }
+    outFile.close();
+  }
+
+  void build_problem(){
+    build_sparse_problem();
+    build_sparse_structure();
   }
 
  private:
