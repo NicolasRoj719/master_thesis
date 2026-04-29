@@ -4,6 +4,8 @@
 #include <vector>
 #include <stdexcept>
 #include <fstream>
+#include <numeric>
+#include <algorithm>
 
 #ifndef GENERATOR_HPP
 #define GENERATOR_HPP
@@ -175,16 +177,28 @@ class n_m_n_E_nnz_Generator: public Generator{
     jac_chain_info[jac_index][n] = d_dim_in_out(g);
     jac_chain_info[jac_index][n_E] = d_n_E(g);
     
-    //Minimum density of a single non zero element per row.
     std::size_t nnz_lb, nnz_ub, nm;
     nm = jac_chain_info[jac_index][n] * jac_chain_info[jac_index][m];
 
-    if(jac_chain_info[jac_index][m] < static_cast<std::size_t>(1/density_lb)){
-      nnz_lb = jac_chain_info[jac_index][n];
+    // At least a single non zero entry is guaranteed at every row and column.
+    if(jac_chain_info[jac_index][n] <= jac_chain_info[jac_index][m]){
+      if(jac_chain_info[jac_index][n] < static_cast<std::size_t>(1/density_lb)){
+        nnz_lb = jac_chain_info[jac_index][m];
+      }
+      else{
+        nnz_lb = static_cast<std::size_t>(density_lb * nm);
+      }
     }
+
     else{
-      nnz_lb = static_cast<std::size_t>(density_lb * nm);
+      if(jac_chain_info[jac_index][m] < static_cast<std::size_t>(1/density_lb)){
+        nnz_lb = jac_chain_info[jac_index][n];
+      }
+      else{
+        nnz_lb = static_cast<std::size_t>(density_lb * nm);
+      }
     }
+
     nnz_ub = static_cast<std::size_t>(density_ub * nm);
 
     std::uniform_int_distribution<std::size_t>::param_type p(nnz_lb, nnz_lb);
@@ -197,11 +211,23 @@ class n_m_n_E_nnz_Generator: public Generator{
       jac_chain_info[jac_index][n_E] = d_n_E(g);
 
       nm = jac_chain_info[jac_index][n] * jac_chain_info[jac_index][m];
-      if(jac_chain_info[jac_index][m] < static_cast<std::size_t>(1/density_lb)){
-        nnz_lb = jac_chain_info[jac_index][n];
+      // At least a single non zero entry is guaranteed at every row and column.
+      if(jac_chain_info[jac_index][n] <= jac_chain_info[jac_index][m]){
+        if(jac_chain_info[jac_index][n] < static_cast<std::size_t>(1/density_lb)){
+          nnz_lb = jac_chain_info[jac_index][m];
+        }
+        else{
+          nnz_lb = static_cast<std::size_t>(density_lb * nm);
+        }
       }
+
       else{
-        nnz_lb = static_cast<std::size_t>(density_lb * nm);
+        if(jac_chain_info[jac_index][m] < static_cast<std::size_t>(1/density_lb)){
+          nnz_lb = jac_chain_info[jac_index][n];
+        }
+        else{
+          nnz_lb = static_cast<std::size_t>(density_lb * nm);
+        }
       }
       nnz_ub = static_cast<std::size_t>(density_ub * nm);
 
@@ -236,27 +262,104 @@ class n_m_n_E_nnz_Generator: public Generator{
       g.seed(seed);
     }
 
-    std::size_t matrix_idx, row_idx, entry_idx;
+    std::size_t matrix_idx;
     std::size_t n = 0, m = 1, nnz = 3;
-    std::uniform_int_distribution<std::size_t> d_col_idx;
-    std::uniform_int_distribution<std::size_t> d_row_idx;
-    
+    std::size_t max_m_n, min_m_n, aux, aux_0;
+    bool is_new_coordinate = 1;
+    std::vector<std::vector<std::size_t>> used_v;
+    std::vector<std::size_t> min_m_n_vector;
+    std::uniform_int_distribution<std::size_t> d_min_m_n;
+    std::uniform_int_distribution<std::size_t> d_max_m_n;
+
     for(matrix_idx = 0; matrix_idx < jac_chain_info.size(); matrix_idx++){
       outFile << "#sparse matrix structure "<< matrix_idx << ' ';
       outFile << "[ " << jac_chain_info[matrix_idx][n] << ' ' << jac_chain_info[matrix_idx][m];
       outFile << ' ' << jac_chain_info[matrix_idx][nnz] << " ]\n";
-      std::uniform_int_distribution<std::size_t>::param_type p_col(0, jac_chain_info[matrix_idx][m]-1);
-    
-      for(row_idx = 0; row_idx < jac_chain_info[matrix_idx][0]; row_idx++){
-        outFile << row_idx << ' ' << d_col_idx(g,p_col) << '\n';
+
+      if(jac_chain_info[matrix_idx][n] <= jac_chain_info[matrix_idx][m]){
+        max_m_n = jac_chain_info[matrix_idx][m];
+        min_m_n = jac_chain_info[matrix_idx][n];
+        used_v.resize(jac_chain_info[matrix_idx][nnz]);
+        min_m_n_vector.resize(min_m_n);
+        std::iota(min_m_n_vector.begin(), min_m_n_vector.end(), 0);
+        std::shuffle(min_m_n_vector.begin(), min_m_n_vector.end(), g);
+        std::uniform_int_distribution<std::size_t>::param_type p_min_m_n(0, min_m_n);
+        std::uniform_int_distribution<std::size_t>::param_type p_max_m_n(0, max_m_n);
+        for(std::size_t i = 0; i < min_m_n; i++){
+          outFile << min_m_n_vector[i] << ' ' << i << '\n';
+          used_v[i].push_back(min_m_n_vector[i]);
+        }
+        for(std::size_t i = min_m_n; i < max_m_n; i++){
+          aux = d_min_m_n(g, p_min_m_n);
+          outFile << aux << ' ' << i << '\n';
+          used_v[i].push_back(aux);
+        }
+        for(std::size_t i = max_m_n; i < jac_chain_info[matrix_idx][nnz]; i++){
+          do{
+            is_new_coordinate = 1;
+            aux = d_min_m_n(g, p_min_m_n);
+            aux_0 = d_max_m_n(g, p_max_m_n);
+            for(std::size_t i = 0; i < used_v[aux_0].size(); i++){
+              if(used_v[aux_0][i] == aux){is_new_coordinate = 0;}
+            }
+          }
+          while(!is_new_coordinate);
+          outFile << aux << ' ' << aux_0 << '\n';
+          used_v[aux_0].push_back(aux);
+        }
       }
-      std::uniform_int_distribution<std::size_t>::param_type p_row(0, jac_chain_info[matrix_idx][n]-1);
-      
-      for(entry_idx = 0; entry_idx < jac_chain_info[matrix_idx][nnz] - jac_chain_info[matrix_idx][n]; entry_idx++){
-        outFile << d_row_idx(g, p_row) << ' ' << d_col_idx(g,p_col) << '\n';
-      } 
+
+      else{
+        max_m_n = jac_chain_info[matrix_idx][n];
+        min_m_n = jac_chain_info[matrix_idx][m];
+        used_v.resize(jac_chain_info[matrix_idx][nnz]);
+        min_m_n_vector.resize(min_m_n);
+        std::iota(min_m_n_vector.begin(), min_m_n_vector.end(), 0);
+        std::shuffle(min_m_n_vector.begin(), min_m_n_vector.end(), g);
+        std::uniform_int_distribution<std::size_t>::param_type p_min_m_n(0, min_m_n);
+        std::uniform_int_distribution<std::size_t>::param_type p_max_m_n(0, max_m_n);
+        for(std::size_t i = 0; i < min_m_n; i++){
+          outFile << i << ' ' << min_m_n_vector[i] << '\n';
+          used_v[i].push_back(min_m_n_vector[i]);
+        }
+        for(std::size_t i = min_m_n; i < max_m_n; i++){
+          aux = d_min_m_n(g, p_min_m_n);
+          outFile << i << ' ' << aux << '\n';
+          used_v[i].push_back(aux);
+        }
+        for(std::size_t i = max_m_n; i < jac_chain_info[matrix_idx][nnz]; i++){
+          do{
+            is_new_coordinate = 1;
+            aux = d_min_m_n(g, p_min_m_n);
+            aux_0 = d_max_m_n(g, p_max_m_n);
+            for(std::size_t i = 0; i < used_v[aux_0].size(); i++){
+              if(used_v[aux_0][i] == aux){is_new_coordinate = 0;}
+            }
+          }
+          while(!is_new_coordinate);
+          outFile << aux_0 << ' ' << aux << '\n';
+          used_v[aux_0].push_back(aux);
+        }
+      }
+
     }
-    outFile.close();
+    
+    /* for(matrix_idx = 0; matrix_idx < jac_chain_info.size(); matrix_idx++){ */
+    /*   outFile << "#sparse matrix structure "<< matrix_idx << ' '; */
+    /*   outFile << "[ " << jac_chain_info[matrix_idx][n] << ' ' << jac_chain_info[matrix_idx][m]; */
+    /*   outFile << ' ' << jac_chain_info[matrix_idx][nnz] << " ]\n"; */
+    /*   std::uniform_int_distribution<std::size_t>::param_type p_col(0, jac_chain_info[matrix_idx][m]-1); */
+    
+    /*   for(row_idx = 0; row_idx < jac_chain_info[matrix_idx][0]; row_idx++){ */
+    /*     outFile << row_idx << ' ' << d_col_idx(g,p_col) << '\n'; */
+    /*   } */
+    /*   std::uniform_int_distribution<std::size_t>::param_type p_row(0, jac_chain_info[matrix_idx][n]-1); */
+      
+    /*   for(entry_idx = 0; entry_idx < jac_chain_info[matrix_idx][nnz] - jac_chain_info[matrix_idx][n]; entry_idx++){ */
+    /*     outFile << d_row_idx(g, p_row) << ' ' << d_col_idx(g,p_col) << '\n'; */
+    /*   } */ 
+    /* } */
+    /* outFile.close(); */
   }
 
   void build_problem(){
