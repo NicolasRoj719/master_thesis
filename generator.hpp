@@ -6,6 +6,7 @@
 #include <fstream>
 #include <numeric>
 #include <algorithm>
+#include <string>
 
 #ifndef GENERATOR_HPP
 #define GENERATOR_HPP
@@ -30,8 +31,9 @@ class Generator{
       }
     }
 
-  virtual void print_format() = 0;
-
+  virtual ~Generator() = default;
+ 
+ public:
   void print(){
     print_format();
     for(std::size_t i=0; i<chain_length; i++){
@@ -43,13 +45,16 @@ class Generator{
     }
   };
 
-  virtual ~Generator() = default;
 
-  virtual void build_problem() = 0;
+  void build_problem();
 
   std::size_t get_problem_size(){return jac_chain_info.size();}
 
   const std::vector<std::vector<std::size_t>>& get_problem(){
+    return jac_chain_info;
+  }
+
+  std::vector<std::vector<std::size_t>> get_problem_copy() const{
     return jac_chain_info;
   }
 
@@ -70,6 +75,7 @@ class Generator{
   bool is_deterministic;
   //seed
   std::size_t seed;
+  virtual void print_format() = 0;
 };
 
 // m_n_n_E_Generator populates jac_chain_info data structure
@@ -106,8 +112,8 @@ class n_m_n_E_Generator: public Generator{
     std::size_t jac_index=0;
     const std::size_t n=0, m=1, n_E=2;
 
-    jac_chain_info[jac_index][m] = d_dim_in_out(g);
     jac_chain_info[jac_index][n] = d_dim_in_out(g);
+    jac_chain_info[jac_index][m] = d_dim_in_out(g);
     jac_chain_info[jac_index][n_E] = d_n_E(g);
     jac_index++;
 
@@ -118,7 +124,7 @@ class n_m_n_E_Generator: public Generator{
       jac_index++;
     }
   }
-
+ protected:
   void print_format() override{
     std::cout<<"Jacobian information: F'_i: [ n_i m_i n_E_i ]\n";
   }
@@ -201,7 +207,7 @@ class n_m_n_E_nnz_Generator: public Generator{
 
     nnz_ub = static_cast<std::size_t>(density_ub * nm);
 
-    std::uniform_int_distribution<std::size_t>::param_type p(nnz_lb, nnz_lb);
+    std::uniform_int_distribution<std::size_t>::param_type p(nnz_lb, nnz_ub);
     jac_chain_info[jac_index][nnz] = d_nnz(g, p);
     jac_index++;
 
@@ -237,16 +243,12 @@ class n_m_n_E_nnz_Generator: public Generator{
     }
   }
 
-  void print_format() override{
-    std::cout<<"Jacobian information: F'_i: [ n_i m_i n_E_i nnz ]\n";
-  }
-
-  void build_sparse_structure(){
+  void build_sparse_structure(const std::string& filename = "sparse_data"){
     if(jac_chain_info.empty()){
       throw std::logic_error("Precondition: build_sparse_problem needs to be called first.");
     }
 
-    std::ofstream outFile("sparse_data");
+    std::ofstream outFile(filename);
     if(!outFile){
       std::cerr << "Error opening file."<< std::endl;
     }
@@ -276,15 +278,49 @@ class n_m_n_E_nnz_Generator: public Generator{
       outFile << "[ " << jac_chain_info[matrix_idx][n] << ' ' << jac_chain_info[matrix_idx][m];
       outFile << ' ' << jac_chain_info[matrix_idx][nnz] << " ]\n";
 
+      //Jacobians with equal or more rows than columns.
       if(jac_chain_info[matrix_idx][n] <= jac_chain_info[matrix_idx][m]){
         max_m_n = jac_chain_info[matrix_idx][m];
         min_m_n = jac_chain_info[matrix_idx][n];
-        used_v.resize(jac_chain_info[matrix_idx][nnz]);
+        used_v.resize(max_m_n);
         min_m_n_vector.resize(min_m_n);
         std::iota(min_m_n_vector.begin(), min_m_n_vector.end(), 0);
         std::shuffle(min_m_n_vector.begin(), min_m_n_vector.end(), g);
-        std::uniform_int_distribution<std::size_t>::param_type p_min_m_n(0, min_m_n);
-        std::uniform_int_distribution<std::size_t>::param_type p_max_m_n(0, max_m_n);
+        std::uniform_int_distribution<std::size_t>::param_type p_min_m_n(0, min_m_n - 1);
+        std::uniform_int_distribution<std::size_t>::param_type p_max_m_n(0, max_m_n - 1);
+        for(std::size_t i = 0; i < min_m_n; i++){
+          outFile << i << ' ' << min_m_n_vector[i] << '\n';
+          used_v[i].push_back(min_m_n_vector[i]);
+        }
+        for(std::size_t i = min_m_n; i < max_m_n; i++){
+          aux = d_min_m_n(g, p_min_m_n);
+          outFile << i << ' ' << aux << '\n';
+          used_v[i].push_back(aux);
+        }
+        for(std::size_t i = max_m_n; i < jac_chain_info[matrix_idx][nnz]; i++){
+          do{
+            is_new_coordinate = 1;
+            aux = d_min_m_n(g, p_min_m_n);
+            aux_0 = d_max_m_n(g, p_max_m_n);
+            for(std::size_t i = 0; i < used_v[aux_0].size(); i++){
+              if(used_v[aux_0][i] == aux){is_new_coordinate = 0;}
+            }
+          }
+          while(!is_new_coordinate);
+          outFile << aux_0 << ' ' << aux << '\n';
+          used_v[aux_0].push_back(aux);
+        }
+      }
+      // Jacobians with more columns than rows
+      else{
+        max_m_n = jac_chain_info[matrix_idx][n];
+        min_m_n = jac_chain_info[matrix_idx][m];
+        used_v.resize(max_m_n);
+        min_m_n_vector.resize(min_m_n);
+        std::iota(min_m_n_vector.begin(), min_m_n_vector.end(), 0);
+        std::shuffle(min_m_n_vector.begin(), min_m_n_vector.end(), g);
+        std::uniform_int_distribution<std::size_t>::param_type p_min_m_n(0, min_m_n-1);
+        std::uniform_int_distribution<std::size_t>::param_type p_max_m_n(0, max_m_n-1);
         for(std::size_t i = 0; i < min_m_n; i++){
           outFile << min_m_n_vector[i] << ' ' << i << '\n';
           used_v[i].push_back(min_m_n_vector[i]);
@@ -309,57 +345,8 @@ class n_m_n_E_nnz_Generator: public Generator{
         }
       }
 
-      else{
-        max_m_n = jac_chain_info[matrix_idx][n];
-        min_m_n = jac_chain_info[matrix_idx][m];
-        used_v.resize(jac_chain_info[matrix_idx][nnz]);
-        min_m_n_vector.resize(min_m_n);
-        std::iota(min_m_n_vector.begin(), min_m_n_vector.end(), 0);
-        std::shuffle(min_m_n_vector.begin(), min_m_n_vector.end(), g);
-        std::uniform_int_distribution<std::size_t>::param_type p_min_m_n(0, min_m_n);
-        std::uniform_int_distribution<std::size_t>::param_type p_max_m_n(0, max_m_n);
-        for(std::size_t i = 0; i < min_m_n; i++){
-          outFile << i << ' ' << min_m_n_vector[i] << '\n';
-          used_v[i].push_back(min_m_n_vector[i]);
-        }
-        for(std::size_t i = min_m_n; i < max_m_n; i++){
-          aux = d_min_m_n(g, p_min_m_n);
-          outFile << i << ' ' << aux << '\n';
-          used_v[i].push_back(aux);
-        }
-        for(std::size_t i = max_m_n; i < jac_chain_info[matrix_idx][nnz]; i++){
-          do{
-            is_new_coordinate = 1;
-            aux = d_min_m_n(g, p_min_m_n);
-            aux_0 = d_max_m_n(g, p_max_m_n);
-            for(std::size_t i = 0; i < used_v[aux_0].size(); i++){
-              if(used_v[aux_0][i] == aux){is_new_coordinate = 0;}
-            }
-          }
-          while(!is_new_coordinate);
-          outFile << aux_0 << ' ' << aux << '\n';
-          used_v[aux_0].push_back(aux);
-        }
-      }
-
     }
-    
-    /* for(matrix_idx = 0; matrix_idx < jac_chain_info.size(); matrix_idx++){ */
-    /*   outFile << "#sparse matrix structure "<< matrix_idx << ' '; */
-    /*   outFile << "[ " << jac_chain_info[matrix_idx][n] << ' ' << jac_chain_info[matrix_idx][m]; */
-    /*   outFile << ' ' << jac_chain_info[matrix_idx][nnz] << " ]\n"; */
-    /*   std::uniform_int_distribution<std::size_t>::param_type p_col(0, jac_chain_info[matrix_idx][m]-1); */
-    
-    /*   for(row_idx = 0; row_idx < jac_chain_info[matrix_idx][0]; row_idx++){ */
-    /*     outFile << row_idx << ' ' << d_col_idx(g,p_col) << '\n'; */
-    /*   } */
-    /*   std::uniform_int_distribution<std::size_t>::param_type p_row(0, jac_chain_info[matrix_idx][n]-1); */
-      
-    /*   for(entry_idx = 0; entry_idx < jac_chain_info[matrix_idx][nnz] - jac_chain_info[matrix_idx][n]; entry_idx++){ */
-    /*     outFile << d_row_idx(g, p_row) << ' ' << d_col_idx(g,p_col) << '\n'; */
-    /*   } */ 
-    /* } */
-    /* outFile.close(); */
+    outFile.close();
   }
 
   void build_problem(){
@@ -367,9 +354,12 @@ class n_m_n_E_nnz_Generator: public Generator{
     build_sparse_structure();
   }
 
- private:
+ protected:
   double density_lb;
   double density_ub;
+  void print_format() override{
+    std::cout<<"Jacobian information: F'_i: [ n_i m_i n_E_i nnz ]\n";
+  }
 };
 
 #endif

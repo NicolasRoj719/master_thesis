@@ -34,6 +34,7 @@ int main(){
       std::cin >> chain_len >> dim_lb >> dim_ub >> n_E_lb;
       std::cin >> n_E_ub >> is_deterministic >> seed;
 
+      std::cout<< "Calling n_m_n_E_Generator constructor.\n";
       n_m_n_E_Generator gen{chain_len, dim_lb, dim_ub, n_E_lb, n_E_ub, is_deterministic, seed};
       std::cout<< "Do you want to test build_problem? [0/1]\n";
       std::cin >> answer;
@@ -70,13 +71,14 @@ int main(){
       std::size_t chain_len, dim_lb, dim_ub, n_E_lb, n_E_ub, seed;
       double den_lb, den_ub;
       bool is_deterministic, answer;
+      std::string file_name;
       std::cout<< "Enter the arguments for the constructor.\n";
       std::cout<< "chain_len dim_lb dim_ub n_E_lb n_E_ub den_lb den_ub";
       std::cout<< " is_deterministic{0,1} seed\n";
       std::cin >> chain_len >> dim_lb >> dim_ub >> n_E_lb;
       std::cin >> n_E_ub >> den_lb >> den_ub >>is_deterministic >> seed;
 
-      std::cout<< "Calling the constructor.\n";
+      std::cout<< "Calling n_m_n_E_nnz_Generator constructor.\n";
       n_m_n_E_nnz_Generator gen{chain_len, dim_lb, dim_ub, n_E_lb, n_E_ub, 
           den_lb, den_ub, is_deterministic, seed};
 
@@ -91,7 +93,9 @@ int main(){
       std::cout << "Do you want to test build_sparse_structure? [0/1]\n";
       std::cin >> answer;
       if(answer){
-        gen.build_sparse_structure();
+      std::cout << "Enter the output file name for the sparse data.\n";
+      std::cin >> file_name;
+        gen.build_sparse_structure(file_name);
       }
       else{break;}
 

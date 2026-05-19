@@ -3,12 +3,20 @@
 #include <fstream>
 #include <stdexcept>
 #include <sstream>
+#include "util_structs.hpp"
 #include "jacobian.hpp"
+
+#ifndef BUILD_CHAIN_HPP
+#define BUILD_CHAIN_HPP
 
 template <class Jacobian_type>
 class build_chain{
  public:
-  std::vector<Jacobian_type> get_chain(){
+  const std::vector<Jacobian_type>& get_chain(){
+    return jacobian_chain;
+  }
+
+  const std::vector<Jacobian_type> get_chain_copy(){
     return jacobian_chain;
   }
 
@@ -32,6 +40,18 @@ template <class Jacobian_type>
 class build_chain_implementation: public build_chain<Jacobian_type>{
  public:
   build_chain_implementation(const std::vector<std::vector<std::size_t>>& problem_data){
+    bool dimension_mismatch = 0;
+    std::size_t n = 0, m = 1;
+    for(std::size_t i = 0; i<problem_data.size()-1; i++){
+      if(problem_data[i][m] != problem_data[i+1][n]){
+        dimension_mismatch = 1;
+        i = problem_data.size();
+      }
+    }
+    if(dimension_mismatch){
+      throw std::invalid_argument("Matrix dimension mismatch.");
+    }
+
     if(this -> jacobian_chain.capacity() < problem_data.size()){
       this -> jacobian_chain.reserve(problem_data.size());
     }
@@ -46,6 +66,18 @@ class build_chain_implementation<Sparse_Jacobian>: public build_chain<Sparse_Jac
  public:
   build_chain_implementation(const std::vector<std::vector<std::size_t>>& problem_data,
       const std::string& sparse_data_file_name){
+    bool dimension_mismatch = 0;
+    std::size_t n = 0, m = 1;
+    for(std::size_t i = 0; i<problem_data.size()-1; i++){
+      if(problem_data[i][m] != problem_data[i+1][n]){
+        dimension_mismatch = 1;
+        i = problem_data.size();
+      }
+    }
+    if(dimension_mismatch){
+      throw std::invalid_argument("Matrix dimension mismatch.");
+    }
+
     std::ifstream file(sparse_data_file_name);
 
     if(!file){
@@ -56,31 +88,42 @@ class build_chain_implementation<Sparse_Jacobian>: public build_chain<Sparse_Jac
       jacobian_chain.reserve(problem_data.size());
     }
 
-    std::vector<std::vector<std::size_t>> jac_sparse_data;
-    std::size_t nnz_row = 0, nnz_col = 1, nnz = 3;
+    std::vector<NNZ>jac_sparse_data;
+    std::size_t nnz = 3;
+    std::size_t row, column;
+    int line_counter = -1;
     std::string line;
-    std::size_t line_counter;
 
     for(std::size_t i =0; i<problem_data.size(); i++){
       if(jac_sparse_data.capacity() < problem_data[i][nnz]){
         jac_sparse_data.reserve(problem_data[i][nnz]);
       }
       std::getline(file,line);
+      line_counter++;
       if(line[0] == '#'){
         //Debugging purpose.
-        std::cout << line << '\n';
+        /* std::cout << line << '\n'; */
       }
-      else{std::runtime_error("# matrix header not found in line " + std::to_string(line_counter) + '.');}
-      
-      line_counter++;
+      else{std::runtime_error("# Jacobian header not found in line " + std::to_string(line_counter) + '.');}
+
       for(std::size_t nnz_idx = 0; nnz_idx < problem_data[i][nnz]; nnz_idx++){
         std::getline(file, line);
-        std::istringstream iss(line);
-        iss >> jac_sparse_data[nnz_idx][nnz_row] >> jac_sparse_data[nnz_idx][nnz_col];
         line_counter++;
+        std::istringstream iss(line);
+        iss >> row >> column; 
+        jac_sparse_data.emplace_back(row, column);
       }
       jacobian_chain.emplace_back(problem_data[i], jac_sparse_data);
       jac_sparse_data.clear();
     }
   }
+
+  void print_CSR_CSC(){
+    for(std::size_t i = 0; i < jacobian_chain.size(); i++){
+      std::cout<<"Sparse Jacobian " << i << '\n';
+      jacobian_chain[i].print_CSR();
+      jacobian_chain[i].print_CSC();
+    }
+  }
 };
+#endif
