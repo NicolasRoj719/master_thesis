@@ -58,6 +58,10 @@ class Generator{
     return jac_chain_info;
   }
 
+  std::vector<std::size_t> get_jacobian_info(std::size_t index){
+    return jac_chain_info.at(index);
+  }
+
   /* //This method will be used to build the elemental jacobians array. */
   /* std::vector<size_t> read_Fi_description(std::size_t i){ */
   /*   return(jac_chain_info[i]); */

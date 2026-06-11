@@ -27,6 +27,10 @@ class build_chain{
     }
   }
 
+  const Jacobian_type get_jac(std::size_t jac_index){
+    return jacobian_chain.at(jac_index);
+  }
+
   std::size_t size(){
     return(jacobian_chain.size());
   }
@@ -120,8 +124,10 @@ class build_chain_implementation<Sparse_Jacobian>: public build_chain<Sparse_Jac
 
   void print_CSR_CSC(){
     for(std::size_t i = 0; i < jacobian_chain.size(); i++){
-      std::cout<<"Sparse Jacobian " << i << '\n';
+      std::cout << "Sparse Jacobian " << i << '\n';
+      std::cout << "CSR format:\n";
       jacobian_chain[i].print_CSR();
+      std::cout << "CSC format:\n";
       jacobian_chain[i].print_CSC();
     }
   }

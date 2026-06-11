@@ -1,0 +1,26 @@
+#sparse matrix structure [3 3 4]
+0 2
+1 2
+2 0
+2 1
+CSR format:
+column_idx:
+2 2 0 1
+row_ptr:
+0 1 2 4
+CSC format:
+row_idx:
+2 2 0 1
+column_ptr:
+0 1 2 4
+Coloring:
+column_number_colors:
+2
+row_number_colors:
+2
+column_coloring:
+0 2
+1
+row_coloring:
+0 2
+1

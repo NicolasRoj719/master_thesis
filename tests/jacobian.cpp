@@ -253,6 +253,22 @@ int main(){
         std::cout<< "Calling print_CSC(): \n";
         jac.print_CSC();
       }
+
+      std::cout << "Dou you want to test row_or_col_num_colors? [0/1]\n";
+      std::cin >> answer;
+      if(answer){
+        const auto& row_idx = jac.get_row_idx();
+        const auto& col_ptr = jac.get_col_ptr();
+        const auto& col_idx = jac.get_col_idx();
+        const auto& row_ptr = jac.get_row_ptr();
+        std::size_t col_num_colors = jac.row_or_col_num_colors(row_ptr, col_idx, jac.n());
+        std::size_t row_num_colors = jac.row_or_col_num_colors(col_ptr, row_idx, jac.m());
+        std::cout << "n = " << jac.n() << " " << "m = " << jac.m() << '\n';
+        std::cout << "column number of colors: " << col_num_colors; 
+        std::cout << '\n';
+        std::cout << "row number of colors: " << row_num_colors;
+        std::cout << '\n';
+      }
       break;
     }
     case JacobianType::UNKOWN: {

@@ -68,8 +68,15 @@ class Sparse_Jacobian: public Dense_Jacobian{
       if(jac_info.size() < 4){
         throw std::invalid_argument("Jacobian information must have at least four elements.");
       }
+      if(jac_info[3] != sparse_data.size()){
+        throw std::invalid_argument("Number of non zero entries and sparse data size do not match.");
+      }
       num_nnz_ = jac_info[3];
       build_CSR_CSC_format(sparse_data);
+      coloring_algorithm(row_ptr, col_idx, column_coloring, n_, col_heu_num_colors);
+      coloring_algorithm(col_ptr, row_idx, row_coloring, m_, row_heu_num_colors);
+      rhs_inner_dim_ = max_nnz_row_or_col(col_ptr);
+      lhs_inner_dim_ = max_nnz_row_or_col(row_ptr);
     }
 
   Sparse_Jacobian(const std::vector<size_t>& jac_info): Dense_Jacobian(jac_info){
@@ -108,9 +115,14 @@ class Sparse_Jacobian: public Dense_Jacobian{
       if(!is_increasing(col_ptr)){
         throw std::invalid_argument("col_ptr is not an increasing array.");
       }
+
       num_nnz_ = jac_info[3];
       handling_repeated_entries(row_ptr, col_idx);
       handling_repeated_entries(col_ptr, row_idx);
+      coloring_algorithm(row_ptr, col_idx, column_coloring, n_, col_heu_num_colors);
+      coloring_algorithm(col_ptr, row_idx, row_coloring, m_, row_heu_num_colors);
+      rhs_inner_dim_ = max_nnz_row_or_col(col_ptr);
+      lhs_inner_dim_ = max_nnz_row_or_col(row_ptr);
     }
 
   void print_CSR(){
@@ -177,30 +189,65 @@ class Sparse_Jacobian: public Dense_Jacobian{
     build_CSR_CSC_format(jac_sparse_data);
   }
 
+  std::size_t row_or_col_num_colors(const std::vector<std::size_t> ptr_arr,
+      const std::vector<std::size_t> idx_arr, std::size_t n_or_m){
+    auto graph = build_cig_from_compressed(ptr_arr, idx_arr, n_or_m);
+    std::size_t heuristic_color_num;
+    auto coloring = color_graph(graph, heuristic_color_num);
+    assert(are_all_rows_or_columns_colored(coloring));
+    /* auto itr_max = std::max_element(coloring.begin(), coloring.end()); */
+    /* return static_cast<std::size_t>(*itr_max) + 1; */
+    return heuristic_color_num;
+  }
+
+  void coloring_algorithm(const std::vector<std::size_t>& ptr_arr,
+      const std::vector<std::size_t>& idx_arr,
+      std::vector<std::vector<std::size_t>>& color_arr,
+      std::size_t n_or_m, std::size_t& number_of_colors){
+    auto graph = build_cig_from_compressed(ptr_arr, idx_arr, n_or_m);
+    auto coloring = color_graph(graph, number_of_colors);
+    coloring_formatting(coloring, color_arr, number_of_colors);
+    assert(is_coloring_valid(color_arr, idx_arr, ptr_arr));
+  }
+
   std::size_t num_nnz(){return num_nnz_;}
 
-  const std::vector<size_t>& get_row_idx(){return row_idx;}
-  std::vector<size_t> get_row_idx_copy(){return row_idx;}
+  std::size_t col_num_colors(){return col_heu_num_colors;}
+  std::size_t row_num_colors(){return row_heu_num_colors;}
+
+  std::size_t rhs_inner_dim(){return rhs_inner_dim_;}
+  std::size_t lhs_inner_dim(){return lhs_inner_dim_;}
+
+  const std::vector<std::size_t>& get_row_idx(){return row_idx;}
+  std::vector<std::size_t> get_row_idx_copy(){return row_idx;}
   
-  const std::vector<size_t>& get_col_ptr(){return col_ptr;}
-  std::vector<size_t> get_col_ptr_copy(){return col_ptr;}
+  const std::vector<std::size_t>& get_col_ptr(){return col_ptr;}
+  std::vector<std::size_t> get_col_ptr_copy(){return col_ptr;}
 
-  const std::vector<size_t>& get_col_idx(){return col_idx;}
-  std::vector<size_t> get_col_idx_copy(){return col_idx;}
+  const std::vector<std::size_t>& get_col_idx(){return col_idx;}
+  std::vector<std::size_t> get_col_idx_copy(){return col_idx;}
 
-  const std::vector<size_t>& get_row_ptr(){return row_ptr;}
-  std::vector<size_t> get_row_ptr_copy(){return row_ptr;}
+  const std::vector<std::size_t>& get_row_ptr(){return row_ptr;}
+  std::vector<std::size_t> get_row_ptr_copy(){return row_ptr;}
+
+  const std::vector<std::vector<std::size_t>>& get_column_coloring(){return column_coloring;}
+
+  const std::vector<std::vector<std::size_t>>& get_row_coloring(){return row_coloring;}
 
   friend Sparse_Jacobian operator*(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs);
   friend void mul_CSR_CSC_2_CSR(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs, std::vector<size_t>& col_idx,
-      std::vector<size_t>& row_ptr);
+      std::vector<std::size_t>& row_ptr);
   friend void mul_CSR_CSC_2_CSC(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs, std::vector<size_t>& row_idx,
-      std::vector<size_t>& col_ptr);
+      std::vector<std::size_t>& col_ptr);
 
  protected:
-  std::vector<size_t> row_idx, col_ptr;
-  std::vector<size_t> col_idx, row_ptr;
-  std::size_t num_nnz_, col_colors, row_colors;
+  std::vector<std::size_t> row_idx, col_ptr;
+  std::vector<std::size_t> col_idx, row_ptr;
+  std::vector<std::vector<std::size_t>> column_coloring, row_coloring;
+  std::size_t num_nnz_;
+  std::size_t col_heu_num_colors, row_heu_num_colors;
+  // Upper bound for the cost of matrix matrix mul.
+  std::size_t rhs_inner_dim_, lhs_inner_dim_;
 
  private:
   bool is_increasing(const std::vector<size_t>& ptr_arr){
@@ -216,11 +263,14 @@ class Sparse_Jacobian: public Dense_Jacobian{
 
   // Eliminate repeated entries and modifies ptr_arr and idx_arr accordingly.
   // After calling the method idx_arr is monotonically increasing inside the range
-  // [ptr_arr[i], ptr_arr[i+1]).
-  void handling_repeated_entries(std::vector<size_t>& ptr_arr, std::vector<size_t>& idx_arr){
+  // [ptr_arr[i], ptr_arr[i+1]) and modifies the data member num_nnz_.
+  void handling_repeated_entries(std::vector<std::size_t>& ptr_arr,
+      std::vector<std::size_t>& idx_arr){
     auto first_iter = idx_arr.begin();
     auto end_iter = idx_arr.begin();
     std::vector<size_t> aux_idx_arr, aux_ptr_arr;
+    aux_idx_arr.reserve(idx_arr.size());
+    aux_ptr_arr.reserve(ptr_arr.size());
     aux_ptr_arr.push_back(0);
     std::size_t repeated_entries = 0;
     bool once = 0;
@@ -244,7 +294,7 @@ class Sparse_Jacobian: public Dense_Jacobian{
         ptr_arr[i] = ptr_arr[i] - aux_ptr_arr[i];
       }
     }
-
+    num_nnz_ = aux_idx_arr.size();
     idx_arr = std::move(aux_idx_arr);
   }
 
@@ -280,14 +330,13 @@ class Sparse_Jacobian: public Dense_Jacobian{
     }
     handling_repeated_entries(row_ptr, col_idx);
     handling_repeated_entries(col_ptr, row_idx);
-    num_nnz_ = col_idx.size();
   }
 
   // Build column-interface graph.
   // The method assumes that idx_arr is within a same row or column monotonically increasing.
   // The method is essentially taken from the code developed by TODO.
   std::vector<std::vector<std::size_t>> build_cig_from_compressed(
-      const std::vector<size_t>& ptr_arr, const std::vector<size_t>& idx_arr,
+      const std::vector<std::size_t>& ptr_arr, const std::vector<std::size_t>& idx_arr,
       const std::size_t n_or_m){
     std::vector<std::pair<std::size_t, std::size_t>> edges;
 
@@ -324,8 +373,11 @@ class Sparse_Jacobian: public Dense_Jacobian{
   } 
   
   // Greedy graph coloring
-  std::vector<int> color_graph(const std::vector<std::vector<std::size_t>>& graph){
+  std::vector<int> color_graph(const std::vector<std::vector<std::size_t>>& graph,
+      std::size_t& max_color){
+
    const std::size_t n_or_m = graph.size();
+   max_color = 0;
    std::vector<std::size_t> order(n_or_m);
    std::iota(order.begin(), order.end(),0);
 
@@ -349,9 +401,81 @@ class Sparse_Jacobian: public Dense_Jacobian{
     while(color_u < n_or_m && forbidden[color_u]){
       color_u++;
     }
+    if(max_color < color_u){
+      max_color = color_u;
+    }
     color[u] = color_u;
    }
+   max_color++;
    return color;
+  }
+
+
+  bool are_all_rows_or_columns_colored(const std::vector<int>& coloring){
+    bool are_all_colored = 1;
+    for(std::size_t i = 0; i < coloring.size(); i++){
+      if(coloring[i] == -1){
+        are_all_colored = 0;
+      }
+    }
+    return are_all_colored;
+  }
+
+  void coloring_formatting(const std::vector<int>& coloring, 
+      std::vector<std::vector<std::size_t>>& new_coloring_format,
+      const std::size_t& number_of_colors){
+
+    new_coloring_format.resize(number_of_colors);
+    std::vector<std::size_t> number_elements_per_color(number_of_colors, 0);
+
+    for(std::size_t i = 0; i < coloring.size(); i++){
+      number_elements_per_color[coloring[i]]++;
+    }
+
+    for(std::size_t i = 0; i < number_of_colors; i++){
+      new_coloring_format[i].reserve(number_elements_per_color[i]);
+    }
+
+    for(std::size_t i = 0; i < coloring.size(); i++){
+      new_coloring_format[coloring[i]].push_back(i);
+    }
+  } 
+
+  // idx_arr must be sorted.
+  // color should follow the format given by coloring_formatting.
+  bool is_coloring_valid(const std::vector<std::vector<std::size_t>>& color,
+      const std::vector<std::size_t>& idx_arr, const std::vector<std::size_t>& ptr_arr){
+    bool is_coloring_valid_ = 1;
+    for(std::size_t i = 0; i < ptr_arr.size() - 1; i++){
+      for(std::size_t color_idx = 0; color_idx < color.size(); color_idx++){
+        for(std::size_t color_i = 0; color_i < color[color_idx].size(); color_i++){
+
+          if(std::binary_search(idx_arr.begin() + ptr_arr[i], idx_arr.begin() + ptr_arr[i+1],
+                color[color_idx][color_i])){
+
+            for(std::size_t color_j = color_i + 1; color_j < color[color_idx].size(); color_j++){
+              if(std::binary_search(idx_arr.begin() + ptr_arr[i], idx_arr.begin() + ptr_arr[i+1],
+                    color[color_idx][color_j])){is_coloring_valid_ = 0;}
+              
+            }
+          }
+
+        }
+      }
+    }
+    return is_coloring_valid_;
+  }
+
+  std::size_t max_nnz_row_or_col(const std::vector<std::size_t>& ptr_arr){
+    std::size_t max_nnz = 0;
+    std::size_t local_nnz;
+    for(std::size_t i = 0; i < ptr_arr.size() - 1; i++){
+      local_nnz = ptr_arr[i+1] - ptr_arr[i];
+      if(max_nnz < local_nnz){
+        max_nnz = local_nnz;
+      }
+    }
+    return max_nnz;
   }
 };
 
@@ -388,8 +512,8 @@ void mul_CSR_CSC_2_CSR(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs, s
   }
 }
 
-void mul_CSR_CSC_2_CSC(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs, std::vector<size_t>& row_idx,
-    std::vector<size_t>& col_ptr){
+void mul_CSR_CSC_2_CSC(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs,
+    std::vector<std::size_t>& row_idx, std::vector<std::size_t>& col_ptr){
   std::size_t first_nnz_col, first_nnz_next_col;
   std::size_t first_nnz_row, first_nnz_next_row;
   std::size_t row_rhs, col_lhs;
