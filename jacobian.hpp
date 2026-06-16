@@ -25,12 +25,20 @@ class Jacobian{
   }
 
   //Print function
-  void print(){
+  void print() const{
     std::cout<<"[ "<< n_ <<' '<< m_ <<" ]\n";
   }
 
   std::size_t n() const noexcept {return n_;}
   std::size_t m() const noexcept {return m_;}
+
+  std::vector<std::size_t> jacobian_information() const{
+    std::vector<std::size_t> jac_info;
+    jac_info.reserve(2);
+    jac_info.push_back(n_);
+    jac_info.push_back(m_);
+    return jac_info;
+  }
 
  protected:
   //Input dimension R^n
@@ -48,12 +56,21 @@ class Dense_Jacobian: public Jacobian{
     n_E_ = jac_info[2];
   }
 
-  void print(){
+  void print() const{
     std::cout<<"[ "<< n_ <<' '<< m_ <<' '<<
       n_E_ <<" ]\n";
   }
  
   std::size_t n_E() const noexcept {return n_E_;}
+
+  std::vector<std::size_t> jacobian_information() const{
+    std::vector<std::size_t> jac_info;
+    jac_info.reserve(3);
+    jac_info.push_back(n_);
+    jac_info.push_back(m_);
+    jac_info.push_back(n_E_);
+    return jac_info;
+  }
   
  protected:
   //Number of edges in the DAG representation
@@ -125,7 +142,7 @@ class Sparse_Jacobian: public Dense_Jacobian{
       lhs_inner_dim_ = max_nnz_row_or_col(row_ptr);
     }
 
-  void print_CSR(){
+  void print_CSR() const{
     std::cout << "col_idx: \n";
     for(std::size_t i = 0; i < num_nnz_; i++){
       std::cout << col_idx[i] << ' ';
@@ -139,7 +156,7 @@ class Sparse_Jacobian: public Dense_Jacobian{
     std::cout << '\n';
   }
 
-  void print_CSC(){
+  void print_CSC() const{
     std::cout << "row_idx: \n";
     for(std::size_t i = 0; i < num_nnz_; i++){
       std::cout << row_idx[i] << ' ';
@@ -153,14 +170,14 @@ class Sparse_Jacobian: public Dense_Jacobian{
     std::cout << '\n';
   }
 
-  void print_CSR_CSC(){
+  void print_CSR_CSC() const{
     std::cout << "CSR: \n";
     print_CSR();
     std::cout << "CSC: \n";
     print_CSC();
   }
 
-  void print(){
+  void print() const{
     std::cout<<"[ "<< n_ <<' '<< m_ <<' '<<
       n_E_<< ' ' << num_nnz_ << " ]\n";
   }
@@ -210,29 +227,43 @@ class Sparse_Jacobian: public Dense_Jacobian{
     assert(is_coloring_valid(color_arr, idx_arr, ptr_arr));
   }
 
-  std::size_t num_nnz(){return num_nnz_;}
+  std::size_t num_nnz() const{return num_nnz_;}
 
-  std::size_t col_num_colors(){return col_heu_num_colors;}
-  std::size_t row_num_colors(){return row_heu_num_colors;}
+  std::vector<std::size_t> jacobian_information() const{
+    std::vector<std::size_t> jac_info;
+    jac_info.reserve(4);
+    jac_info.push_back(n_);
+    jac_info.push_back(m_);
+    jac_info.push_back(n_E_);
+    jac_info.push_back(num_nnz_);
+    return jac_info;
+  }
 
-  std::size_t rhs_inner_dim(){return rhs_inner_dim_;}
-  std::size_t lhs_inner_dim(){return lhs_inner_dim_;}
+  std::size_t col_num_colors() const{return col_heu_num_colors;}
+  std::size_t row_num_colors() const{return row_heu_num_colors;}
 
-  const std::vector<std::size_t>& get_row_idx(){return row_idx;}
+  std::size_t rhs_inner_dim() const{return rhs_inner_dim_;}
+  std::size_t lhs_inner_dim() const{return lhs_inner_dim_;}
+
+  const std::vector<std::size_t>& get_row_idx() const{return row_idx;}
   std::vector<std::size_t> get_row_idx_copy(){return row_idx;}
   
-  const std::vector<std::size_t>& get_col_ptr(){return col_ptr;}
+  const std::vector<std::size_t>& get_col_ptr() const{return col_ptr;}
   std::vector<std::size_t> get_col_ptr_copy(){return col_ptr;}
 
-  const std::vector<std::size_t>& get_col_idx(){return col_idx;}
+  const std::vector<std::size_t>& get_col_idx() const{return col_idx;}
   std::vector<std::size_t> get_col_idx_copy(){return col_idx;}
 
-  const std::vector<std::size_t>& get_row_ptr(){return row_ptr;}
+  const std::vector<std::size_t>& get_row_ptr() const{return row_ptr;}
   std::vector<std::size_t> get_row_ptr_copy(){return row_ptr;}
 
-  const std::vector<std::vector<std::size_t>>& get_column_coloring(){return column_coloring;}
+  const std::vector<std::vector<std::size_t>>& get_column_coloring() const{
+    return column_coloring;
+  }
 
-  const std::vector<std::vector<std::size_t>>& get_row_coloring(){return row_coloring;}
+  const std::vector<std::vector<std::size_t>>& get_row_coloring() const{
+    return row_coloring;
+  }
 
   friend Sparse_Jacobian operator*(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs);
   friend void mul_CSR_CSC_2_CSR(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs, std::vector<size_t>& col_idx,

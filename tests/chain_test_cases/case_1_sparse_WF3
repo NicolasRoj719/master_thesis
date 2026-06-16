@@ -1,0 +1,17 @@
+#Jacobian Chain. Chain size = 3
+#Jacobian 0 [4 2 100 4]
+0 0
+0 2
+1 1
+1 3
+
+#Jacobian 1 [2 3 150 3]
+0 1
+1 0
+2 1
+
+#Jacobian 2 [3 4 80 4]
+0 0
+1 1
+2 2
+3 2

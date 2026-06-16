@@ -1,0 +1,4 @@
+#Jacobian Chain Format n m n_E. size = 3
+4 2 100
+2 3 150
+3 4 80
