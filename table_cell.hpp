@@ -1,6 +1,8 @@
 #include <iostream>
 #include <cstdint>
+#include <optional>
 #include <string>
+#include <type_traits>
 #include "./jacobian.hpp"
 
 #ifndef TABLE_CELL_HPP
@@ -32,130 +34,194 @@ std::ostream& operator<<(std::ostream& os, Operation op){
   return os << to_string(op);
 }
 
+template <class Jacobian_type>
+class cell{};
 
-class Table_cell{
+template <>
+class cell<Jacobian>{
  public:
-  Table_cell(std::size_t cost, std::size_t k, Operation op):
-    cost_(cost), k_(k), operation(op){}
-  
-  Table_cell():cost_(0), k_(0),operation(Operation::NONE){}
+  cell(std::size_t cost_, std::size_t k_):
+    cost(cost_), k(k_){}
+  //cell_with_pointer initializes first the pointer
+  //without initializing the cell data.
+  cell(){}
+
+  std::string split_position_to_string(){
+    return std::to_string(k);
+  }
+
+  std::size_t split_position(){return k;}
+  std::size_t accumulated_cost(){return cost;}
+
+  void print(){
+    std::cout<< "[ " << cost << ' ' << k << " ]\n";
+  }
+ 
+ protected:
+  std::size_t cost;
+  std::size_t k;
+};
+
+template <>
+class cell<Dense_Jacobian>: public cell<Jacobian>{
+ public:
+  cell(std::size_t cost_, std::size_t k_, Operation op):
+    cell<Jacobian>(cost_, k_), operation(op){}
+
+  cell(std::size_t cost_, std::size_t k_, Operation op,
+      std::optional<std::size_t> memory_):
+    cell<Jacobian>(cost_, k_), operation(op), memory(memory_){}
 
   std::string op_to_string(){
     return to_string(operation);
   }
+  //cell_with_pointer initializes first the pointer
+  //without initializing the cell data.
+  cell(){}
 
-  std::string k_to_string(){
-    return std::to_string(k_);
+  void print(){
+    std::cout<< "[ " << cost << ' ' << k << ' ' << operation << " ]\n";
   }
 
-  std::size_t k(){return k_;}
-  std::size_t cost(){return cost_;}
+  std::optional<std::size_t> accumulated_memory_use(){return memory;}
 
  protected:
-  std::size_t cost_;
-  //split position
-  std::size_t k_;
-  //Operation type
   Operation operation;
+  std::optional<std::size_t> memory;
 };
 
-class cell_DJCPB: public Table_cell{
+template<>
+class cell<Sparse_Jacobian>: public cell<Dense_Jacobian>{
  public:
-  cell_DJCPB(std::size_t cost, std::size_t k, Operation op):
-    Table_cell(cost, k, op){};
-  
-  void print() const{
-    std::cout<<"[ "<<cost_<<' '<<k_<<' '<<operation<<" ]\n";
-  }
-};
+  cell(Sparse_Jacobian sparse_jacobian_, std::size_t cost_, std::size_t k_,
+     Operation op):
+    cell<Dense_Jacobian>(cost_, k_, op), sparse_jacobian(sparse_jacobian_){}
 
-class cell_DJCPB_p: public cell_DJCPB{
- public:
-  cell_DJCPB_p(Jacobian* jac_p, std::size_t cost, std::size_t k, Operation op):
-    cell_DJCPB(cost, k, op), jac_pointer(jac_p){};
-  
-  //Wrappers
-  std::size_t n(){return jac_pointer -> n();}
-  std::size_t m(){return jac_pointer -> m();}
- protected:
-  Jacobian* jac_pointer;
-};
-
-class cell_MFDJCPB: public Table_cell{
- public:
-  cell_MFDJCPB(std::size_t cost, std::size_t k, Operation op,
-      std::size_t memory): Table_cell(cost, k, op), memory_(memory){}
-
-  cell_MFDJCPB(): memory_(0){}
-
-  std::string mem_to_string(){
-    return std::to_string(memory_);
-  }
-
-  void print() const{
-    /* Table_cell::print(); */
-    /* std::cout<<memory<<" ]\n"; */
-    std::cout<<"[ "<<cost_<<' '<<k_<<' '<<operation<< ' '<<memory_<<" ]\n";
-  }
-
-  std::size_t mem_lim(){return memory_;}
- protected:
-  std::size_t memory_;
-};
-
-class cell_MFDJCPB_p: public cell_MFDJCPB{
- public:
-  cell_MFDJCPB_p(Dense_Jacobian* jac_p, std::size_t cost, std::size_t k,
-      Operation op, std::size_t memory):
-    cell_MFDJCPB(cost, k, op, memory), dense_pointer(jac_p){}
+  cell(Sparse_Jacobian sparse_jacobian_, std::size_t cost_, std::size_t k_,
+     Operation op, std::size_t memory_):
+    cell<Dense_Jacobian>(cost_, k_, op, memory_), sparse_jacobian(sparse_jacobian_){}
 
   //Wrappers
-  std::size_t n(){return dense_pointer -> n();}
-  std::size_t m(){return dense_pointer -> m();}
-  std::size_t n_E(){return dense_pointer -> n_E();}
+  std::size_t num_nnz() const{return sparse_jacobian.num_nnz();}
+  std::size_t col_number_colors() const {return sparse_jacobian.col_num_colors();}
+  std::size_t row_number_colors() const {return sparse_jacobian.row_num_colors();}
+  std::size_t rhs_inner_dimension() const {return sparse_jacobian.rhs_inner_dim();}
+  std::size_t lhs_inner_dimension() const {return sparse_jacobian.lhs_inner_dim();}
+
+  void print_basic_information() const{
+    std::cout <<"Sparse jacobian information: " 
+      "[n col_number_colors m row_number_colors n_E nnz]: \n";
+    sparse_jacobian.print_cell_relevant_information();
+  }
+
+  void print_basic_info_plus_CSR_CSC() const{
+    print_basic_information();
+    sparse_jacobian.print_CSR_CSC();
+  }
+
  protected:
-  Dense_Jacobian* dense_pointer;
+  const Sparse_Jacobian sparse_jacobian;
 };
 
-class cell_MFSJCPB: public cell_MFDJCPB{
- public: 
-  cell_MFSJCPB(Sparse_Jacobian jacobian, std::size_t cost, std::size_t k,
-      Operation op, std::size_t memory):
-    cell_MFDJCPB(cost, k, op, memory), sparse_jac(jacobian){}
+template <class Jacobian_type>
+class cell_with_pointer{};
 
-  cell_MFSJCPB(Sparse_Jacobian jacobian): sparse_jac(jacobian){}
+template <>
+class cell_with_pointer<Jacobian>: cell<Jacobian>{
+ public:
+  cell_with_pointer(const Jacobian* jac_ptr):
+    cell<Jacobian>(), jacobian_ptr(jac_ptr){}
 
-  void initiliaze_cell(std::size_t cost, std::size_t k, Operation op,
-      std::size_t memory){
-    cost_ = cost;
-    k_ = k;
-    operation = op;
-    memory_ = memory;
+  cell_with_pointer(const Jacobian* jac_ptr, std::size_t cost_, std::size_t k_):
+    cell<Jacobian>(cost_, k_), jacobian_ptr(jac_ptr){}
+
+  void cell_data_initializer(std::size_t cost_, std::size_t k_){
+    cell<Jacobian>(cost_, k_);
   }
-  
+
   //Wrappers
-  std::size_t num_nnz(){return sparse_jac.num_nnz();}
-  std::size_t col_num_colors(){return sparse_jac.col_num_colors();}
-  std::size_t row_num_colors(){return sparse_jac.row_num_colors();}
-  std::size_t rhs_inner_dim(){return sparse_jac.rhs_inner_dim();}
-  std::size_t lhs_inner_dim(){return sparse_jac.lhs_inner_dim();}
-  
+  std::size_t n() const {return jacobian_ptr -> n();}
+  std::size_t m() const {return jacobian_ptr -> m();}
+
  private:
-  Sparse_Jacobian sparse_jac;
+  const Jacobian* jacobian_ptr;
 };
 
-class cell_MFSJCPB_p: public cell_MFDJCPB{
+template <>
+class cell_with_pointer<Dense_Jacobian>: public cell<Dense_Jacobian>{
  public:
-  cell_MFSJCPB_p(Sparse_Jacobian* jac_p, std::size_t cost, std::size_t k,
-      Operation op, std::size_t memory):
-    cell_MFDJCPB(cost, k, op, memory), sparse_pointer(jac_p){}
+  cell_with_pointer(const Dense_Jacobian* jac_ptr):
+    cell<Dense_Jacobian>(), jacobian_ptr(jac_ptr){}
+
+  cell_with_pointer(const Dense_Jacobian* jac_ptr, std::size_t cost_, std::size_t k_,
+      Operation op):
+    cell<Dense_Jacobian>(cost_, k_, op), jacobian_ptr(jac_ptr){}
+
+  cell_with_pointer(const Dense_Jacobian* jac_ptr, std::size_t cost_, std::size_t k_,
+      Operation op, std::size_t memory_):
+    cell<Dense_Jacobian>(cost_, k_, op, memory_), jacobian_ptr(jac_ptr){}
+
+  void cell_data_initializer(std::size_t cost_, std::size_t k_, Operation op){
+    cell<Dense_Jacobian>(cost_, k_, op);
+  }
+
+  void cell_data_initializer(std::size_t cost_, std::size_t k_,
+      Operation op, std::size_t memory_){
+    cell<Dense_Jacobian>(cost_, k_, op, memory_);
+  }
+  
   //Wrappers
-  std::size_t num_nnz(){return sparse_pointer -> num_nnz();}
-  std::size_t col_num_colors(){return sparse_pointer -> col_num_colors();}
-  std::size_t row_num_colors(){return sparse_pointer -> row_num_colors();}
-  std::size_t rhs_inner_dim(){return sparse_pointer -> rhs_inner_dim();}
-  std::size_t lhs_inner_dim(){return sparse_pointer -> lhs_inner_dim();}
+  std::size_t n() const {return jacobian_ptr -> n();}
+  std::size_t m() const {return jacobian_ptr -> m();}
+  std::size_t n_E() const {return jacobian_ptr -> n_E();}
+
  private:
-  Sparse_Jacobian* sparse_pointer;
+  const Dense_Jacobian* jacobian_ptr;
 };
+
+template <>
+class cell_with_pointer<Sparse_Jacobian>: public cell<Dense_Jacobian>{
+ public:
+  cell_with_pointer(const Sparse_Jacobian* jac_ptr):
+    cell<Dense_Jacobian>(), jacobian_ptr(jac_ptr){}
+
+  cell_with_pointer(const Sparse_Jacobian* jac_ptr, std::size_t cost_, std::size_t k_,
+      Operation op):
+    cell<Dense_Jacobian>(cost_, k_, op), jacobian_ptr(jac_ptr){}
+
+  cell_with_pointer(const Sparse_Jacobian* jac_ptr, std::size_t cost_, std::size_t k_,
+      Operation op, std::size_t memory_):
+    cell<Dense_Jacobian>(cost_, k_, op, memory_), jacobian_ptr(jac_ptr){}
+
+  void cell_data_initializer(std::size_t cost_, std::size_t k_, Operation op){
+    cell<Dense_Jacobian>(cost_, k_, op);
+  }
+
+  void cell_data_initializer(std::size_t cost_, std::size_t k_,
+      Operation op, std::size_t memory_){
+    cell<Dense_Jacobian>(cost_, k_, op, memory_);
+  }
+
+  //Wrappers
+  std::size_t num_nnz() const{return jacobian_ptr->num_nnz();}
+  std::size_t col_number_colors() const {return jacobian_ptr->col_num_colors();}
+  std::size_t row_number_colors() const {return jacobian_ptr->row_num_colors();}
+  std::size_t rhs_inner_dimension() const {return jacobian_ptr->rhs_inner_dim();}
+  std::size_t lhs_inner_dimension() const {return jacobian_ptr->lhs_inner_dim();}
+
+  void print_basic_information() const{
+    std::cout <<"Sparse jacobian information: " 
+      "[n col_number_colors m row_number_colors n_E nnz]: \n";
+    jacobian_ptr->print_cell_relevant_information();
+  }
+
+  void print_basic_info_plus_CSR_CSC() const{
+    print_basic_information();
+    jacobian_ptr->print_CSR_CSC();
+  }
+ 
+ private:
+  const Sparse_Jacobian* jacobian_ptr;
+};
+
 #endif

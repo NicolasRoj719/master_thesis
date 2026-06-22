@@ -182,6 +182,11 @@ class Sparse_Jacobian: public Dense_Jacobian{
       n_E_<< ' ' << num_nnz_ << " ]\n";
   }
 
+  void print_cell_relevant_information() const{
+    std::cout<<"[ "<< n_ << ' ' << col_heu_num_colors << ' ' << m_ <<
+      ' ' << row_heu_num_colors << ' ' << num_nnz_ << " ]\n";
+  }
+
   void file_to_CSR_CSC(const std::string& sparse_data_file_name){
     std::ifstream file(sparse_data_file_name);
     if(!file){
@@ -266,8 +271,10 @@ class Sparse_Jacobian: public Dense_Jacobian{
   }
 
   friend Sparse_Jacobian operator*(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs);
+
   friend void mul_CSR_CSC_2_CSR(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs, std::vector<size_t>& col_idx,
       std::vector<std::size_t>& row_ptr);
+
   friend void mul_CSR_CSC_2_CSC(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs, std::vector<size_t>& row_idx,
       std::vector<std::size_t>& col_ptr);
 
