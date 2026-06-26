@@ -1,118 +1,70 @@
-#include <cassert>
 #include <cstdint>
 #include <iostream>
-#include <string>
 #include <stdexcept>
-#include "./../generator.hpp"
-
-enum class GeneratorType{
-  N_M_N_E,
-  N_M_N_E_NNZ,
-  UNKOWN
-};
-
-GeneratorType parse_generator(const std::string& name){
-  if (name == "n_m_n_E") return GeneratorType::N_M_N_E;
-  if (name == "n_m_n_E_nnz") return GeneratorType::N_M_N_E_NNZ;
-  return GeneratorType::UNKOWN;
-}
+#include "./class_test_generator.hpp"
+#include "./../test.hpp"
 
 int main(){
-
-  std::string input;
-  std::cout << "Enter generator type {n_m_n_E , n_m_n_E_nnz} \n";
-  std::cin >> input;
-
-  GeneratorType type = parse_generator(input);
-
-  switch (type){
-    case GeneratorType::N_M_N_E: {
-      std::size_t chain_len, dim_lb, dim_ub, n_E_lb, n_E_ub, seed;
-      bool is_deterministic, answer;
-      std::cout<< "Enter the arguments for the constructor.\n";
-      std::cout<< "chain_len dim_lb dim_ub n_E_lb n_E_ub is_deterministic{0,1} seed\n";
-      std::cin >> chain_len >> dim_lb >> dim_ub >> n_E_lb;
-      std::cin >> n_E_ub >> is_deterministic >> seed;
-
-      std::cout<< "Calling n_m_n_E_Generator constructor.\n";
-      n_m_n_E_Generator gen{chain_len, dim_lb, dim_ub, n_E_lb, n_E_ub, is_deterministic, seed};
-      std::cout<< "Do you want to test build_problem? [0/1]\n";
-      std::cin >> answer;
-      if(answer){
-        gen.build_problem();
-        gen.print();
-      }
-      else{break;}
-      
-      std::cout<< "Do you want to test get_problem? [0/1]\n";
-      std::cin >> answer;
-      if(answer){
-        auto problem = gen.get_problem();
-        for(std::size_t i=0; i<gen.get_problem_size(); i++){
-          std::cout<< "F'_"<<i<<" [ ";
-          for(std::size_t j=0; j<problem[0].size(); j++){
-            std::cout<<problem[i][j]<<' ';
-          }
-          std::cout<<"]\n";
-        }
-      }
-
-      std::cout<< "Do you want to check if the generator is deterministic? [0/1]\n";
-      std::cin >> answer;
-      if(answer){
-        std::cout<< "Calling build problem for the second time.\n";
-        gen.build_problem();
-        gen.print();
-      }
-      break;
-    }
-    
-    case GeneratorType::N_M_N_E_NNZ: {
-      std::size_t chain_len, dim_lb, dim_ub, n_E_lb, n_E_ub, seed;
-      double den_lb, den_ub;
-      bool is_deterministic, answer;
-      std::string file_name;
-      std::cout<< "Enter the arguments for the constructor.\n";
-      std::cout<< "chain_len dim_lb dim_ub n_E_lb n_E_ub den_lb den_ub";
-      std::cout<< " is_deterministic{0,1} seed\n";
-      std::cin >> chain_len >> dim_lb >> dim_ub >> n_E_lb;
-      std::cin >> n_E_ub >> den_lb >> den_ub >>is_deterministic >> seed;
-
-      std::cout<< "Calling n_m_n_E_nnz_Generator constructor.\n";
-      n_m_n_E_nnz_Generator gen{chain_len, dim_lb, dim_ub, n_E_lb, n_E_ub, 
-          den_lb, den_ub, is_deterministic, seed};
-
-      std::cout<< "Do you want to test build_sparse_problem? [0/1]\n";
-      std::cin >> answer;
-      if(answer){
-        gen.build_sparse_problem();
-        gen.print();
-      }
-      else{break;}
-
-      std::cout << "Do you want to test build_sparse_structure? [0/1]\n";
-      std::cin >> answer;
-      if(answer){
-      std::cout << "Enter the output file name for the sparse data.\n";
-      std::cin >> file_name;
-        gen.build_sparse_structure(file_name);
-      }
-      else{break;}
-
-      std::cout<< "Do you want to check if the generator is deterministic? [0/1]\n";
-      std::cin >> answer;
-      if(answer){
-        std::cout<< "Calling build problem for the second time.\n";
-        gen.build_problem();
-        gen.print();
-      }
-      break;
-    }
-
-    case GeneratorType::UNKOWN: {
-      std::cout<<"Invalid generator type.\n";
-      break;
-    }
+  {
+    const std::size_t chain_length = 3;
+    const std::size_t dimension_lower_bound = 4, dimension_upper_bound = 10;
+    const bool is_deterministic = 0;
+    const std::size_t seed = 60;
+    test_Generator<Jacobian_information> 
+      test{chain_length, dimension_lower_bound, dimension_upper_bound, is_deterministic, seed};
+    test.print_test_state();
+  } 
+  {
+    const std::size_t chain_length = 10;
+    const std::size_t dimension_lower_bound = 9, dimension_upper_bound = 20;
+    const bool is_deterministic = 1;
+    const std::size_t seed = 60;
+    test_Generator<Jacobian_information> 
+      test{chain_length, dimension_lower_bound, dimension_upper_bound, is_deterministic, seed};
+    test.print_test_state();
+  } 
+  {
+    const std::size_t chain_length = 8;
+    const std::size_t dimension_lower_bound = 6, dimension_upper_bound = 20;
+    const std::size_t number_edges_lower_bound = 100;
+    const std::size_t number_edges_upper_bound = 200;
+    const bool is_deterministic = 0;
+    const std::size_t seed = 60;
+    test_Generator<Matrix_free_infomation>
+      test{chain_length, dimension_lower_bound, dimension_upper_bound,
+      number_edges_lower_bound, number_edges_upper_bound,
+      is_deterministic, seed};
+    test.print_test_state();
   }
-  return 0;
+
+  {
+    const std::size_t chain_length = 8;
+    const std::size_t dimension_lower_bound = 6, dimension_upper_bound = 20;
+    const std::size_t number_edges_lower_bound = 100;
+    const std::size_t number_edges_upper_bound = 200;
+    const double density_lower_bound = 0.25, density_upper_bound = 0.5;
+    const bool is_deterministic = 0;
+    const std::size_t seed = 60;
+    test_Generator<Matrix_free_sparse_information>
+      test{chain_length, dimension_lower_bound, dimension_upper_bound, number_edges_lower_bound,
+          number_edges_upper_bound, density_lower_bound, density_upper_bound, is_deterministic,
+          seed};
+    test.print_test_state();
+  }
+
+  {
+    const std::size_t chain_length = 12;
+    const std::size_t dimension_lower_bound = 4, dimension_upper_bound = 15;
+    const std::size_t number_edges_lower_bound = 50;
+    const std::size_t number_edges_upper_bound = 150;
+    const double density_lower_bound = 0.25, density_upper_bound = 0.5;
+    const bool is_deterministic = 0;
+    const std::size_t seed = 20;
+    test_Generator<Matrix_free_sparse_information>
+      test{chain_length, dimension_lower_bound, dimension_upper_bound, number_edges_lower_bound,
+          number_edges_upper_bound, density_lower_bound, density_upper_bound, is_deterministic,
+          seed};
+    test.print_test_state();
+  }
+
 }
