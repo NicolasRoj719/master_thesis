@@ -133,7 +133,6 @@ void reading_data(std::vector<std::size_t>& jacobian_information,
 }
 
 bool are_vectors_equal(const std::vector<std::size_t>& arg_0, const std::vector<std::size_t>& arg_1){
-  bool are_equal = 1;
   if(arg_0.size() != arg_1.size()){
     throw std::runtime_error("The vectors have different size.");
     return 0;
@@ -141,16 +140,14 @@ bool are_vectors_equal(const std::vector<std::size_t>& arg_0, const std::vector<
 
   for(std::size_t i = 0; i < arg_0.size(); i++){
     if(arg_0[i] != arg_1[i]){
-      are_equal = 0;
-      i = arg_0.size();
+      return false;
     }
   }
-  return are_equal;
+  return true;
 }
 
 bool are_colorings_equal(const std::vector<std::vector<std::size_t>>& arg_0,
     const std::vector<std::vector<std::size_t>>& arg_1){
-  bool are_equal = 1;
   if(arg_0.size() != arg_1.size()){
     throw std::runtime_error("The coloring vectors have different outer size.");
     return 0;
@@ -162,13 +159,11 @@ bool are_colorings_equal(const std::vector<std::vector<std::size_t>>& arg_0,
     }
     for(std::size_t idx = 0; idx < arg_0[color_idx].size(); idx++){
       if(arg_0[color_idx][idx] != arg_1[color_idx][idx]){
-        are_equal = 0;
-        color_idx = arg_0.size();
-        idx = arg_0[color_idx][idx];
+        return false;
       }
     }
   }
-  return are_equal;
+  return true;
 }
 
 void sparse_jacobian_test(const std::string file_name){

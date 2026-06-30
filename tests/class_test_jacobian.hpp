@@ -85,8 +85,8 @@ class test_Sparse_Jacobian{
     path_to_file(format_file_name(file_name)), 
     jacobian(Sparse_Jacobian::from_file(path_to_file + "_sparse_data")){
 
-      test_jacobian_information_sparse_coherency =
-        jac_information_sparse_data_coherency();
+      test_compressed_format_invariants =
+        compressed_format_invariants();
 
       std::vector<std::size_t> read_col_idx, read_row_ptr;
       std::vector<std::size_t> read_row_idx, read_col_ptr;
@@ -103,55 +103,47 @@ class test_Sparse_Jacobian{
           read_row_num_colors, read_max_nnz_row,
           read_max_nnz_col);
 
-    if(are_vectors_equal(jacobian.get_column_idx_reference(),
-          read_col_idx) &&
-        are_vectors_equal(jacobian.get_row_pointer_reference(),
-          read_row_ptr)){
-      test_CSR_format = true;
+      run_tests(read_col_idx, read_row_ptr,
+          read_row_idx, read_col_ptr,
+          read_col_coloring, read_row_coloring,
+          read_col_num_colors, read_row_num_colors,
+          read_max_nnz_row, read_max_nnz_col);
     }
-    else{test_CSR_format = false;}
 
-    if(are_vectors_equal(jacobian.get_row_idx_reference(),
-          read_row_idx) &&
-        are_vectors_equal(jacobian.get_column_pointer_reference(),
-          read_col_ptr)){
-      test_CSC_format = true;
-    }
-    else{test_CSC_format = false;}
+  test_Sparse_Jacobian(const std::string& file_name,
+      const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs):
+    path_to_file(format_file_name(file_name)), jacobian(lhs*rhs){
 
-    if(read_row_num_colors == jacobian.get_row_number_colors() &&
-        read_col_num_colors == jacobian.get_column_number_colors()){
-      test_number_colors = true;
-    }
-    else{test_number_colors = false;}
+      test_compressed_format_invariants =
+        compressed_format_invariants();
 
-    if(are_colorings_equivalent(read_row_coloring, jacobian.get_row_coloring()) &&
-        are_colorings_equivalent(read_col_coloring, jacobian.get_column_coloring())){
-      test_coloring = true;
-    }
-    else{test_coloring = false;}
+      std::vector<std::size_t> read_col_idx, read_row_ptr;
+      std::vector<std::size_t> read_row_idx, read_col_ptr;
 
-    if(read_max_nnz_row == jacobian.get_max_number_nnz_row() &&
-        read_max_nnz_col == jacobian.get_max_number_nnz_column()){
-      test_max_row_and_column = true;
-    }
-    else{test_max_row_and_column = false;}
+      std::vector<std::vector<std::size_t>> read_col_coloring;
+      std::vector<std::vector<std::size_t>> read_row_coloring;
 
-    if(test_jacobian_information_sparse_coherency && test_CSR_format &&
-        test_CSC_format && test_number_colors && test_coloring &&
-        test_max_row_and_column){
-      were_all_test_successful = true;
+      std::size_t read_col_num_colors, read_row_num_colors;
+      std::size_t read_max_nnz_row, read_max_nnz_col;
+
+      read_validate_data(read_col_idx, read_row_ptr,
+          read_row_idx, read_col_ptr, read_col_coloring,
+          read_row_coloring, read_col_num_colors,
+          read_row_num_colors, read_max_nnz_row,
+          read_max_nnz_col);
+
+      run_tests(read_col_idx, read_row_ptr,
+          read_row_idx, read_col_ptr,
+          read_col_coloring, read_row_coloring,
+          read_col_num_colors, read_row_num_colors,
+          read_max_nnz_row, read_max_nnz_col);
     }
-    else{
-      void print_test_state();
-    }
-  }
+
 
   void print_test_state() const{
     std::cout << "State of test_Sparse_Jacobian:\n";
-
-    std::cout << "test_jacobian_information_sparse_coherency: ";
-    if(test_jacobian_information_sparse_coherency){
+    std::cout << "test_compressed_format_invariants: ";
+    if(test_compressed_format_invariants){
       std::cout << "successful.\n";
     }
     else{std::cout << "failed.\n";}
@@ -194,10 +186,14 @@ class test_Sparse_Jacobian{
     std::cout << '\n';
   }
 
+  const Sparse_Jacobian& get_sparse_jacobian(){
+    return jacobian;
+  }
+
  protected:
   const std::string path_to_file;
   Sparse_Jacobian jacobian;
-  bool test_jacobian_information_sparse_coherency;
+  bool test_compressed_format_invariants;
   bool test_CSR_format;
   bool test_CSC_format;
   bool test_number_colors;
@@ -205,12 +201,16 @@ class test_Sparse_Jacobian{
   bool test_max_row_and_column;
   bool were_all_test_successful;
 
-  static const std::string format_file_name(const std::string& file_path){
-    if(file_path == "case_0" || file_path == "case_1" || file_path == "case_2"){
-      std::string file_complete_path = "./sparse_jacobian_sample_tests/" + file_path;
-      return file_complete_path;
+  static const std::string format_file_name(const std::string& file_name){
+    if(file_name == "case_0" || file_name == "case_1" || file_name == "case_2" ||
+        file_name == "case_0_MxM" || file_name == "case_1_MxM" || file_name == "case_2_MxM" ||
+        file_name == "case_0_MxM_lhs" || file_name == "case_1_MxM_lhs" ||
+        file_name == "case_2_MxM_lhs" || file_name == "case_0_MxM_rhs" ||
+        file_name == "case_1_MxM_rhs" || file_name == "case_2_MxM_rhs"){
+      std::string file_path = "./sparse_jacobian_sample_tests/" + file_name;
+      return file_path;
     }
-    return file_path;
+    return file_name;
   }
 
   bool is_ptr_array_increasing(const std::vector<size_t>& ptr_arr){
@@ -232,7 +232,7 @@ class test_Sparse_Jacobian{
     return false;
   }
 
-  bool jac_information_sparse_data_coherency(){
+  bool compressed_format_invariants(){
     if(jacobian.column_idx_size() != jacobian.number_nnz()){
       return false;
     }
@@ -374,4 +374,58 @@ class test_Sparse_Jacobian{
     }
     return true;
   }
+
+  void run_tests(const std::vector<std::size_t>& read_col_idx,
+      const std::vector<std::size_t>& read_row_ptr,
+      const std::vector<std::size_t>& read_row_idx,
+      const std::vector<std::size_t>& read_col_ptr,
+      const std::vector<std::vector<std::size_t>>& read_col_coloring,
+      const std::vector<std::vector<std::size_t>>& read_row_coloring,
+      const std::size_t read_col_num_colors, const std::size_t read_row_num_colors,
+      const std::size_t read_max_nnz_row, const std::size_t read_max_nnz_col){
+
+    if(are_vectors_equal(jacobian.get_column_idx_reference(),
+          read_col_idx) &&
+        are_vectors_equal(jacobian.get_row_pointer_reference(),
+          read_row_ptr)){
+      test_CSR_format = true;
+    }
+    else{test_CSR_format = false;}
+
+    if(are_vectors_equal(jacobian.get_row_idx_reference(),
+          read_row_idx) &&
+        are_vectors_equal(jacobian.get_column_pointer_reference(),
+          read_col_ptr)){
+      test_CSC_format = true;
+    }
+    else{test_CSC_format = false;}
+
+    if(read_row_num_colors == jacobian.get_row_number_colors() &&
+        read_col_num_colors == jacobian.get_column_number_colors()){
+      test_number_colors = true;
+    }
+    else{test_number_colors = false;}
+
+    if(are_colorings_equivalent(read_row_coloring, jacobian.get_row_coloring()) &&
+        are_colorings_equivalent(read_col_coloring, jacobian.get_column_coloring())){
+      test_coloring = true;
+    }
+    else{test_coloring = false;}
+
+    if(read_max_nnz_row == jacobian.get_max_number_nnz_row() &&
+        read_max_nnz_col == jacobian.get_max_number_nnz_column()){
+      test_max_row_and_column = true;
+    }
+    else{test_max_row_and_column = false;}
+
+    if(test_compressed_format_invariants && test_CSR_format &&
+        test_CSC_format && test_number_colors && test_coloring &&
+        test_max_row_and_column){
+      were_all_test_successful = true;
+    }
+    else{
+      void print_test_state();
+    }
+  }
+
 };
