@@ -2,7 +2,7 @@
 #include <iostream>
 #include <stdexcept>
 #include "./class_test_generator.hpp"
-#include "./../test.hpp"
+#include "./../generator.hpp"
 
 int main(){
   {

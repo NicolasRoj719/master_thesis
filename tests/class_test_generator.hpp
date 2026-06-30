@@ -1,7 +1,7 @@
 #include <vector>
 #include <stdexcept>
 #include "./../util_structs.hpp"
-#include "./../test.hpp"
+#include "./../generator.hpp"
 
 #ifndef TEST_GENERATOR_HPP
 #define TEST_GENERATOR_HPP
@@ -41,25 +41,26 @@ class test_Generator<Jacobian_information>{
     if(test_size){
       std::cout << "successful.\n";
     }
-    else{std::cout << "false.\n";}
+    else{std::cout << "failed.\n";}
 
     std::cout << "test_data_bounds: " ;
     if(test_data_bounds){
       std::cout << "successful.\n";
     }
-    else{std::cout << "false.\n";}
+    else{std::cout << "failed.\n";}
 
     std::cout << "test_dimensions: ";
     if(test_dimensions){
       std::cout << "successful.\n";
     }
-    else{std::cout << "false.\n";}
+    else{std::cout << "failed.\n";}
 
     std::cout << "test_deterministic: ";
     if(test_deterministic){
       std::cout << "successful.\n";
     }
-    else{std::cout << "false.\n";}
+    else{std::cout << "failed.\n";}
+    std::cout << '\n';
   }
 
 
@@ -159,25 +160,26 @@ class test_Generator<Matrix_free_infomation>{
     if(test_size){
       std::cout << "successful.\n";
     }
-    else{std::cout << "false.\n";}
+    else{std::cout << "failed.\n";}
 
     std::cout << "test_data_bounds: " ;
     if(test_data_bounds){
       std::cout << "successful.\n";
     }
-    else{std::cout << "false.\n";}
+    else{std::cout << "failed.\n";}
 
     std::cout << "test_dimensions: ";
     if(test_dimensions){
       std::cout << "successful.\n";
     }
-    else{std::cout << "false.\n";}
+    else{std::cout << "failed.\n";}
 
     std::cout << "test_deterministic: ";
     if(test_deterministic){
       std::cout << "successful.\n";
     }
-    else{std::cout << "false.\n";}
+    else{std::cout << "failed.\n";}
+    std::cout << '\n';
   }
 
  protected:
@@ -304,49 +306,50 @@ class test_Generator<Matrix_free_sparse_information>{
     if(test_jacobian_information_size){
       std::cout << "successful.\n";
     }
-    else{std::cout << "false.\n";}
+    else{std::cout << "failed.\n";}
 
     std::cout << "test_jacobian_information_bounds: " ;
     if(test_jacobian_information_bounds){
       std::cout << "successful.\n";
     }
-    else{std::cout << "false.\n";}
+    else{std::cout << "failed.\n";}
 
     std::cout << "test_jacobian_information_dimensions: ";
     if(test_jacobian_information_dimensions){
       std::cout << "successful.\n";
     }
-    else{std::cout << "false.\n";}
+    else{std::cout << "failed.\n";}
 
     std::cout<< "test_sparse_data_size: ";
     if(test_sparse_data_size){
       std::cout << "successful.\n";
     }
-    else{std::cout << "false.\n";}
+    else{std::cout << "failed.\n";}
 
     std::cout<< "test_sparse_data_bounds: ";
     if(test_sparse_data_bounds){
       std::cout << "successful.\n";
     }
-    else{std::cout << "false.\n";}
+    else{std::cout << "failed.\n";}
 
     std::cout<< "test_repeated_entries: ";
     if(test_repeated_entries){
       std::cout << "successful.\n";
     }
-    else{std::cout << "false.\n";}
+    else{std::cout << "failed.\n";}
 
     std::cout<< "test_nnz_in_every_row_column: ";
     if(test_nnz_in_every_row_column){
       std::cout << "successful.\n";
     }
-    else{std::cout << "false.\n";}
+    else{std::cout << "failed.\n";}
 
     std::cout << "test_deterministic: ";
     if(test_deterministic){
       std::cout << "successful.\n";
     }
-    else{std::cout << "false.\n";}
+    else{std::cout << "failed.\n";}
+    std::cout << '\n';
   }
   
  protected:

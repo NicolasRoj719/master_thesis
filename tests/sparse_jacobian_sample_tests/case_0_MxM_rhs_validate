@@ -1,16 +1,11 @@
-#sparse matrix structure [3 3 4]
-0 0
-0 1
-1 2
-2 2
 CSR format:
 column_idx:
-0 1 2 2
+2 2 0 1
 row_ptr:
-0 2 3 4
+0 1 2 4
 CSC format:
 row_idx:
-0 0 1 2
+2 2 0 1
 column_ptr:
 0 1 2 4
 Coloring:
@@ -22,7 +17,9 @@ column_coloring:
 0 2
 1
 row_coloring:
-0 1
+0 2
+1
+max_number_nnz_row:
 2
-
-
+max_number_nnz_column:
+2
