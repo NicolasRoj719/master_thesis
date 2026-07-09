@@ -42,20 +42,9 @@ class cell<Jacobian>{
  public:
   cell(std::size_t cost_, std::size_t k_):
     cost(cost_), k(k_){}
-  //cell_with_pointer initializes first the pointer
-  //without initializing the cell data.
-  cell(){}
 
-  std::string split_position_to_string(){
-    return std::to_string(k);
-  }
-
-  std::size_t split_position(){return k;}
-  std::size_t accumulated_cost(){return cost;}
-
-  void print(){
-    std::cout<< "[ " << cost << ' ' << k << " ]\n";
-  }
+  std::size_t split_position() const {return k;}
+  std::size_t accumulated_cost() const {return cost;}
  
  protected:
   std::size_t cost;
@@ -66,27 +55,21 @@ template <>
 class cell<Dense_Jacobian>: public cell<Jacobian>{
  public:
   cell(std::size_t cost_, std::size_t k_, Operation op):
-    cell<Jacobian>(cost_, k_), operation(op){}
+    cell<Jacobian>(cost_, k_), operation_(op){}
 
   cell(std::size_t cost_, std::size_t k_, Operation op,
-      std::optional<std::size_t> memory_):
-    cell<Jacobian>(cost_, k_), operation(op), memory(memory_){}
+      std::size_t memory_):
+    cell<Jacobian>(cost_, k_), operation_(op), memory(memory_){}
 
-  std::string op_to_string(){
-    return to_string(operation);
-  }
-  //cell_with_pointer initializes first the pointer
-  //without initializing the cell data.
-  cell(){}
+  const Operation& operation(){return operation_;}
 
-  void print(){
-    std::cout<< "[ " << cost << ' ' << k << ' ' << operation << " ]\n";
-  }
-
-  std::optional<std::size_t> accumulated_memory_use(){return memory;}
+  const std::optional<std::size_t>& accumulated_memory() const{
+    
+    return memory;
+  }  
 
  protected:
-  Operation operation;
+  Operation operation_;
   std::optional<std::size_t> memory;
 };
 
@@ -102,21 +85,29 @@ class cell<Sparse_Jacobian>: public cell<Dense_Jacobian>{
     cell<Dense_Jacobian>(cost_, k_, op, memory_), sparse_jacobian(sparse_jacobian_){}
 
   //Wrappers
-  std::size_t num_nnz() const{return sparse_jacobian.num_nnz();}
-  std::size_t col_number_colors() const {return sparse_jacobian.col_num_colors();}
-  std::size_t row_number_colors() const {return sparse_jacobian.row_num_colors();}
-  std::size_t rhs_inner_dimension() const {return sparse_jacobian.rhs_inner_dim();}
-  std::size_t lhs_inner_dimension() const {return sparse_jacobian.lhs_inner_dim();}
 
-  void print_basic_information() const{
-    std::cout <<"Sparse jacobian information: " 
-      "[n col_number_colors m row_number_colors n_E nnz]: \n";
-    sparse_jacobian.print_cell_relevant_information();
+  std::size_t domain_dim() const {return sparse_jacobian.domain_dim();}
+
+  std::size_t codomain_dim() const {return sparse_jacobian.codomain_dim();}
+
+  std::size_t number_edges() const {return sparse_jacobian.number_edges();}
+
+  std::size_t number_nnz() const {return sparse_jacobian.number_nnz();}
+
+  std::size_t column_number_colors() const {
+    return sparse_jacobian.get_column_number_colors();
   }
 
-  void print_basic_info_plus_CSR_CSC() const{
-    print_basic_information();
-    sparse_jacobian.print_CSR_CSC();
+  std::size_t row_number_colors() const {
+    return sparse_jacobian.get_row_number_colors();
+  }
+
+  std::size_t max_number_nnz_row() const {
+    return sparse_jacobian.get_max_number_nnz_row();
+  }
+
+  std::size_t max_number_nnz_column() const {
+    return sparse_jacobian.get_max_number_nnz_column();
   }
 
  protected:
@@ -127,21 +118,15 @@ template <class Jacobian_type>
 class cell_with_pointer{};
 
 template <>
-class cell_with_pointer<Jacobian>: cell<Jacobian>{
+class cell_with_pointer<Jacobian>: public cell<Jacobian>{
  public:
-  cell_with_pointer(const Jacobian* jac_ptr):
-    cell<Jacobian>(), jacobian_ptr(jac_ptr){}
-
   cell_with_pointer(const Jacobian* jac_ptr, std::size_t cost_, std::size_t k_):
     cell<Jacobian>(cost_, k_), jacobian_ptr(jac_ptr){}
 
-  void cell_data_initializer(std::size_t cost_, std::size_t k_){
-    cell<Jacobian>(cost_, k_);
-  }
-
   //Wrappers
-  std::size_t n() const {return jacobian_ptr -> n();}
-  std::size_t m() const {return jacobian_ptr -> m();}
+  std::size_t domain_dim() const {return jacobian_ptr -> domain_dim();}
+
+  std::size_t codomain_dim() const {return jacobian_ptr -> codomain_dim();}
 
  private:
   const Jacobian* jacobian_ptr;
@@ -150,9 +135,6 @@ class cell_with_pointer<Jacobian>: cell<Jacobian>{
 template <>
 class cell_with_pointer<Dense_Jacobian>: public cell<Dense_Jacobian>{
  public:
-  cell_with_pointer(const Dense_Jacobian* jac_ptr):
-    cell<Dense_Jacobian>(), jacobian_ptr(jac_ptr){}
-
   cell_with_pointer(const Dense_Jacobian* jac_ptr, std::size_t cost_, std::size_t k_,
       Operation op):
     cell<Dense_Jacobian>(cost_, k_, op), jacobian_ptr(jac_ptr){}
@@ -161,19 +143,13 @@ class cell_with_pointer<Dense_Jacobian>: public cell<Dense_Jacobian>{
       Operation op, std::size_t memory_):
     cell<Dense_Jacobian>(cost_, k_, op, memory_), jacobian_ptr(jac_ptr){}
 
-  void cell_data_initializer(std::size_t cost_, std::size_t k_, Operation op){
-    cell<Dense_Jacobian>(cost_, k_, op);
-  }
-
-  void cell_data_initializer(std::size_t cost_, std::size_t k_,
-      Operation op, std::size_t memory_){
-    cell<Dense_Jacobian>(cost_, k_, op, memory_);
-  }
   
   //Wrappers
-  std::size_t n() const {return jacobian_ptr -> n();}
-  std::size_t m() const {return jacobian_ptr -> m();}
-  std::size_t n_E() const {return jacobian_ptr -> n_E();}
+  std::size_t domain_dim() const {return jacobian_ptr -> domain_dim();}
+
+  std::size_t codomain_dim() const {return jacobian_ptr -> codomain_dim();}
+
+  std::size_t number_edges() const {return jacobian_ptr -> number_edges();}
 
  private:
   const Dense_Jacobian* jacobian_ptr;
@@ -182,9 +158,6 @@ class cell_with_pointer<Dense_Jacobian>: public cell<Dense_Jacobian>{
 template <>
 class cell_with_pointer<Sparse_Jacobian>: public cell<Dense_Jacobian>{
  public:
-  cell_with_pointer(const Sparse_Jacobian* jac_ptr):
-    cell<Dense_Jacobian>(), jacobian_ptr(jac_ptr){}
-
   cell_with_pointer(const Sparse_Jacobian* jac_ptr, std::size_t cost_, std::size_t k_,
       Operation op):
     cell<Dense_Jacobian>(cost_, k_, op), jacobian_ptr(jac_ptr){}
@@ -193,31 +166,30 @@ class cell_with_pointer<Sparse_Jacobian>: public cell<Dense_Jacobian>{
       Operation op, std::size_t memory_):
     cell<Dense_Jacobian>(cost_, k_, op, memory_), jacobian_ptr(jac_ptr){}
 
-  void cell_data_initializer(std::size_t cost_, std::size_t k_, Operation op){
-    cell<Dense_Jacobian>(cost_, k_, op);
-  }
-
-  void cell_data_initializer(std::size_t cost_, std::size_t k_,
-      Operation op, std::size_t memory_){
-    cell<Dense_Jacobian>(cost_, k_, op, memory_);
-  }
-
   //Wrappers
-  std::size_t num_nnz() const{return jacobian_ptr->num_nnz();}
-  std::size_t col_number_colors() const {return jacobian_ptr->col_num_colors();}
-  std::size_t row_number_colors() const {return jacobian_ptr->row_num_colors();}
-  std::size_t rhs_inner_dimension() const {return jacobian_ptr->rhs_inner_dim();}
-  std::size_t lhs_inner_dimension() const {return jacobian_ptr->lhs_inner_dim();}
 
-  void print_basic_information() const{
-    std::cout <<"Sparse jacobian information: " 
-      "[n col_number_colors m row_number_colors n_E nnz]: \n";
-    jacobian_ptr->print_cell_relevant_information();
+  std::size_t domain_dim() const {return jacobian_ptr -> domain_dim();}
+
+  std::size_t codomain_dim() const {return jacobian_ptr -> codomain_dim();}
+
+  std::size_t number_edges() const {return jacobian_ptr -> number_edges();}
+
+  std::size_t number_nnz() const {return jacobian_ptr -> number_nnz();}
+
+  std::size_t column_number_colors() const {
+    return jacobian_ptr -> get_column_number_colors();
   }
 
-  void print_basic_info_plus_CSR_CSC() const{
-    print_basic_information();
-    jacobian_ptr->print_CSR_CSC();
+  std::size_t row_number_colors() const {
+    return jacobian_ptr -> get_row_number_colors();
+  }
+
+  std::size_t max_number_nnz_row() const {
+    return jacobian_ptr -> get_max_number_nnz_row();
+  }
+
+  std::size_t max_number_nnz_column() const {
+    return jacobian_ptr -> get_max_number_nnz_column();
   }
  
  private:
