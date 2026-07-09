@@ -1,0 +1,7 @@
+#Generator constructor arguments:
+# chain_length dimension_lower_boud dimension_upper_bound deterministic seed
+3 2 5 true 54
+#Format: domain_dimension codomain_dimension
+2 2
+2 5
+5 5

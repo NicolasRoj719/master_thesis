@@ -1,6 +1,7 @@
 #include <vector>
 #include <stdexcept>
 #include "./../util_structs.hpp"
+/* #include "./../playground.hpp" */
 #include "./../generator.hpp"
 
 #ifndef TEST_GENERATOR_HPP
@@ -15,12 +16,19 @@ class test_Generator<Jacobian_information>{
   test_Generator(std::size_t chain_length, std::size_t dimension_lb,
       std::size_t dimension_ub, bool is_deterministic_, std::size_t seed = 45):
     generator{chain_length, dimension_lb, dimension_ub, is_deterministic_, seed}{
-      if(generator.jacobian_information_size() == chain_length){
+
+      auto jacobian_information = generator.generate_jacobian_information();
+
+      if(jacobian_information.size() == chain_length){
         test_size = true;
       }
       else{test_size = false;}
-      test_data_bounds = is_generated_data_within_bounds(dimension_lb, dimension_ub);
-      test_dimensions = rhs_output_dim_equal_lhs_input_dim();
+
+      test_data_bounds = is_generated_data_within_bounds(dimension_lb, dimension_ub,
+          jacobian_information);
+
+      test_dimensions = rhs_output_dim_equal_lhs_input_dim(jacobian_information);
+
       test_deterministic = 
         test_is_deterministic_method(chain_length, dimension_lb, dimension_ub, seed);
       
@@ -65,15 +73,16 @@ class test_Generator<Jacobian_information>{
 
 
  protected:
-  const Generator<Jacobian_information> generator;
+  Generator<Jacobian_information> generator;
   bool test_size;
   bool test_data_bounds;
   bool test_dimensions;
   bool test_deterministic;
   bool were_all_test_successful;
 
-  bool rhs_output_dim_equal_lhs_input_dim(){
-    auto jacobian_information = generator.get_jacobian_information_reference();
+  bool rhs_output_dim_equal_lhs_input_dim(
+      const std::vector<Jacobian_information>& jacobian_information){
+
     for(std::size_t i = 0; i < jacobian_information.size() - 1; i++){
       if(jacobian_information[i].codomain_dimension() !=
           jacobian_information[i+1].domain_dimension()){
@@ -83,8 +92,9 @@ class test_Generator<Jacobian_information>{
     return true;
   }
 
-  bool is_generated_data_within_bounds(std::size_t dimension_lb, std::size_t dimension_ub){
-    auto jacobian_information = generator.get_jacobian_information_reference();
+  bool is_generated_data_within_bounds(std::size_t dimension_lb, std::size_t dimension_ub,
+      const std::vector<Jacobian_information>& jacobian_information){
+
     for(std::size_t i = 0; i < jacobian_information.size(); i++){
       if((dimension_ub < jacobian_information[i].domain_dimension()) ||
           (dimension_ub < jacobian_information[i].codomain_dimension()) ||
@@ -115,30 +125,38 @@ class test_Generator<Jacobian_information>{
 
   bool test_is_deterministic_method(std::size_t chain_length, std::size_t dimension_lb,
       std::size_t dimension_ub, std::size_t seed){
-    const Generator<Jacobian_information> generator_0{chain_length, dimension_lb,
+
+    Generator<Jacobian_information> generator_0{chain_length, dimension_lb,
       dimension_ub, true, seed};
-    const Generator<Jacobian_information> generator_1{chain_length, dimension_lb,
+    Generator<Jacobian_information> generator_1{chain_length, dimension_lb,
       dimension_ub, true, seed};
-    return is_information_data_equal(generator_0.get_jacobian_information_reference(),
-        generator_1.get_jacobian_information_reference());
+
+    return is_information_data_equal(generator_0.generate_jacobian_information(),
+        generator_1.generate_jacobian_information());
   }
 };
 
 template<>
-class test_Generator<Matrix_free_infomation>{
+class test_Generator<Matrix_free_information>{
  public:
   test_Generator(std::size_t chain_length, std::size_t dimension_lb,
       std::size_t dimension_ub, std::size_t n_E_lb, std::size_t n_E_ub,
       bool is_deterministic_, std::size_t seed = 45):
     generator{chain_length, dimension_lb, dimension_ub, n_E_lb, n_E_ub,
     is_deterministic_, seed}{
-      if(generator.jacobian_information_size() == chain_length){
+
+      auto jacobian_information = generator.generate_jacobian_information();
+
+      if(jacobian_information.size() == chain_length){
         test_size = true;
       }
       else{test_size = false;}
+
       test_data_bounds = is_generated_data_within_bounds(dimension_lb, dimension_ub,
-            n_E_lb, n_E_ub);
-      test_dimensions = rhs_output_dim_equal_lhs_input_dim();
+            n_E_lb, n_E_ub, jacobian_information);
+
+      test_dimensions = rhs_output_dim_equal_lhs_input_dim(jacobian_information);
+
       test_deterministic =
         test_is_deterministic_method(chain_length, dimension_lb, dimension_ub,
             n_E_lb, n_E_ub, seed);
@@ -155,7 +173,7 @@ class test_Generator<Matrix_free_infomation>{
     }
 
   void print_test_state() const{
-    std::cout << "State of test_Generator<Matrix_free_infomation>:\n";
+    std::cout << "State of test_Generator<Matrix_free_information>:\n";
     std::cout << "test_size: " ;
     if(test_size){
       std::cout << "successful.\n";
@@ -183,15 +201,16 @@ class test_Generator<Matrix_free_infomation>{
   }
 
  protected:
-  const Generator<Matrix_free_infomation> generator;  
+  Generator<Matrix_free_information> generator;  
   bool test_size;
   bool test_data_bounds;
   bool test_dimensions;
   bool test_deterministic;
   bool were_all_test_successful;
 
-  bool rhs_output_dim_equal_lhs_input_dim(){
-    auto jacobian_information = generator.get_jacobian_information_reference();
+  bool rhs_output_dim_equal_lhs_input_dim(
+      const std::vector<Matrix_free_information>& jacobian_information){
+
     for(std::size_t i = 0; i < jacobian_information.size() - 1; i++){
       if(jacobian_information[i].codomain_dimension() !=
           jacobian_information[i+1].domain_dimension()){
@@ -201,9 +220,11 @@ class test_Generator<Matrix_free_infomation>{
     return true;
   }
 
-  bool is_generated_data_within_bounds(std::size_t dimension_lb, std::size_t dimension_ub,
-      std::size_t n_E_lb, std::size_t n_E_ub){
-    auto jacobian_information = generator.get_jacobian_information_reference();
+  bool is_generated_data_within_bounds(
+      std::size_t dimension_lb, std::size_t dimension_ub,
+      std::size_t n_E_lb, std::size_t n_E_ub,
+      const std::vector<Matrix_free_information>& jacobian_information){
+
     for(std::size_t i = 0; i < jacobian_information.size(); i++){
       if((dimension_ub < jacobian_information[i].domain_dimension()) ||
           (dimension_ub < jacobian_information[i].codomain_dimension()) ||
@@ -218,8 +239,8 @@ class test_Generator<Matrix_free_infomation>{
   }
 
   bool is_information_data_equal(
-      const std::vector<Matrix_free_infomation>& jacobian_information_0,
-      const std::vector<Matrix_free_infomation>& jacobian_information_1){
+      const std::vector<Matrix_free_information>& jacobian_information_0,
+      const std::vector<Matrix_free_information>& jacobian_information_1){
 
     if(jacobian_information_0.size() != jacobian_information_1.size()){
       return false;
@@ -241,12 +262,15 @@ class test_Generator<Matrix_free_infomation>{
   bool test_is_deterministic_method(std::size_t chain_length, std::size_t dimension_lb,
       std::size_t dimension_ub, std::size_t n_E_lb, std::size_t n_E_ub, 
       std::size_t seed){
-    const Generator<Matrix_free_infomation> generator_0{chain_length, dimension_lb,
+
+    Generator<Matrix_free_information> generator_0{chain_length, dimension_lb,
       dimension_ub, n_E_lb, n_E_ub, true, seed};
-    const Generator<Matrix_free_infomation> generator_1{chain_length, dimension_lb,
+
+    Generator<Matrix_free_information> generator_1{chain_length, dimension_lb,
       dimension_ub, n_E_lb, n_E_ub, true, seed};
-    return is_information_data_equal(generator_0.get_jacobian_information_reference(),
-        generator_1.get_jacobian_information_reference());
+
+    return is_information_data_equal(generator_0.generate_jacobian_information(),
+        generator_1.generate_jacobian_information());
   }
 };
 
@@ -261,15 +285,17 @@ class test_Generator<Matrix_free_sparse_information>{
       n_E_lb, n_E_ub, density_lb, density_ub, is_deterministic_, seed}
   {
 
-    if(generator.jacobian_information_size() == chain_length){
+    auto data = generator.generate_data();
+
+    if(data.jacobian_information.size() == chain_length){
       test_jacobian_information_size = true;
     }
     else{
       test_jacobian_information_size = false;
     }
 
-    if(generator.sparse_data_size() == chain_length){
-      if(is_number_of_nnz_correct()){
+    if(data.sparse_data.size() == chain_length){
+      if(is_number_of_nnz_correct(data.jacobian_information, data.sparse_data)){
       test_sparse_data_size = true;
       }
     else{test_sparse_data_size = false;}
@@ -278,11 +304,20 @@ class test_Generator<Matrix_free_sparse_information>{
     else{test_sparse_data_size = false;}
 
     test_jacobian_information_bounds =
-      is_jacobian_information_within_bounds(dimension_lb, dimension_ub, n_E_lb, n_E_ub);
-    test_jacobian_information_dimensions = rhs_output_dim_equal_lhs_input_dim();
-    test_sparse_data_bounds = is_sparse_data_within_bounds();
-    test_repeated_entries = are_there_repeated_entries();
-    test_nnz_in_every_row_column = all_columns_rows_have_nnz();
+      is_jacobian_information_within_bounds(dimension_lb, dimension_ub,
+          n_E_lb, n_E_ub, data.jacobian_information);
+
+    test_jacobian_information_dimensions = rhs_output_dim_equal_lhs_input_dim(
+        data.jacobian_information);
+
+    test_sparse_data_bounds = is_sparse_data_within_bounds(
+        data.jacobian_information, data.sparse_data);
+
+    test_repeated_entries = are_there_repeated_entries(data.sparse_data);
+
+    test_nnz_in_every_row_column = all_columns_rows_have_nnz(
+        data.jacobian_information, data.sparse_data);
+
     test_deterministic = 
      is_deterministic(chain_length, dimension_lb, dimension_lb, n_E_lb, n_E_ub,
          density_lb, density_ub, seed);
@@ -353,7 +388,7 @@ class test_Generator<Matrix_free_sparse_information>{
   }
   
  protected:
-  const Generator<Matrix_free_sparse_information> generator;
+  Generator<Matrix_free_sparse_information> generator;
   bool test_jacobian_information_size;
   bool test_jacobian_information_bounds;
   bool test_jacobian_information_dimensions;
@@ -364,8 +399,9 @@ class test_Generator<Matrix_free_sparse_information>{
   bool test_nnz_in_every_row_column;
   bool were_all_test_successful;
 
-  bool rhs_output_dim_equal_lhs_input_dim(){
-    auto jacobian_information = generator.get_jacobian_information_reference();
+  bool rhs_output_dim_equal_lhs_input_dim(
+      const std::vector<Matrix_free_sparse_information>& jacobian_information){
+
     for(std::size_t i = 0; i < jacobian_information.size() - 1; i++){
       if(jacobian_information[i].codomain_dimension() !=
           jacobian_information[i+1].domain_dimension()){
@@ -376,11 +412,13 @@ class test_Generator<Matrix_free_sparse_information>{
   }
 
   bool is_jacobian_information_within_bounds(std::size_t dimension_lb,
-      std::size_t dimension_ub, std::size_t n_E_lb, std::size_t n_E_ub){
-    auto jacobian_information = generator.get_jacobian_information_reference();
+      std::size_t dimension_ub, std::size_t n_E_lb, std::size_t n_E_ub,
+      const std::vector<Matrix_free_sparse_information>& jacobian_information){
+
     std::size_t available_entries;
     std::size_t min_number_entries;
     std::size_t domain_dimension, codomain_dimension;
+
     for(std::size_t i = 0; i < jacobian_information.size(); i++){
       if((dimension_ub < jacobian_information[i].domain_dimension()) ||
           (dimension_ub < jacobian_information[i].codomain_dimension()) ||
@@ -409,13 +447,14 @@ class test_Generator<Matrix_free_sparse_information>{
     return true;
   }
 
-  bool is_sparse_data_within_bounds(){
-    auto sparse_data = generator.get_sparse_data_reference();
-    auto jacobian_information = generator.get_jacobian_information_reference();
+  bool is_sparse_data_within_bounds(
+      const std::vector<Matrix_free_sparse_information>& jacobian_information,
+      const std::vector<std::vector<NNZ>>& sparse_data){
   
     if(sparse_data.size() != jacobian_information.size()){
       return false;
     }
+
     for(std::size_t i = 0; i < sparse_data.size(); i++){
       for(std::size_t j = 0; j < sparse_data[i].size(); j++){
 
@@ -429,23 +468,26 @@ class test_Generator<Matrix_free_sparse_information>{
     return true;
   }
 
-  bool are_there_repeated_entries(){
-    auto sparse_data_copy = generator.get_sparse_data_copy();
+  bool are_there_repeated_entries(
+      std::vector<std::vector<NNZ>> sparse_data_copy){
+
     std::sort(sparse_data_copy.begin(), sparse_data_copy.end());
+
     auto it =
       std::unique(sparse_data_copy.begin(), sparse_data_copy.end());
+
     return it == sparse_data_copy.end();
   }
 
-  bool all_columns_rows_have_nnz(){
-    auto jacobian_information = generator.get_jacobian_information_reference();
-    auto sparse_data = generator.get_sparse_data_reference();
+  bool all_columns_rows_have_nnz(
+      const std::vector<Matrix_free_sparse_information>& jacobian_information,
+      const std::vector<std::vector<NNZ>>& sparse_data){
 
     if(jacobian_information.size() != sparse_data.size()){
       return false;
     }
 
-    for(std::size_t i = 0; i < generator.sparse_data_size(); i++){
+    for(std::size_t i = 0; i < sparse_data.size(); i++){
       //Checks that every rows has a non zero entry.
       for(std::size_t row = 0; row < jacobian_information[i].codomain_dimension();
           row++){
@@ -469,9 +511,10 @@ class test_Generator<Matrix_free_sparse_information>{
     return true;
   }
 
-  bool is_number_of_nnz_correct(){
-    auto sparse_data = generator.get_sparse_data_reference();
-    auto jacobian_information = generator.get_jacobian_information_reference();
+  bool is_number_of_nnz_correct(
+      const std::vector<Matrix_free_sparse_information>& jacobian_information,
+      const std::vector<std::vector<NNZ>>& sparse_data){
+
     if(sparse_data.size() != jacobian_information.size()){
       return false;
     }
@@ -529,23 +572,29 @@ class test_Generator<Matrix_free_sparse_information>{
   bool is_deterministic(std::size_t chain_length, std::size_t dimension_lb,
       std::size_t dimension_ub, std::size_t n_E_lb, std::size_t n_E_ub,
       double density_lb, double density_ub, std::size_t seed){
+
     bool is_deterministic_ = true;
+
     Generator<Matrix_free_sparse_information> gen_0{chain_length, dimension_lb, dimension_ub,
       n_E_lb, n_E_ub, density_lb, density_ub, is_deterministic_, seed};
-    auto jacobian_information_0 = gen_0.get_jacobian_information_reference();
-    auto sparse_information_0 = gen_0.get_sparse_data_reference();
+
+    auto data_0 = gen_0.generate_data();
 
     Generator<Matrix_free_sparse_information> gen_1{chain_length, dimension_lb, dimension_ub,
     n_E_lb, n_E_ub, density_lb, density_ub, is_deterministic_, seed};
-    auto jacobian_information_1 = gen_1.get_jacobian_information_reference();
-    auto sparse_information_1 = gen_1.get_sparse_data_reference();
 
-    if(!is_information_data_equal(jacobian_information_0, jacobian_information_1)){
+    auto data_1 = gen_1.generate_data();
+
+    if(!is_information_data_equal(
+          data_0.jacobian_information, data_1.jacobian_information)){
       return false;
     }
-    if(!is_sparse_data_equal(sparse_information_0, sparse_information_1)){
+
+    if(!is_sparse_data_equal(
+          data_0.sparse_data, data_1.sparse_data)){
       return false;
     }
+
     return true;
   }
 

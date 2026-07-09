@@ -35,7 +35,7 @@ class Jacobian{
 
 class Dense_Jacobian{
  public:
-  Dense_Jacobian(Matrix_free_infomation jacobian_obj):
+  Dense_Jacobian(Matrix_free_information jacobian_obj):
     jacobian_basic_data(std::move(jacobian_obj)){}
 
   Dense_Jacobian(std::size_t domain_dimension, std::size_t codomain_dimension,
@@ -53,7 +53,7 @@ class Dense_Jacobian{
   }
 
  protected:
-  Matrix_free_infomation jacobian_basic_data;
+  Matrix_free_information jacobian_basic_data;
 };
 
 class Sparse_Jacobian{

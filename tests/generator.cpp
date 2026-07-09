@@ -1,8 +1,10 @@
 #include <cstdint>
 #include <iostream>
 #include <stdexcept>
+/* #include "./class_test_playground.hpp" */
 #include "./class_test_generator.hpp"
 #include "./../generator.hpp"
+/* #include "./../playground.hpp" */
 
 int main(){
   {
@@ -12,8 +14,9 @@ int main(){
     const std::size_t seed = 60;
     test_Generator<Jacobian_information> 
       test{chain_length, dimension_lower_bound, dimension_upper_bound, is_deterministic, seed};
-    test.print_test_state();
+    /* test.print_test_state(); */
   } 
+
   {
     const std::size_t chain_length = 10;
     const std::size_t dimension_lower_bound = 9, dimension_upper_bound = 20;
@@ -21,8 +24,9 @@ int main(){
     const std::size_t seed = 60;
     test_Generator<Jacobian_information> 
       test{chain_length, dimension_lower_bound, dimension_upper_bound, is_deterministic, seed};
-    test.print_test_state();
+    /* test.print_test_state(); */
   } 
+
   {
     const std::size_t chain_length = 8;
     const std::size_t dimension_lower_bound = 6, dimension_upper_bound = 20;
@@ -30,11 +34,11 @@ int main(){
     const std::size_t number_edges_upper_bound = 200;
     const bool is_deterministic = 0;
     const std::size_t seed = 60;
-    test_Generator<Matrix_free_infomation>
+    test_Generator<Matrix_free_information>
       test{chain_length, dimension_lower_bound, dimension_upper_bound,
       number_edges_lower_bound, number_edges_upper_bound,
       is_deterministic, seed};
-    test.print_test_state();
+    /* test.print_test_state(); */
   }
 
   {
@@ -49,7 +53,7 @@ int main(){
       test{chain_length, dimension_lower_bound, dimension_upper_bound, number_edges_lower_bound,
           number_edges_upper_bound, density_lower_bound, density_upper_bound, is_deterministic,
           seed};
-    test.print_test_state();
+    /* test.print_test_state(); */
   }
 
   {
@@ -64,7 +68,7 @@ int main(){
       test{chain_length, dimension_lower_bound, dimension_upper_bound, number_edges_lower_bound,
           number_edges_upper_bound, density_lower_bound, density_upper_bound, is_deterministic,
           seed};
-    test.print_test_state();
+    /* test.print_test_state(); */
   }
 
 }

@@ -1,0 +1,26 @@
+#Generator constructor arguments:
+# chain_length dimension_lower_bound dimension_upper_bound
+# number_edges_lower_bound number_edges_upper_bound density_lower_bound
+# density_upper_bound deterministic seed
+3 2 5 80 160 0.2 0.5 true 26
+Format: domain_dimension codomain_dimension number_of_edges number_of_nnz
+3 2 132 3
+2 5 136 5
+5 4 133 5
+Sparsity information:
+#Sparse Jacobian: 0
+0 1
+1 0
+0 2
+#Sparse Jacobian: 1
+0 0
+1 1
+2 1
+3 1
+4 1
+#Sparse Jacobian: 2
+0 1
+1 2
+2 0
+3 3
+2 4

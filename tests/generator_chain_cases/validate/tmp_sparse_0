@@ -1,0 +1,10 @@
+CSR
+column_idx:
+1 2 0
+row_ptr:
+0 2 3
+CSC
+row_idx:
+1 0 0
+column_ptr:
+0 1 2 3

@@ -9,206 +9,219 @@
 #ifndef CHAIN_HPP
 #define CHAIN_HPP
 
-template <class Jacobian_type>
+template<class Jacobian_type, class Basic_information_type>
 class jacobian_chain{
  public:
-  jacobian_chain(const std::vector<std::vector<std::size_t>>& jacobian_chain_information){
-    static_assert(std::is_same_v<Jacobian_type, Jacobian> || 
-        std::is_same_v<Jacobian_type, Dense_Jacobian>);
-    generator_data_to_chain(jacobian_chain_information);
-  }
+   jacobian_chain(std::vector<Basic_information_type> basic_information){
+    if(!basic_information_dimension_check(basic_information)){
+      throw std::runtime_error("Mismatching vector space dimension.\n"
+          "Error encountered during jacobian chain initialization.");
+    }
+    chain_initializer(basic_information);
+   }
 
-  jacobian_chain(const std::string& file_name){
-    static_assert(std::is_same_v<Jacobian_type, Jacobian> || 
-        std::is_same_v<Jacobian_type, Dense_Jacobian>);
-    file_to_chain(file_name);
-  }
+   jacobian_chain(const std::string& file_name){
+     file_to_chain(file_name);
+   }
 
-  const Jacobian_type& operator[](std::size_t index) const{
+   const Jacobian_type& operator[](std::size_t index) const{
     return chain[index];
-  }
+   } 
 
-  std::size_t size() const {return chain.size();}
+   const Jacobian_type& at(std::size_t index) const{
+    return chain.at(index);
+   }
 
- private:
+   std::size_t size() const {return chain.size();}
+
+ protected:
   std::vector<Jacobian_type> chain;
 
-  void generator_data_to_chain(const std::vector<std::vector<std::size_t>>& jac_chain_info){
-    //n: dimension of the domain vector space (R^n)
-    //m: dimension of the codomain vector space (R^m)
-    const std::size_t n = 0, m = 1;
-    bool dimensions_match = 1;
-    
-    for(std::size_t jac_idx = 0; jac_idx < jac_chain_info.size() - 1; jac_idx++){
-      if(jac_chain_info[jac_idx][m] != jac_chain_info[jac_idx + 1][n]){
-        dimensions_match = 0;
-        jac_idx = jac_chain_info.size();
+  bool basic_information_dimension_check
+    (const std::vector<Basic_information_type>& basic_information) const{
+      for(std::size_t jacobian_idx = 0; jacobian_idx < basic_information.size() - 1;
+          jacobian_idx++){
+       if(basic_information[jacobian_idx+1].domain_dimension() !=
+           basic_information[jacobian_idx].codomain_dimension()){
+        return false;
+       } 
       }
+      return true;
     }
 
-    if(!dimensions_match){
-      throw std::runtime_error("Dimension mismatch found while executing "
-          "Jacobian chain constructor.");
-    }
-
-    chain.reserve(jac_chain_info.size());
-
-    for(std::size_t jac_idx = 0; jac_idx < jac_chain_info.size(); jac_idx++){
-      chain.emplace_back(jac_chain_info[jac_idx]); 
+  //Data ownership is transfer to the jacobian object.
+  void chain_initializer(std::vector<Basic_information_type>& basic_information){
+    chain.reserve(basic_information.size());
+    for(std::size_t jacobian_idx = 0; jacobian_idx < basic_information.size();
+        jacobian_idx++){
+      chain.emplace_back(std::move(basic_information[jacobian_idx]));
     }
   }
 
-  void file_to_chain(const std::string& file_name){
-    std::ifstream file;
-    file.open(file_name);
-    if(!file.is_open()){
-      throw std::runtime_error("There was a problem opening the file: " + 
-          file_name);
-    }
+  void file_to_chain(const std::string& file_name);
+};
 
-    std::string line;
-    std::vector<std::vector<std::size_t>> jac_chain_info;
-    
-    std::getline(file, line);
-    std::istringstream stream_first_line(line);
-    std::string resize_data;
-    while(stream_first_line >> resize_data){}
-    std::size_t chain_len = std::stoull(resize_data);
-    jac_chain_info.resize(chain_len);
-    jac_chain_info[0].reserve(4);
+template<class Jacobian_type, class Basic_information_type>
+void jacobian_chain<Jacobian_type, Basic_information_type>::file_to_chain(const std::string& file_name){
 
-    std::size_t data;
-    std::size_t jac_idx= 0;
-    std::istringstream iss;
-    while(std::getline(file, line) && jac_idx < chain_len){
+  std::ifstream file;
+  file.open(file_name);
+  if(!file.is_open()){
+    throw std::runtime_error("There was a problem opening the file: " + 
+        file_name);
+  }
+
+  std::string line;
+  
+  std::getline(file, line);
+  std::istringstream iss(line);
+  std::string word;
+  //reading first line
+  while(iss >> word){}
+  std::size_t chain_len = std::stoull(word);
+  chain.reserve(chain_len);
+
+  std::size_t domain_dimension, codomain_dimension;
+  std::size_t shared_dimension;
+  std::size_t number_edges;
+  //Format assumption: no empty line between the first line and first line with data.
+  std::getline(file,line);
+  iss.clear();
+  iss.str(line);
+
+  if constexpr(std::is_same_v<Basic_information_type, Jacobian_information>){
+    iss >> domain_dimension >> codomain_dimension;
+    chain.emplace_back(domain_dimension, codomain_dimension);
+    shared_dimension = codomain_dimension;
+    while(std::getline(file, line)){
       if(std::isdigit(line[0])){
         iss.clear();
         iss.str(line);
-        while(iss >> data){
-          jac_chain_info[jac_idx].push_back(data);
+        iss >> domain_dimension >> codomain_dimension;
+        if(shared_dimension != domain_dimension){
+          throw std::runtime_error("Dimension mismatch found while "
+              "chain initialization.\n"
+              "Reading data from file: " + file_name);
         }
-        jac_idx++;
+        chain.emplace_back(domain_dimension, codomain_dimension);
+        shared_dimension = codomain_dimension;
       }
     }
-    file.close();
-    generator_data_to_chain(jac_chain_info);
   }
-};
+
+  else if constexpr(std::is_same_v<Basic_information_type, Matrix_free_information>){
+    iss >> domain_dimension >> codomain_dimension >> number_edges;
+    chain.emplace_back(domain_dimension, codomain_dimension, number_edges);
+    shared_dimension = codomain_dimension;
+    while(std::getline(file, line)){
+      if(std::isdigit(line[0])){
+        iss.clear();
+        iss.str(line);
+        iss >> domain_dimension >> codomain_dimension >> number_edges;
+        if(shared_dimension != domain_dimension){
+          throw std::runtime_error("Dimension mismatch found while " 
+              "chain initialization.\n"
+              "Reading data from file: " + file_name);
+        }
+        chain.emplace_back(domain_dimension, codomain_dimension, number_edges);
+        shared_dimension = codomain_dimension;
+      }
+    }
+  }
+
+  file.close();
+}
 
 template<>
-class jacobian_chain<Sparse_Jacobian>{
+class jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>{
  public:
-  jacobian_chain(const std::vector<std::vector<std::size_t>>& jacobian_chain_information,
-      const std::vector<std::vector<NNZ>>& sparse_data){
+  jacobian_chain(Generator_data data){
 
-    test_constructor_arguments(jacobian_chain_information, sparse_data);
-    initialize_chain(jacobian_chain_information, sparse_data);
-  }
+    coherency_basic_information_sparse_data(
+        data.jacobian_information, data.sparse_data);
 
-  jacobian_chain(const std::vector<std::vector<std::size_t>>& jacobian_chain_information,
-      const std::string& file_name){
-
-    std::vector<std::vector<NNZ>> sparse_data;
-    sparse_data.resize(jacobian_chain_information.size());
-    const std::size_t idx_nnz = 3;
-
-    for(std::size_t jac_idx = 0; jac_idx < jacobian_chain_information.size(); jac_idx++){
-      sparse_data[jac_idx].reserve(jacobian_chain_information[jac_idx][idx_nnz]);
-    }
-
-    simple_sparse_file_to_sparse_data(sparse_data, file_name);
-    jacobian_chain(jacobian_chain_information, sparse_data);
+    initialize_chain(data.jacobian_information, data.sparse_data);
   }
 
   jacobian_chain(const std::string& file_name){
-    std::vector<std::vector<std::size_t>> jacobian_chain_information;
-    std::vector<std::vector<NNZ>> sparse_data;
-    sparse_file_to_sparse_data(file_name, jacobian_chain_information, sparse_data);
-    test_constructor_arguments(jacobian_chain_information, sparse_data);
-    initialize_chain(jacobian_chain_information, sparse_data);
+
+    std::vector<Matrix_free_sparse_information> basic_information_;
+    std::vector<std::vector<NNZ>> sparse_data_;
+
+    file_to_sparse_data(file_name, basic_information_, sparse_data_);
+    coherency_basic_information_sparse_data(basic_information_, sparse_data_);
+    initialize_chain(basic_information_, sparse_data_);
+    
   }
 
   const Sparse_Jacobian& operator[](std::size_t index) const{
     return chain[index];
   }
 
+  const Sparse_Jacobian& at(std::size_t index) const{
+    return chain.at(index);
+  }
+
   std::size_t size() const {return chain.size();}
 
- private:
+ protected:
   std::vector<Sparse_Jacobian> chain;
+  bool basic_information_dimension_check(
+      const std::vector<Matrix_free_sparse_information>& basic_information){
 
-  void test_constructor_arguments(const std::vector<std::vector<std::size_t>>& jac_chain_info,
+    for(std::size_t jacobian_idx = 0; jacobian_idx < basic_information.size() - 1; jacobian_idx++){
+     if(basic_information[jacobian_idx+1].domain_dimension() !=
+         basic_information[jacobian_idx].codomain_dimension()){
+      return false;
+     }
+    }
+    return true;
+  }
+
+  void coherency_basic_information_sparse_data(
+      const std::vector<Matrix_free_sparse_information>& basic_information,
       const std::vector<std::vector<NNZ>>& sparse_data){
-    if(jac_chain_info.size() != sparse_data.size()){
-      throw std::runtime_error("Problem data and sparse data outer dimension do not match.\n"
-          "Error found while executing Sparse Jacobian chain constructor.");
+    
+    if(!basic_information_dimension_check(basic_information)){
+      throw std::runtime_error("Mismatching vector space dimension.\n"
+          "Error encountered during jacobian chain initialization.");
     }
 
-    bool dimensions_match = 1;
-    //n: dimension of the domain vector space (R^n)
-    //m: dimension of the codomain vector space (R^m)
-    const std::size_t n = 0, m = 1; 
-    for(std::size_t jac_idx = 0; jac_idx < jac_chain_info.size() - 1; jac_idx++){
-      if(jac_chain_info[jac_idx][m] != jac_chain_info[jac_idx + 1][n]){
-        dimensions_match = 0;
-        jac_idx = jac_chain_info.size();
-      }
+    if(basic_information.size() != sparse_data.size()){
+      throw std::runtime_error("Error encountered during chain initialization.\n" 
+          "Basic_information and Sparse data size do not match.");
     }
-    if(!dimensions_match){
-      throw std::runtime_error("Dimension mismatch found while executing Sparse Jacobian "
-          "chain constructor.");
+
+    for(std::size_t jacobian_idx =0; jacobian_idx < basic_information.size(); jacobian_idx++){
+      if(sparse_data[jacobian_idx].size() != basic_information[jacobian_idx].number_of_nonzeros()){
+        throw std::runtime_error("Error encountered during chain initialization.\n"
+            "Inconsistency in the number of nonzero entries reported by the basic \n"
+            "information array and the number of nonzero entries stored in sparse_data.");
+      }
     }
   }
 
-  void initialize_chain(const std::vector<std::vector<std::size_t>>& jac_chain_info,
-      const std::vector<std::vector<NNZ>>& sparse_data){
-
-    chain.reserve(jac_chain_info.size());
-
-    for(std::size_t jac_idx = 0; jac_idx < jac_chain_info.size(); jac_idx++){
-      chain.emplace_back(jac_chain_info[jac_idx], sparse_data[jac_idx]);
+  void initialize_chain(std::vector<Matrix_free_sparse_information>& basic_information,
+      std::vector<std::vector<NNZ>>& sparse_data){
+    chain.reserve(basic_information.size());
+    for(std::size_t jacobian_idx = 0; jacobian_idx < basic_information.size(); jacobian_idx++){
+      chain.emplace_back(std::move(basic_information[jacobian_idx]), sparse_data[jacobian_idx]);
+      sparse_data[jacobian_idx].clear();
     }
   }
 
-  void simple_sparse_file_to_sparse_data(std::vector<std::vector<NNZ>>& sparse_data,
-      const std::string& file_name){
-    std::ifstream file;
-    file.open(file_name);
-    if(!file.is_open()){
-      throw std::runtime_error("There was a problem opening the file: " + 
-          file_name);
-    }
-    std::string line;
-    std::size_t row, column;
-    std::size_t jac_idx = 0;
-    std::istringstream iss;
-
-    while(std::getline(file, line)){
-      if(line[0] == '#'){
-        jac_idx++;
-      }
-      else if(std::isdigit(line[0])){
-        iss.clear();
-        iss.str(line);
-        iss >> row >> column;
-        sparse_data[jac_idx-1].emplace_back(row, column);
-      }
-    }
-    file.close();
-  }
-
-  void sparse_file_to_sparse_data(const std::string& file_name,
-      std::vector<std::vector<std::size_t>>& jac_chain_info,
+  void file_to_sparse_data(const std::string& file_name,
+      std::vector<Matrix_free_sparse_information>& basic_information,
       std::vector<std::vector<NNZ>>& sparse_data){
 
-    jac_chain_info.clear();
+    basic_information.clear();
     sparse_data.clear();
 
     std::ifstream file;
     file.open(file_name);
     if(!file.is_open()){
-      throw std::runtime_error("There was a problem opening the file: " + 
-          file_name);
+      throw std::runtime_error("Error encountered during chain initialization.\n"
+          "There was a problem opening the file: " + file_name);
     }
     std::string line;
     std::istringstream iss;
@@ -216,43 +229,41 @@ class jacobian_chain<Sparse_Jacobian>{
     std::size_t chain_len;
     std::getline(file, line);
     if(line[0] != '#'){
-      throw std::runtime_error("Wrong format:  check " + file_name + " file.");
-    }
-    else{
-      iss.str(line);
-      while(iss >> chain_size_string){}
-      chain_len = std::stoull(chain_size_string);
+      throw std::runtime_error("Error encountered during chain initialization.\n"
+          "Wrong format found in " + file_name + " file.");
     }
 
-    jac_chain_info.resize(chain_len);
+    iss.str(line);
+    while(iss >> chain_size_string){}
+    chain_len = std::stoull(chain_size_string);
+
     sparse_data.resize(chain_len);
+    basic_information.reserve(chain_len);
 
     std::size_t jac_idx = 0;
-    std::size_t jacobian_data;
+    std::size_t domain_dimension, codomain_dimension, number_edges, number_nnz;
     std::size_t row, column;
+    std::string basic_information_str;
     while(std::getline(file, line)){
       if(line[0] == '#'){
         auto start = line.find('[') + 1;
         auto end = line.find(']');
-        std::string jacobian_data_string = line.substr(start, end-start);
-        jac_chain_info[jac_idx].reserve(4);
+        basic_information_str = line.substr(start, end-start);
         iss.clear();
-        iss.str(jacobian_data_string);
-        while(iss >> jacobian_data){
-          jac_chain_info[jac_idx].push_back(jacobian_data);
-        }
-        //The last value of jacobian_data_string correspond to the number of non-zero entries
-        sparse_data[jac_idx].reserve(jacobian_data);
+        iss.str(basic_information_str);
+        iss >> domain_dimension >> codomain_dimension >> number_edges >> number_nnz;
+        basic_information.emplace_back(domain_dimension, codomain_dimension,
+            number_edges, number_nnz);
+        sparse_data[jac_idx].reserve(number_nnz);
         jac_idx++;
       }
       else if(std::isdigit(line[0])){
         iss.clear();
         iss.str(line);
         iss >> row >> column;
-        sparse_data[jac_idx-1].emplace_back(row, column);
+        sparse_data[jac_idx - 1].emplace_back(row, column);
       }
     }
   }
 };
-
 #endif

@@ -18,9 +18,10 @@ template<>
 class Generator<Jacobian_information>{
  public:
   Generator(std::size_t chain_length, std::size_t dimension_lb, std::size_t dimension_ub,
-      bool is_deterministic_, std::size_t seed = 45):
+      bool is_deterministic_, std::size_t seed_):
   jacobian_chain_lenght(chain_length), dimension_lower_bound(dimension_lb),
-  dimension_upper_bound(dimension_ub), is_deterministic(is_deterministic_){
+  dimension_upper_bound(dimension_ub), is_deterministic(is_deterministic_),
+  seed(seed_){
 
     if(chain_length == 0){
       throw std::invalid_argument("Chain length must be greater than 0.");
@@ -28,27 +29,9 @@ class Generator<Jacobian_information>{
     if(dimension_ub < dimension_lb){
       throw std::invalid_argument("Dimension lower bound must be smaller or equal to the upper bound.");
     }
-    jacobian_information.reserve(chain_length);
-    generate_jacobian_information(seed);
   }
 
-  std::size_t jacobian_information_size() const {return jacobian_information.size();}
-
-  std::vector<Jacobian_information> get_jacobian_information_copy() const{
-    return jacobian_information;  
-  }
-
-  const std::vector<Jacobian_information>& get_jacobian_information_reference() const{
-    return jacobian_information;
-  } 
-
- protected:
-  std::size_t jacobian_chain_lenght;
-  std::size_t dimension_lower_bound, dimension_upper_bound;
-  std::vector<Jacobian_information> jacobian_information;
-  bool is_deterministic;
-  
-  void generate_jacobian_information(std::size_t seed){
+  std::vector<Jacobian_information> generate_jacobian_information(){
     std::default_random_engine g;
     
     if(!is_deterministic){
@@ -59,6 +42,9 @@ class Generator<Jacobian_information>{
     else{
       g.seed(seed);
     }
+
+    std::vector<Jacobian_information> jacobian_information;
+    jacobian_information.reserve(jacobian_chain_lenght);
 
     std::uniform_int_distribution<std::size_t> 
       dimension_probability_distribution(dimension_lower_bound, dimension_upper_bound);
@@ -74,17 +60,26 @@ class Generator<Jacobian_information>{
       dimension_shared = dimension_non_shared;
       counter++;
     }
+    
+    return jacobian_information;
   }
+
+ protected:
+  std::size_t jacobian_chain_lenght;
+  std::size_t dimension_lower_bound, dimension_upper_bound;
+  bool is_deterministic;
+  std::size_t seed;
 };
 
 template<>
-class Generator<Matrix_free_infomation>{
+class Generator<Matrix_free_information>{
  public:
   Generator(std::size_t chain_length, std::size_t dimension_lb, std::size_t dimension_ub,
-      std::size_t n_E_lb, std::size_t n_E_ub, bool is_deterministic_, std::size_t seed = 45):
+      std::size_t n_E_lb, std::size_t n_E_ub, bool is_deterministic_, std::size_t seed_):
     jacobian_chain_lenght(chain_length), dimension_lower_bound(dimension_lb),
     dimension_upper_bound(dimension_ub), number_of_edges_lower_bound(n_E_lb),
-    number_of_edges_upper_bound(n_E_ub), is_deterministic(is_deterministic_){
+    number_of_edges_upper_bound(n_E_ub), is_deterministic(is_deterministic_),
+    seed(seed_){
 
       if(chain_length == 0){
         throw std::invalid_argument("Chain length must be greater than 0.");
@@ -97,28 +92,9 @@ class Generator<Matrix_free_infomation>{
       throw std::invalid_argument("Number of edges lower bound must be smaller " 
           "or equal to its upper bound.");
       }
-      jacobian_information.reserve(chain_length);
-      generate_jacobian_information(seed);
     }
 
-  std::size_t jacobian_information_size() const{return jacobian_information.size();}
-
-  std::vector<Matrix_free_infomation> get_jacobian_information_copy() const{
-    return jacobian_information;  
-  }
-
-  const std::vector<Matrix_free_infomation>& get_jacobian_information_reference() const{
-    return jacobian_information;
-  } 
-
- protected:
-  std::size_t jacobian_chain_lenght;
-  std::size_t dimension_lower_bound, dimension_upper_bound;
-  std::size_t number_of_edges_lower_bound, number_of_edges_upper_bound;
-  std::vector<Matrix_free_infomation> jacobian_information;
-  bool is_deterministic;
-
-  void generate_jacobian_information(std::size_t seed){
+  std::vector<Matrix_free_information> generate_jacobian_information(){
     std::default_random_engine g;
     
     if(!is_deterministic){
@@ -129,6 +105,9 @@ class Generator<Matrix_free_infomation>{
     else{
       g.seed(seed);
     }
+
+    std::vector<Matrix_free_information> jacobian_information;
+    jacobian_information.reserve(jacobian_chain_lenght);
 
     std::uniform_int_distribution<std::size_t> 
       dimension_probability_distribution(dimension_lower_bound, dimension_upper_bound);
@@ -148,7 +127,17 @@ class Generator<Matrix_free_infomation>{
       dimension_shared = dimension_non_shared;
       counter++;
     }
+
+    return jacobian_information;
   }
+
+ protected:
+  std::size_t jacobian_chain_lenght;
+  std::size_t dimension_lower_bound, dimension_upper_bound;
+  std::size_t number_of_edges_lower_bound, number_of_edges_upper_bound;
+  /* std::vector<Matrix_free_information> jacobian_information; */
+  bool is_deterministic;
+  std::size_t seed;
 };
 
 template<>
@@ -156,11 +145,12 @@ class Generator<Matrix_free_sparse_information>{
  public:
   Generator(std::size_t chain_length, std::size_t dimension_lb, std::size_t dimension_ub,
       std::size_t n_E_lb, std::size_t n_E_ub, double density_lb, double density_ub,
-      bool is_deterministic_, std::size_t seed):
+      bool is_deterministic_, std::size_t seed_):
     jacobian_chain_lenght(chain_length), dimension_lower_bound(dimension_lb),
     dimension_upper_bound(dimension_ub), number_of_edges_lower_bound(n_E_lb),
     number_of_edges_upper_bound(n_E_ub), density_lower_bound(density_lb),
-    density_upper_bound(density_ub), is_deterministic(is_deterministic_){
+    density_upper_bound(density_ub), is_deterministic(is_deterministic_),
+    seed(seed_){
 
       if(chain_length == 0){
         throw std::invalid_argument("Chain length must be greater than 0.");
@@ -174,126 +164,13 @@ class Generator<Matrix_free_sparse_information>{
           "or equal to its upper bound.");
       }
 
-      jacobian_information.reserve(chain_length);
-      generate_jacobian_information(seed);
-      sparse_data.reserve(chain_length);
-      generate_sparse_data(seed);
+      /* jacobian_information.reserve(chain_length); */
+      /* generate_jacobian_information(seed); */
+      /* sparse_data.reserve(chain_length); */
+      /* generate_sparse_data(seed); */
     }
 
-  std::size_t jacobian_information_size() const {return jacobian_information.size();}
-  std::size_t sparse_data_size() const {return sparse_data.size();}
-
-  std::vector<Matrix_free_sparse_information> get_jacobian_information_copy() const{
-    return jacobian_information;  
-  }
-
-  const std::vector<Matrix_free_sparse_information>& get_jacobian_information_reference() const{
-    return jacobian_information;
-  } 
-
-  std::vector<std::vector<NNZ>> get_sparse_data_copy() const{
-    return sparse_data;
-  }
-
-  const std::vector<std::vector<NNZ>>& get_sparse_data_reference() const{
-    return sparse_data;
-  }
-
- protected:
-  std::size_t jacobian_chain_lenght;
-  std::size_t dimension_lower_bound, dimension_upper_bound;
-  std::size_t number_of_edges_lower_bound, number_of_edges_upper_bound;
-  double density_lower_bound, density_upper_bound;
-
-  std::vector<Matrix_free_sparse_information> jacobian_information;
-  std::vector<std::vector<NNZ>> sparse_data;
-  bool is_deterministic;
-
-  void set_number_of_zeros_upper_and_lower_bound(std::size_t domain_dimension,
-      std::size_t codomain_dimension, std::size_t& number_of_zeros_lower_bound,
-      std::size_t& number_of_zeros_upper_bound){
-
-    std::size_t max_domain_codomain = 
-      (domain_dimension > codomain_dimension)? domain_dimension : codomain_dimension;
-
-    number_of_zeros_lower_bound = 
-    static_cast<std::size_t>(std::ceil(density_lower_bound * domain_dimension * codomain_dimension / max_domain_codomain));
-
-    //The lower limit should be set such that the condition:
-    //all columns and rows have at least one non zero element.
-    if(number_of_edges_lower_bound < max_domain_codomain){
-      number_of_edges_lower_bound = max_domain_codomain;
-    }
-
-    number_of_zeros_upper_bound =
-    static_cast<std::size_t>(std::floor(density_upper_bound * domain_dimension * codomain_dimension / max_domain_codomain));
-
-    if(number_of_zeros_upper_bound < max_domain_codomain){
-      number_of_edges_upper_bound = max_domain_codomain;
-    }
-  }
-
-  void generate_jacobian_information(std::size_t seed){
-    std::default_random_engine g;
-    
-    if(!is_deterministic){
-      std::random_device r;
-      g.seed(r());
-    }
-
-    else{
-      g.seed(seed);
-    }
-
-    std::uniform_int_distribution<std::size_t> 
-      dimension_probability_distribution(dimension_lower_bound, dimension_upper_bound);
-    std::uniform_int_distribution<std::size_t>
-      number_edges_probability_distribution(number_of_edges_lower_bound, number_of_edges_upper_bound);
-    std::uniform_int_distribution<std::size_t>
-      number_of_nonzeros_distribution;
-
-    std::size_t dimension_shared = dimension_probability_distribution(g);
-    std::size_t dimension_non_shared = dimension_probability_distribution(g);
-    std::size_t number_of_edges = number_edges_probability_distribution(g);
-
-    set_number_of_zeros_upper_and_lower_bound(dimension_non_shared, dimension_shared,
-        number_of_edges_lower_bound, number_of_edges_upper_bound);
-    std::uniform_int_distribution<std::size_t>::param_type 
-      num_nonzeros_param(number_of_edges_lower_bound, number_of_edges_upper_bound);
-    std::size_t number_nonzeros = number_of_nonzeros_distribution(g, num_nonzeros_param); 
-
-    jacobian_information.emplace_back(dimension_non_shared, dimension_shared,
-        number_of_edges, number_nonzeros);
-    
-    std::size_t counter = 1;
-    while(counter < jacobian_chain_lenght){
-      dimension_non_shared = dimension_probability_distribution(g);
-      number_of_edges = number_edges_probability_distribution(g);
-      set_number_of_zeros_upper_and_lower_bound(dimension_non_shared, dimension_shared,
-          number_of_edges_lower_bound, number_of_edges_upper_bound);
-      std::uniform_int_distribution<std::size_t>::param_type 
-        num_nonzeros_param(number_of_edges_lower_bound, number_of_edges_upper_bound);
-      number_nonzeros = number_of_nonzeros_distribution(g, num_nonzeros_param); 
-      jacobian_information.emplace_back(dimension_shared, dimension_non_shared,
-          number_of_edges, number_nonzeros);
-      dimension_shared = dimension_non_shared;
-      counter++;
-    }
-  }
-
-  void generate_data_square_submatrix(std::vector<NNZ>& single_sparse_data,
-      std::default_random_engine& random_engine, std::size_t min_domain_codomain){
-
-    std::vector<std::size_t> index_vector(min_domain_codomain);
-    std::iota(index_vector.begin(), index_vector.end(), 0);
-    std::shuffle(index_vector.begin(), index_vector.end(), random_engine);
-    
-    for(std::size_t i = 0; i < min_domain_codomain; i++){
-      single_sparse_data.emplace_back(i, index_vector[i]);
-    }
-  }
-
-  void generate_sparse_data(std::size_t seed){
+  Generator_data generate_data(){
 
     std::default_random_engine g;
 
@@ -313,6 +190,11 @@ class Generator<Matrix_free_sparse_information>{
     std::uniform_int_distribution<std::size_t> non_zero_distribution;
     std::uniform_int_distribution<std::size_t> non_zero_distribution_aux;
     std::size_t row, column;
+
+    std::vector<std::vector<NNZ>> sparse_data;
+    sparse_data.reserve(jacobian_chain_lenght);
+
+    auto jacobian_information = generate_jacobian_information();
 
     for(std::size_t matrix_idx = 0; matrix_idx < jacobian_chain_lenght; matrix_idx++){
       number_nonzeros = jacobian_information[matrix_idx].number_of_nonzeros();
@@ -370,6 +252,106 @@ class Generator<Matrix_free_sparse_information>{
       }
       sparse_data.emplace_back(sparse_data_per_matrix);
       sparse_data_per_matrix.clear();
+    }
+    return Generator_data{jacobian_information, sparse_data};
+  }
+
+ protected:
+  std::size_t jacobian_chain_lenght;
+  std::size_t dimension_lower_bound, dimension_upper_bound;
+  std::size_t number_of_edges_lower_bound, number_of_edges_upper_bound;
+  double density_lower_bound, density_upper_bound;
+
+  /* std::vector<Matrix_free_sparse_information> jacobian_information; */
+  /* std::vector<std::vector<NNZ>> sparse_data; */
+  bool is_deterministic;
+  std::size_t seed;
+
+  std::vector<Matrix_free_sparse_information> generate_jacobian_information(){
+    std::default_random_engine g;
+    
+    if(!is_deterministic){
+      std::random_device r;
+      g.seed(r());
+    }
+
+    else{
+      g.seed(seed);
+    }
+
+    std::uniform_int_distribution<std::size_t> 
+      dimension_probability_distribution(dimension_lower_bound, dimension_upper_bound);
+    std::uniform_int_distribution<std::size_t>
+      number_edges_probability_distribution(number_of_edges_lower_bound, number_of_edges_upper_bound);
+    std::uniform_int_distribution<std::size_t>
+      number_of_nonzeros_distribution;
+
+    std::size_t dimension_shared = dimension_probability_distribution(g);
+    std::size_t dimension_non_shared = dimension_probability_distribution(g);
+    std::size_t number_of_edges = number_edges_probability_distribution(g);
+
+    set_number_of_zeros_upper_and_lower_bound(dimension_non_shared, dimension_shared,
+        number_of_edges_lower_bound, number_of_edges_upper_bound);
+    std::uniform_int_distribution<std::size_t>::param_type 
+      num_nonzeros_param(number_of_edges_lower_bound, number_of_edges_upper_bound);
+    std::size_t number_nonzeros = number_of_nonzeros_distribution(g, num_nonzeros_param); 
+
+    std::vector<Matrix_free_sparse_information> jacobian_information;
+    jacobian_information.reserve(jacobian_chain_lenght);
+
+    jacobian_information.emplace_back(dimension_non_shared, dimension_shared,
+        number_of_edges, number_nonzeros);
+    
+    std::size_t counter = 1;
+    while(counter < jacobian_chain_lenght){
+      dimension_non_shared = dimension_probability_distribution(g);
+      number_of_edges = number_edges_probability_distribution(g);
+      set_number_of_zeros_upper_and_lower_bound(dimension_non_shared, dimension_shared,
+          number_of_edges_lower_bound, number_of_edges_upper_bound);
+      std::uniform_int_distribution<std::size_t>::param_type 
+        num_nonzeros_param(number_of_edges_lower_bound, number_of_edges_upper_bound);
+      number_nonzeros = number_of_nonzeros_distribution(g, num_nonzeros_param); 
+      jacobian_information.emplace_back(dimension_shared, dimension_non_shared,
+          number_of_edges, number_nonzeros);
+      dimension_shared = dimension_non_shared;
+      counter++;
+    }
+    return jacobian_information;
+  }
+
+  void set_number_of_zeros_upper_and_lower_bound(std::size_t domain_dimension,
+      std::size_t codomain_dimension, std::size_t& number_of_zeros_lower_bound,
+      std::size_t& number_of_zeros_upper_bound){
+
+    std::size_t max_domain_codomain = 
+      (domain_dimension > codomain_dimension)? domain_dimension : codomain_dimension;
+
+    number_of_zeros_lower_bound = 
+    static_cast<std::size_t>(std::ceil(density_lower_bound * domain_dimension * codomain_dimension / max_domain_codomain));
+
+    //The lower limit should be set such that the condition:
+    //all columns and rows have at least one non zero element.
+    if(number_of_edges_lower_bound < max_domain_codomain){
+      number_of_edges_lower_bound = max_domain_codomain;
+    }
+
+    number_of_zeros_upper_bound =
+    static_cast<std::size_t>(std::floor(density_upper_bound * domain_dimension * codomain_dimension / max_domain_codomain));
+
+    if(number_of_zeros_upper_bound < max_domain_codomain){
+      number_of_edges_upper_bound = max_domain_codomain;
+    }
+  }
+
+  void generate_data_square_submatrix(std::vector<NNZ>& single_sparse_data,
+      std::default_random_engine& random_engine, std::size_t min_domain_codomain){
+
+    std::vector<std::size_t> index_vector(min_domain_codomain);
+    std::iota(index_vector.begin(), index_vector.end(), 0);
+    std::shuffle(index_vector.begin(), index_vector.end(), random_engine);
+    
+    for(std::size_t i = 0; i < min_domain_codomain; i++){
+      single_sparse_data.emplace_back(i, index_vector[i]);
     }
   }
 

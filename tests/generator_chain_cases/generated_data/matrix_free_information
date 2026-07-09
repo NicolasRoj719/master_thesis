@@ -1,0 +1,8 @@
+#Generator constructor arguments:
+# chain_length dimension_lower_bound dimension_upper_bound
+# number_of_edges_lower_bound number_of_edges_upper_bound deterministic seed
+3 2 5 50 120 true 60
+#Format: domain_dimension codomain_dimension number_of_edges
+5 2 73
+2 4 118
+4 2 108

@@ -45,9 +45,9 @@ class Jacobian_information{
   std::size_t codomain_dimension_;
 };
 
-class Matrix_free_infomation: public Jacobian_information{
+class Matrix_free_information: public Jacobian_information{
  public:
-  Matrix_free_infomation(std::size_t domain_dim, std::size_t codomain_dim,
+  Matrix_free_information(std::size_t domain_dim, std::size_t codomain_dim,
       std::size_t num_of_edges):
     Jacobian_information(domain_dim, codomain_dim), number_of_edges_(num_of_edges){}
 
@@ -57,11 +57,11 @@ class Matrix_free_infomation: public Jacobian_information{
   std::size_t number_of_edges_;
 };
 
-class Matrix_free_sparse_information: public Matrix_free_infomation{
+class Matrix_free_sparse_information: public Matrix_free_information{
  public:
   Matrix_free_sparse_information(std::size_t domain_dim, std::size_t codomain_dim,
       std::size_t num_of_edges, std::size_t num_nonzeros):
-    Matrix_free_infomation(domain_dim, codomain_dim, num_of_edges),
+    Matrix_free_information(domain_dim, codomain_dim, num_of_edges),
     number_of_nonzeros_(num_nonzeros){
 
       if(domain_dim * codomain_dim < num_nonzeros){
@@ -90,4 +90,10 @@ class Matrix_free_sparse_information: public Matrix_free_infomation{
  protected:
   std::size_t number_of_nonzeros_;
 };
+
+struct Generator_data{
+ std::vector<Matrix_free_sparse_information> jacobian_information;
+ std::vector<std::vector<NNZ>> sparse_data;
+};
+
 #endif
