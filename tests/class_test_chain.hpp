@@ -115,25 +115,21 @@ std::string test_chain<Jacobian_T, Basic_info_T>::case_to_path_with_data(
     const std::string& case_name){
   if(case_name == "case_0"){
     if constexpr (std::is_same_v<Basic_info_T, Jacobian_information>){
-      return "./chain_test_cases/"+ case_name +
-        "_non_sparse_jacobian_information";
+      return "./chain_test_cases/case_0_jacobian_information";
     }
 
     else{
-      return "./chain_test_cases/"+ case_name +
-        "_non_sparse_matrix_free";
+      return "./chain_test_cases/case_0_matrix_free";
     }
   }
 
   if(case_name == "case_1"){
     if constexpr (std::is_same_v<Basic_info_T, Jacobian_information>){
-      return "./chain_test_cases/"+ case_name +
-        "_non_sparse_jacobian_information";
+      return "./chain_test_cases/case_1_jacobian_information"; 
     }
 
     else{
-      return "./chain_test_cases/"+ case_name +
-        "_non_sparse_matrix_free";
+      return "./chain_test_cases/case_1_matrix_free"; 
     }
   }
 
@@ -147,25 +143,21 @@ std::string test_chain<Jacobian_T, Basic_info_T>::case_to_validate_path(
 
   if(case_name == "case_0"){
     if constexpr (std::is_same_v<Basic_info_T, Jacobian_information>){
-      return "./chain_test_cases/validate/"+ case_name+
-        "_non_sparse_jacobian_information";
+      return "./chain_test_cases/validate/case_0_jacobian_information"; 
     }
 
     else{
-      return "./chain_test_cases/validate/"+ case_name+
-        "_non_sparse_matrix_free";
+      return "./chain_test_cases/validate/case_0_matrix_free"; 
     }
   }
 
   if(case_name == "case_1"){
     if constexpr (std::is_same_v<Basic_info_T, Jacobian_information>){
-      return "./chain_test_cases/validate/"+ case_name+
-        "_non_sparse_jacobian_information";
+      return "./chain_test_cases/case_1_jacobian_information"; 
     }
 
     else{
-      return "./chain_test_cases/validate/"+ case_name+
-        "_non_sparse_matrix_free";
+      return "./chain_test_cases/case_1_matrix_free"; 
     }
   }
 
@@ -374,12 +366,12 @@ std::string test_chain<Sparse_Jacobian, Matrix_free_sparse_information>::
       std::size_t jacobian_index){
   
   if(validate_name == "case_0"){
-    return "./chain_test_cases/validate/case_0_sparse_jacobian"+
+    return "./chain_test_cases/validate/sparse/case_0_"+
       std::to_string(jacobian_index);
   }
 
   else if(validate_name == "case_1"){
-    return "./chain_test_cases/validate/case_1_sparse_jacobian"+
+    return "./chain_test_cases/validate/sparse/case_1_"+
       std::to_string(jacobian_index);
   }
 

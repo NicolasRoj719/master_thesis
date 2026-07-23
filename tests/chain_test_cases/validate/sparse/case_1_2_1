@@ -1,0 +1,22 @@
+#Jacobian 2,1:
+Basic_information:
+2 4 230 4
+CSR:
+column_idx:
+1 0 1 1
+row_ptr:
+0 1 2 3 4
+CSC:
+row_idx:
+1 0 2 3
+column_ptr:
+0 1 4
+Coloring:
+column_number_colors:
+1
+row_number_colors:
+3
+max_number_nnz_row:
+1
+max_number_nnz_column:
+3

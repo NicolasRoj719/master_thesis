@@ -32,6 +32,11 @@ class jacobian_chain{
     return chain.at(index);
    }
 
+   //This will be used to test table_cell and table implementation.
+   Jacobian_type copy(std::size_t index) const{
+    return chain[index];
+   }
+
    std::size_t size() const {return chain.size();}
 
  protected:
@@ -163,6 +168,11 @@ class jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>{
   }
 
   std::size_t size() const {return chain.size();}
+  //
+   //This will be used to test table_cell and table implementation.
+   Sparse_Jacobian copy(std::size_t index) const{
+    return chain[index];
+   }
 
  protected:
   std::vector<Sparse_Jacobian> chain;

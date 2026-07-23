@@ -1,10 +1,8 @@
 #include <cstdint>
 #include <iostream>
 #include <stdexcept>
-/* #include "./class_test_playground.hpp" */
 #include "./class_test_generator.hpp"
 #include "./../generator.hpp"
-/* #include "./../playground.hpp" */
 
 int main(){
   {

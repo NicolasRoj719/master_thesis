@@ -1,0 +1,13 @@
+#Jacobian 2,0:
+Basic_information:
+3 3 70 4
+CSR:
+column_idx:
+1 2 0 0
+row_ptr:
+0 2 3 4
+CSC:
+row_idx:
+1 2 0 0
+column_ptr:
+0 2 3 4

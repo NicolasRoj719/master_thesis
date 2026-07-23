@@ -58,6 +58,11 @@ class Dense_Jacobian{
 
 class Sparse_Jacobian{
  public:
+
+  Sparse_Jacobian(Sparse_Jacobian&& sparse_jacobian) = default;
+  Sparse_Jacobian(const Sparse_Jacobian&) = default;
+  
+
   Sparse_Jacobian(Matrix_free_sparse_information jacobian_obj,
       std::vector<NNZ>& sparse_data):
     jacobian_basic_data(std::move(jacobian_obj)){
@@ -130,6 +135,7 @@ class Sparse_Jacobian{
       max_number_nnz_row = max_nnz_row_or_col(column_pointer);
       max_number_nnz_column = max_nnz_row_or_col(row_pointer);
     }
+
   
   std::size_t domain_dim() const {
     return jacobian_basic_data.domain_dimension();

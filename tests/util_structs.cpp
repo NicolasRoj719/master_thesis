@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <cassert>
 #include <iostream>
+#include <vector>
 #include "./class_test_util_structs.hpp"
 #include "./../util_structs.hpp"
 

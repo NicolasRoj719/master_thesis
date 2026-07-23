@@ -1,6 +1,10 @@
+#include <algorithm>
 #include <cassert>
+#include <limits>
+#include <optional>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <vector>
 #include "./jacobian.hpp"
 #include "./table_cell.hpp"
@@ -8,119 +12,132 @@
 #ifndef DPTABLE_HPP  
 #define DPTABLE_HPP
 
-template<class Jacobian_type>
+template<class Jacobian_T>
 class Table{
  public:
-  Table(const std::vector<Jacobian_type>& jacobian_chain){
-    const std::size_t chain_size = jacobian_chain.size();
-    single_jacobian_cells.reserve(chain_size);
-    calculated_jacobian_cells.reserve(chain_size * (chain_size - 1) / 2);
+  Table(std::size_t chain_size){
 
-    for(std::size_t i = 0; i < chain_size; i++){
-      single_jacobian_cells.emplace_back(&jacobian_chain[i]);
-    }
+     cells_with_pointer.reserve(chain_size);
+     cells.reserve((chain_size * (chain_size - 1))/ 2);
   }
 
-  const cell_with_pointer<Jacobian_type> operator() (std::size_t i) const{
-    return single_jacobian_cells[i];
+  void emplace_back(std::size_t accumulated_cost, std::size_t split_position);
+
+  void emplace_back(std::size_t accumulated_cost, std::size_t split_position,
+        Operation operation);
+
+  void emplace_back(std::size_t accumulated_cost, std::size_t split_position,
+        Operation operation, std::size_t accumulated_memory);
+
+  void emplace_back(Jacobian_T jacobian, std::size_t accumulated_cost,
+        std::size_t split_position, Operation operation);
+
+  void emplace_back(Jacobian_T jacobian, std::size_t accumulated_cost,
+        std::size_t split_position, Operation operation, std::size_t accumulated_memory);
+
+  void emplace_back(const Jacobian_T* jacobian_pointer);
+
+  void emplace_back(const Jacobian_T* jacobian_pointer, std::size_t accumulated_cost,
+        Operation operation);
+
+  void emplace_back(const Jacobian_T* jacobian_pointer, std::size_t accumulated_cost,
+        Operation operation, std::size_t accumulated_memory);
+
+  const cell<Jacobian_T>& get_cell(std::size_t j_index, std::size_t i_index) const{
+
+     return cells[((j_index - 1) * j_index) / 2 + (j_index - 1 - i_index)];
   }
 
-  const cell<Jacobian_type> operator() (std::size_t j, std::size_t i) const{
-    if(j <= i){
-      throw std::invalid_argument("Invalid access to calculated_jacobian cell.\n"
-          "Condition j <= i does not hold. Entered j = " + std::to_string(j) +
-          " and i = " + std::to_string(i) + ".");
-    }
-    return calculated_jacobian_cells[ j * (j-1) / 2 + ((j-1) - i)];
+  const cell_with_pointer<Jacobian_T>& get_cell(std::size_t j_index) const{
+
+      return cells_with_pointer[j_index];
   }
-
-  //calculated_jacobian_cells is constructed following a very strict order
-  //which is imposed and guaranteed by another class.
-  void emplace_back(std::size_t j, std::size_t i,
-      std::size_t cost, std::size_t split_position){
-    if(j==i){
-      single_jacobian_cells[j].cell_data_initializer(cost, split_position);
-    }
-    else{
-      calculated_jacobian_cells.emplace_back(cost, split_position);
-    }
-  }
-
-  //calculated_jacobian_cells is constructed following a very strict order
-  //which is imposed and guaranteed by another class.
-  void emplace_back(std::size_t j, std::size_t i,
-      std::size_t cost, std::size_t split_position, Operation op){
-
-    if(j==i){
-      single_jacobian_cells[j].cell_data_initializer(cost, split_position, op);
-    }
-
-    else{
-      calculated_jacobian_cells.emplace_back(cost, split_position, op);
-    }
-  }
-
-  //calculated_jacobian_cells is constructed following a very strict order
-  //which is imposed and guaranteed by another class.
-  void emplace_back(std::size_t j, std::size_t i,
-      std::size_t cost, std::size_t split_position,
-      Operation op, std::size_t memory){
-
-    if(j==i){
-      single_jacobian_cells[j].cell_data_initializer(cost, split_position, op, memory);
-    }
-
-    else{
-      calculated_jacobian_cells.emplace_back(cost, split_position, op, memory);
-    }
-  }
-
-  //calculated_jacobian_cells is constructed following a very strict order
-  //which is imposed and guaranteed by another class.
-  void emplace_back(std::size_t j, std::size_t i,
-      const Jacobian_type jacobian_lhs, const Jacobian_type jacobian_rhs,
-      std::size_t cost, std::size_t split_position, Operation op){
-
-    if(j==i){
-      throw std::invalid_argument("emplace_back cannot be used for j=i.\n"
-          "The Jacobian object was created within the constructor.");
-    }
-
-    else{
-      calculated_jacobian_cells.emplace_back(jacobian_lhs * jacobian_rhs,
-          cost, split_position, op);
-    }
-  }
-  
-  //calculated_jacobian_cells is constructed following a very strict order
-  //which is imposed and guaranteed by another class.
-  void emplace_back(std::size_t j, std::size_t i,
-      const Jacobian_type jacobian_lhs, const Jacobian_type jacobian_rhs,
-      std::size_t cost, std::size_t split_position,
-      std::size_t memory, Operation op){
-
-    if(j==i){
-      throw std::invalid_argument("emplace_back cannot be used for j=i.\n"
-          "The Jacobian object was created within the constructor.");
-    }
-
-    else{
-      calculated_jacobian_cells.emplace_back(jacobian_lhs * jacobian_rhs,
-          cost, split_position, op, memory);
-    }
-  }
-
-  void clear(){
-    single_jacobian_cells.clear();
-    calculated_jacobian_cells.clear();
-  }
-
-  std::size_t size(){
-    return single_jacobian_cells.size() + calculated_jacobian_cells.size();
-  }
-
+ 
  protected:
-  std::vector<cell_with_pointer<Jacobian_type>> single_jacobian_cells;
-  std::vector<cell<Jacobian_type>> calculated_jacobian_cells;
+  std::vector<cell<Jacobian_T>> cells;
+  std::vector<cell_with_pointer<Jacobian_T>> cells_with_pointer;
 };
+
+template <>
+void Table<Jacobian>::emplace_back(
+      std::size_t accumulated_cost, std::size_t split_position){
+  
+   cells.emplace_back(accumulated_cost, split_position); 
+}
+
+template <>
+void Table<Jacobian>::emplace_back(
+      const Jacobian* jacobian_pointer){
+
+   cells_with_pointer.emplace_back(jacobian_pointer);
+}
+
+template <>
+void Table<Dense_Jacobian>::emplace_back(
+      std::size_t accumulated_cost, std::size_t split_position, Operation operation){
+
+   cells.emplace_back(accumulated_cost, split_position, operation);
+}
+
+template<>
+void Table<Dense_Jacobian>::emplace_back(
+      std::size_t accumulated_cost, std::size_t split_position,
+      Operation operation, std::size_t memory){
+
+   cells.emplace_back(accumulated_cost, split_position, operation, memory);
+}
+
+template <>
+void Table<Dense_Jacobian>::emplace_back(
+      const Dense_Jacobian* jacobian_pointer, std::size_t accumulated_cost,
+      Operation operation){
+
+   cells_with_pointer.emplace_back(
+         jacobian_pointer, accumulated_cost, operation);
+}
+
+template <>
+void Table<Dense_Jacobian>::emplace_back(
+      const Dense_Jacobian* jacobian_pointer, std::size_t accumulated_cost,
+      Operation operation, std::size_t memory){
+
+
+   cells_with_pointer.emplace_back(
+         jacobian_pointer, accumulated_cost, operation, memory);
+}
+
+template<>
+void Table<Sparse_Jacobian>::emplace_back(
+      const Sparse_Jacobian jacobian, std::size_t accumulated_cost,
+      std::size_t split_position, Operation operation){
+
+   cells.emplace_back(jacobian, accumulated_cost, split_position, operation);
+}
+
+template<>
+void Table<Sparse_Jacobian>::emplace_back(
+      const Sparse_Jacobian jacobian, std::size_t accumulated_cost,
+      std::size_t split_position, Operation operation, std::size_t memory){
+
+   cells.emplace_back(jacobian, accumulated_cost, split_position, operation, memory);
+}
+
+template <>
+void Table<Sparse_Jacobian>::emplace_back(
+      const Sparse_Jacobian* jacobian_pointer, std::size_t accumulated_cost,
+      Operation operation){
+
+   cells_with_pointer.emplace_back(
+         jacobian_pointer, accumulated_cost, operation);
+}
+
+template<>
+void Table<Sparse_Jacobian>::emplace_back(
+      const Sparse_Jacobian* jacobian_pointer, std::size_t accumulated_cost,
+      Operation operation, std::size_t memory){
+
+   cells_with_pointer.emplace_back(jacobian_pointer, accumulated_cost,
+         operation, memory);
+}
+
 #endif
