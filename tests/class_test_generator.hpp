@@ -1,602 +1,599 @@
-#include <vector>
+#include <algorithm>
 #include <stdexcept>
+#include <type_traits>
+#include <vector>
 #include "./../util_structs.hpp"
-/* #include "./../playground.hpp" */
 #include "./../generator.hpp"
 
 #ifndef TEST_GENERATOR_HPP
 #define TEST_GENERATOR_HPP
 
-template<class Jacobian_information_type>
-class test_Generator{};
-
-template<>
-class test_Generator<Jacobian_information>{
+template<class Jacobian_info_T>
+class test_Generator{
  public:
   test_Generator(std::size_t chain_length, std::size_t dimension_lb,
-      std::size_t dimension_ub, bool is_deterministic_, std::size_t seed = 45):
-    generator{chain_length, dimension_lb, dimension_ub, is_deterministic_, seed}{
+          std::size_t dimension_ub, bool is_deterministic, std::size_t seed):
+      test_jacobian_dimension_consistency(false), test_jacobian_data_bounds(false),
+      test_deterministic(false), test_no_repeated_entries(false),
+      test_nnz_number(false), test_all_columns_and_rows_have_nnz(false),
+      were_all_test_successful(false){
 
-      auto jacobian_information = generator.generate_jacobian_information();
+        Generator<Jacobian_info_T>
+            generator{chain_length, dimension_lb, dimension_ub, is_deterministic, seed}; 
 
-      if(jacobian_information.size() == chain_length){
-        test_size = true;
-      }
-      else{test_size = false;}
+        auto jacobian_information = generator.generate_jacobian_information();
 
-      test_data_bounds = is_generated_data_within_bounds(dimension_lb, dimension_ub,
-          jacobian_information);
+        test_jacobian_dimension_consistency =
+           input_output_dimension_check(jacobian_information);
 
-      test_dimensions = rhs_output_dim_equal_lhs_input_dim(jacobian_information);
+        test_jacobian_data_bounds =
+           is_generated_data_within_bounds(jacobian_information, dimension_lb, dimension_ub);
 
-      test_deterministic = 
-        test_is_deterministic_method(chain_length, dimension_lb, dimension_ub, seed);
-      
-      if(test_size && test_data_bounds && test_dimensions &&
-          test_deterministic){
-        were_all_test_successful = true;
-      }
+        test_deterministic =
+           test_is_deterministic(chain_length, dimension_lb, dimension_ub, seed);
 
-      else{
-        were_all_test_successful = false;
-        print_test_state();
-      }
+        if(test_jacobian_dimension_consistency && test_jacobian_data_bounds &&
+            test_deterministic){
+
+          were_all_test_successful = true;
+        }
+        
+        else{
+
+          were_all_test_successful = false;
+          print_test_state();
+        }
     }
 
-  void print_test_state() const{
-    std::cout << "State of test_Generator<Jacobian_information>:\n";
-    std::cout << "test_size: " ;
-    if(test_size){
-      std::cout << "successful.\n";
-    }
-    else{std::cout << "failed.\n";}
-
-    std::cout << "test_data_bounds: " ;
-    if(test_data_bounds){
-      std::cout << "successful.\n";
-    }
-    else{std::cout << "failed.\n";}
-
-    std::cout << "test_dimensions: ";
-    if(test_dimensions){
-      std::cout << "successful.\n";
-    }
-    else{std::cout << "failed.\n";}
-
-    std::cout << "test_deterministic: ";
-    if(test_deterministic){
-      std::cout << "successful.\n";
-    }
-    else{std::cout << "failed.\n";}
-    std::cout << '\n';
-  }
-
-
- protected:
-  Generator<Jacobian_information> generator;
-  bool test_size;
-  bool test_data_bounds;
-  bool test_dimensions;
-  bool test_deterministic;
-  bool were_all_test_successful;
-
-  bool rhs_output_dim_equal_lhs_input_dim(
-      const std::vector<Jacobian_information>& jacobian_information){
-
-    for(std::size_t i = 0; i < jacobian_information.size() - 1; i++){
-      if(jacobian_information[i].codomain_dimension() !=
-          jacobian_information[i+1].domain_dimension()){
-        return false;
-      }
-    }
-    return true;
-  }
-
-  bool is_generated_data_within_bounds(std::size_t dimension_lb, std::size_t dimension_ub,
-      const std::vector<Jacobian_information>& jacobian_information){
-
-    for(std::size_t i = 0; i < jacobian_information.size(); i++){
-      if((dimension_ub < jacobian_information[i].domain_dimension()) ||
-          (dimension_ub < jacobian_information[i].codomain_dimension()) ||
-          (jacobian_information[i].domain_dimension() < dimension_lb) ||
-          (jacobian_information[i].codomain_dimension() < dimension_lb)){
-        return false;
-      }
-    }
-    return true;
-  }
-
-  bool is_information_data_equal(
-      const std::vector<Jacobian_information>& jacobian_information_0,
-      const std::vector<Jacobian_information>& jacobian_information_1){
-    if(jacobian_information_0.size() != jacobian_information_1.size()){
-      return false;
-    }
-    for(std::size_t i = 0; i < jacobian_information_0.size(); i++){
-      if((jacobian_information_0[i].domain_dimension() != 
-          jacobian_information_1[i].domain_dimension()) ||
-          (jacobian_information_0[i].codomain_dimension() !=
-           jacobian_information_1[i].codomain_dimension())){
-        return false;
-      }
-    }
-    return true;
-  }
-
-  bool test_is_deterministic_method(std::size_t chain_length, std::size_t dimension_lb,
-      std::size_t dimension_ub, std::size_t seed){
-
-    Generator<Jacobian_information> generator_0{chain_length, dimension_lb,
-      dimension_ub, true, seed};
-    Generator<Jacobian_information> generator_1{chain_length, dimension_lb,
-      dimension_ub, true, seed};
-
-    return is_information_data_equal(generator_0.generate_jacobian_information(),
-        generator_1.generate_jacobian_information());
-  }
-};
-
-template<>
-class test_Generator<Matrix_free_information>{
- public:
   test_Generator(std::size_t chain_length, std::size_t dimension_lb,
-      std::size_t dimension_ub, std::size_t n_E_lb, std::size_t n_E_ub,
-      bool is_deterministic_, std::size_t seed = 45):
-    generator{chain_length, dimension_lb, dimension_ub, n_E_lb, n_E_ub,
-    is_deterministic_, seed}{
+          std::size_t dimension_ub, std::size_t number_edges_lb,
+          std::size_t number_edges_ub, bool is_deterministic,
+          std::size_t seed):
+      test_jacobian_dimension_consistency(false), test_jacobian_data_bounds(false),
+      test_deterministic(false), test_no_repeated_entries(false),
+      test_nnz_number(false), test_all_columns_and_rows_have_nnz(false),
+      were_all_test_successful(false){
 
-      auto jacobian_information = generator.generate_jacobian_information();
+        Generator<Jacobian_info_T>
+            generator{chain_length, dimension_lb, dimension_ub,
+            number_edges_lb, number_edges_ub, is_deterministic, seed};
 
-      if(jacobian_information.size() == chain_length){
-        test_size = true;
-      }
-      else{test_size = false;}
+        auto jacobian_information = generator.generate_jacobian_information();
 
-      test_data_bounds = is_generated_data_within_bounds(dimension_lb, dimension_ub,
-            n_E_lb, n_E_ub, jacobian_information);
+        test_jacobian_dimension_consistency =
+           input_output_dimension_check(jacobian_information);
 
-      test_dimensions = rhs_output_dim_equal_lhs_input_dim(jacobian_information);
+        test_jacobian_data_bounds =
+           is_generated_data_within_bounds(jacobian_information, dimension_lb, dimension_ub,
+                   number_edges_lb, number_edges_ub);
 
-      test_deterministic =
-        test_is_deterministic_method(chain_length, dimension_lb, dimension_ub,
-            n_E_lb, n_E_ub, seed);
+        test_deterministic =
+           test_is_deterministic(chain_length, dimension_lb, dimension_ub,
+                   number_edges_lb, number_edges_ub, seed);
 
-      if(test_size && test_data_bounds && test_dimensions &&
-          test_deterministic){
-        were_all_test_successful = true;
-      }
+        if(test_jacobian_dimension_consistency && test_jacobian_data_bounds &&
+            test_deterministic){
 
-      else{
-        were_all_test_successful = false;
-        print_test_state();
-      }
+          were_all_test_successful = true;
+        }
+
+        else{
+          
+          were_all_test_successful = false;
+          print_test_state();
+        }
     }
 
-  void print_test_state() const{
-    std::cout << "State of test_Generator<Matrix_free_information>:\n";
-    std::cout << "test_size: " ;
-    if(test_size){
-      std::cout << "successful.\n";
-    }
-    else{std::cout << "failed.\n";}
-
-    std::cout << "test_data_bounds: " ;
-    if(test_data_bounds){
-      std::cout << "successful.\n";
-    }
-    else{std::cout << "failed.\n";}
-
-    std::cout << "test_dimensions: ";
-    if(test_dimensions){
-      std::cout << "successful.\n";
-    }
-    else{std::cout << "failed.\n";}
-
-    std::cout << "test_deterministic: ";
-    if(test_deterministic){
-      std::cout << "successful.\n";
-    }
-    else{std::cout << "failed.\n";}
-    std::cout << '\n';
-  }
-
- protected:
-  Generator<Matrix_free_information> generator;  
-  bool test_size;
-  bool test_data_bounds;
-  bool test_dimensions;
-  bool test_deterministic;
-  bool were_all_test_successful;
-
-  bool rhs_output_dim_equal_lhs_input_dim(
-      const std::vector<Matrix_free_information>& jacobian_information){
-
-    for(std::size_t i = 0; i < jacobian_information.size() - 1; i++){
-      if(jacobian_information[i].codomain_dimension() !=
-          jacobian_information[i+1].domain_dimension()){
-        return false;
-      }
-    }
-    return true;
-  }
-
-  bool is_generated_data_within_bounds(
-      std::size_t dimension_lb, std::size_t dimension_ub,
-      std::size_t n_E_lb, std::size_t n_E_ub,
-      const std::vector<Matrix_free_information>& jacobian_information){
-
-    for(std::size_t i = 0; i < jacobian_information.size(); i++){
-      if((dimension_ub < jacobian_information[i].domain_dimension()) ||
-          (dimension_ub < jacobian_information[i].codomain_dimension()) ||
-          (jacobian_information[i].domain_dimension() < dimension_lb) ||
-          (jacobian_information[i].codomain_dimension() < dimension_lb) ||
-          (n_E_ub < jacobian_information[i].number_of_edges()) ||
-          (jacobian_information[i].number_of_edges() < n_E_lb)){
-        return false;
-      }
-    }
-    return true;
-  }
-
-  bool is_information_data_equal(
-      const std::vector<Matrix_free_information>& jacobian_information_0,
-      const std::vector<Matrix_free_information>& jacobian_information_1){
-
-    if(jacobian_information_0.size() != jacobian_information_1.size()){
-      return false;
-    }
-
-    for(std::size_t i = 0; i < jacobian_information_0.size(); i++){
-      if((jacobian_information_0[i].domain_dimension() != 
-          jacobian_information_1[i].domain_dimension()) ||
-          (jacobian_information_0[i].codomain_dimension() !=
-           jacobian_information_1[i].codomain_dimension()) ||
-          (jacobian_information_0[i].number_of_edges() !=
-           jacobian_information_1[i].number_of_edges())){
-        return false;
-      }
-    }
-    return true;
-  }
-
-  bool test_is_deterministic_method(std::size_t chain_length, std::size_t dimension_lb,
-      std::size_t dimension_ub, std::size_t n_E_lb, std::size_t n_E_ub, 
-      std::size_t seed){
-
-    Generator<Matrix_free_information> generator_0{chain_length, dimension_lb,
-      dimension_ub, n_E_lb, n_E_ub, true, seed};
-
-    Generator<Matrix_free_information> generator_1{chain_length, dimension_lb,
-      dimension_ub, n_E_lb, n_E_ub, true, seed};
-
-    return is_information_data_equal(generator_0.generate_jacobian_information(),
-        generator_1.generate_jacobian_information());
-  }
-};
-
-template<>
-class test_Generator<Matrix_free_sparse_information>{
- public:
   test_Generator(std::size_t chain_length, std::size_t dimension_lb,
-    std::size_t dimension_ub, std::size_t n_E_lb, std::size_t n_E_ub,
-    double density_lb, double density_ub, bool is_deterministic_,
-    std::size_t seed):
-    generator{chain_length, dimension_lb, dimension_ub,
-      n_E_lb, n_E_ub, density_lb, density_ub, is_deterministic_, seed}
-  {
+          std::size_t dimension_ub, std::size_t number_edges_lb,
+          std::size_t number_edges_ub, double density_lb, double density_ub,
+          bool is_deterministic_, std::size_t seed):
+      test_jacobian_dimension_consistency(false), test_jacobian_data_bounds(false),
+      test_deterministic(false), test_no_repeated_entries(false), 
+      test_nnz_number(false), test_all_columns_and_rows_have_nnz(false),
+      were_all_test_successful(false){
 
-    auto data = generator.generate_data();
+        Generator<Jacobian_info_T>
+            generator{chain_length, dimension_lb, dimension_ub, number_edges_lb,
+            number_edges_ub, density_lb, density_ub, is_deterministic_, seed};
 
-    if(data.jacobian_information.size() == chain_length){
-      test_jacobian_information_size = true;
+        auto data = generator.generate_data();
+
+        test_jacobian_dimension_consistency =
+           input_output_dimension_check(data.jacobian_information);
+
+        test_jacobian_data_bounds =
+           is_generated_data_within_bounds(data.jacobian_information, dimension_lb,
+                dimension_ub, number_edges_lb, number_edges_ub);
+
+        test_no_repeated_entries = 
+            !are_there_repeated_entries(data.sparse_data);
+
+        test_nnz_number =
+            is_number_of_nnz_correct(data.jacobian_information, data.sparse_data);
+
+        test_all_columns_and_rows_have_nnz = 
+            all_columns_rows_have_nnz(data.jacobian_information, data.sparse_data);
+            
+        test_deterministic =
+            test_is_deterministic(chain_length, dimension_lb, dimension_ub,
+                number_edges_lb, number_edges_ub, density_lb, density_ub, seed);
+
+        if(test_jacobian_dimension_consistency && test_jacobian_data_bounds &&
+            test_no_repeated_entries && test_nnz_number &&
+            test_all_columns_and_rows_have_nnz && test_deterministic){
+
+          were_all_test_successful = true;
+        }
+
+        else{
+
+          were_all_test_successful = false;
+          print_test_state();
+        }
     }
-    else{
-      test_jacobian_information_size = false;
-    }
 
-    if(data.sparse_data.size() == chain_length){
-      if(is_number_of_nnz_correct(data.jacobian_information, data.sparse_data)){
-      test_sparse_data_size = true;
-      }
-    else{test_sparse_data_size = false;}
-    }
-    
-    else{test_sparse_data_size = false;}
+  void print_test_state();
 
-    test_jacobian_information_bounds =
-      is_jacobian_information_within_bounds(dimension_lb, dimension_ub,
-          n_E_lb, n_E_ub, data.jacobian_information);
-
-    test_jacobian_information_dimensions = rhs_output_dim_equal_lhs_input_dim(
-        data.jacobian_information);
-
-    test_sparse_data_bounds = is_sparse_data_within_bounds(
-        data.jacobian_information, data.sparse_data);
-
-    test_repeated_entries = are_there_repeated_entries(data.sparse_data);
-
-    test_nnz_in_every_row_column = all_columns_rows_have_nnz(
-        data.jacobian_information, data.sparse_data);
-
-    test_deterministic = 
-     is_deterministic(chain_length, dimension_lb, dimension_lb, n_E_lb, n_E_ub,
-         density_lb, density_ub, seed);
-
-    if(test_jacobian_information_size && test_jacobian_information_bounds &&
-        test_jacobian_information_dimensions && test_deterministic &&
-        test_sparse_data_size && test_sparse_data_bounds &&
-        test_repeated_entries && test_nnz_in_every_row_column){
-      were_all_test_successful = true;
-    }
-    else{
-      were_all_test_successful = false;
-      print_test_state();
-    }
-   
-  }
-
-  void print_test_state() const{
-    std::cout << "State of test_Generator<Matrix_free_sparse_information>:\n";
-    std::cout << "test_jacobian_information_size: " ;
-    if(test_jacobian_information_size){
-      std::cout << "successful.\n";
-    }
-    else{std::cout << "failed.\n";}
-
-    std::cout << "test_jacobian_information_bounds: " ;
-    if(test_jacobian_information_bounds){
-      std::cout << "successful.\n";
-    }
-    else{std::cout << "failed.\n";}
-
-    std::cout << "test_jacobian_information_dimensions: ";
-    if(test_jacobian_information_dimensions){
-      std::cout << "successful.\n";
-    }
-    else{std::cout << "failed.\n";}
-
-    std::cout<< "test_sparse_data_size: ";
-    if(test_sparse_data_size){
-      std::cout << "successful.\n";
-    }
-    else{std::cout << "failed.\n";}
-
-    std::cout<< "test_sparse_data_bounds: ";
-    if(test_sparse_data_bounds){
-      std::cout << "successful.\n";
-    }
-    else{std::cout << "failed.\n";}
-
-    std::cout<< "test_repeated_entries: ";
-    if(test_repeated_entries){
-      std::cout << "successful.\n";
-    }
-    else{std::cout << "failed.\n";}
-
-    std::cout<< "test_nnz_in_every_row_column: ";
-    if(test_nnz_in_every_row_column){
-      std::cout << "successful.\n";
-    }
-    else{std::cout << "failed.\n";}
-
-    std::cout << "test_deterministic: ";
-    if(test_deterministic){
-      std::cout << "successful.\n";
-    }
-    else{std::cout << "failed.\n";}
-    std::cout << '\n';
-  }
-  
  protected:
-  Generator<Matrix_free_sparse_information> generator;
-  bool test_jacobian_information_size;
-  bool test_jacobian_information_bounds;
-  bool test_jacobian_information_dimensions;
+
+  bool test_jacobian_dimension_consistency;
+
+  bool test_jacobian_data_bounds;
+
   bool test_deterministic;
-  bool test_sparse_data_size;
-  bool test_sparse_data_bounds;
-  bool test_repeated_entries;
-  bool test_nnz_in_every_row_column;
+
+  bool test_no_repeated_entries;
+
+  bool test_nnz_number;
+
+  bool test_all_columns_and_rows_have_nnz;
+
   bool were_all_test_successful;
 
-  bool rhs_output_dim_equal_lhs_input_dim(
-      const std::vector<Matrix_free_sparse_information>& jacobian_information){
+  bool input_output_dimension_check(const std::vector<Jacobian_info_T>& information);
 
-    for(std::size_t i = 0; i < jacobian_information.size() - 1; i++){
-      if(jacobian_information[i].codomain_dimension() !=
-          jacobian_information[i+1].domain_dimension()){
-        return false;
-      }
-    }
-    return true;
-  }
+  bool is_generated_data_within_bounds(const std::vector<Jacobian_info_T>& information,
+            std::size_t dimension_lb, std::size_t dimension_ub);
 
-  bool is_jacobian_information_within_bounds(std::size_t dimension_lb,
-      std::size_t dimension_ub, std::size_t n_E_lb, std::size_t n_E_ub,
-      const std::vector<Matrix_free_sparse_information>& jacobian_information){
+  bool is_generated_data_within_bounds(const std::vector<Jacobian_info_T>& information,
+            std::size_t dimension_lb, std::size_t dimension_ub,
+            std::size_t number_edges_lb, std::size_t number_edges_ub);
 
-    std::size_t available_entries;
-    std::size_t min_number_entries;
-    std::size_t domain_dimension, codomain_dimension;
+  bool is_jacobian_information_equal(const std::vector<Jacobian_info_T>& information_0,
+            const std::vector<Jacobian_info_T>& information_1);
 
-    for(std::size_t i = 0; i < jacobian_information.size(); i++){
-      if((dimension_ub < jacobian_information[i].domain_dimension()) ||
-          (dimension_ub < jacobian_information[i].codomain_dimension()) ||
-          (jacobian_information[i].domain_dimension() < dimension_lb) ||
-          (jacobian_information[i].codomain_dimension() < dimension_lb) ||
-          (n_E_ub < jacobian_information[i].number_of_edges()) ||
-          (jacobian_information[i].number_of_edges() < n_E_lb)){
-        return false;
-      }
-
-      domain_dimension = jacobian_information[i].domain_dimension();
-      codomain_dimension = jacobian_information[i].codomain_dimension();
-
-      available_entries = domain_dimension * codomain_dimension;
-      min_number_entries = (domain_dimension < codomain_dimension) ?
-        codomain_dimension : domain_dimension;
-
-      //Test checks if the number of non zeros lay between
-      //between the maximum number of columns and rows
-      //and the number of available entries.
-      if((jacobian_information[i].number_of_nonzeros() < min_number_entries) ||
-          (available_entries < jacobian_information[i].number_of_nonzeros())){
-        return false;
-      }
-    }
-    return true;
-  }
-
-  bool is_sparse_data_within_bounds(
-      const std::vector<Matrix_free_sparse_information>& jacobian_information,
-      const std::vector<std::vector<NNZ>>& sparse_data){
-  
-    if(sparse_data.size() != jacobian_information.size()){
-      return false;
-    }
-
-    for(std::size_t i = 0; i < sparse_data.size(); i++){
-      for(std::size_t j = 0; j < sparse_data[i].size(); j++){
-
-        if((jacobian_information[i].codomain_dimension() <= sparse_data[i][j].row()) ||
-            (jacobian_information[i].domain_dimension() <= sparse_data[i][j].col())){
-          return false;
-        }
-
-      }
-    }
-    return true;
-  }
-
-  bool are_there_repeated_entries(
-      std::vector<std::vector<NNZ>> sparse_data_copy){
-
-    std::sort(sparse_data_copy.begin(), sparse_data_copy.end());
-
-    auto it =
-      std::unique(sparse_data_copy.begin(), sparse_data_copy.end());
-
-    return it == sparse_data_copy.end();
-  }
-
-  bool all_columns_rows_have_nnz(
-      const std::vector<Matrix_free_sparse_information>& jacobian_information,
-      const std::vector<std::vector<NNZ>>& sparse_data){
-
-    if(jacobian_information.size() != sparse_data.size()){
-      return false;
-    }
-
-    for(std::size_t i = 0; i < sparse_data.size(); i++){
-      //Checks that every rows has a non zero entry.
-      for(std::size_t row = 0; row < jacobian_information[i].codomain_dimension();
-          row++){
-        if(std::find_if(sparse_data[i].begin(), sparse_data[i].end(),
-              [row](const NNZ& nnz){ return nnz.row() == row;}) ==
-            sparse_data[i].end()){
-          return false;
-        }
-      }
-
-      //Cheks that every column has a non zero entry.
-      for(std::size_t column = 0; column < jacobian_information[i].domain_dimension();
-          column++){
-        if(std::find_if(sparse_data[i].begin(), sparse_data[i].end(),
-              [column](const NNZ& nnz){ return nnz.col() == column;}) ==
-            sparse_data[i].end()){
-          return false;
-        }
-      }
-    } 
-    return true;
-  }
+  bool is_sparse_data_equal(const std::vector<std::vector<NNZ>>& information_0,
+            const std::vector<std::vector<NNZ>>& information_1);
 
   bool is_number_of_nnz_correct(
-      const std::vector<Matrix_free_sparse_information>& jacobian_information,
-      const std::vector<std::vector<NNZ>>& sparse_data){
+        const std::vector<Jacobian_info_T>& jacobian_information,
+        const std::vector<std::vector<NNZ>>& sparse_data);
 
-    if(sparse_data.size() != jacobian_information.size()){
-      return false;
-    }
+  bool are_there_repeated_entries(std::vector<NNZ> sparse_data);
 
-    for(std::size_t jac_idx= 0; jac_idx< sparse_data.size(); jac_idx++){
-      if(sparse_data[jac_idx].size() != jacobian_information[jac_idx].number_of_nonzeros()){
-        return false;
-      }
-    }
-    return true;
-  }
+  bool are_there_repeated_entries(const std::vector<std::vector<NNZ>>& sparse_data);
 
-  bool is_information_data_equal(
-      const std::vector<Matrix_free_sparse_information>& jacobian_information_0,
-      const std::vector<Matrix_free_sparse_information>& jacobian_information_1){
+  bool all_columns_rows_have_nnz(
+      const std::vector<Jacobian_info_T>& jacobian_information,
+      const std::vector<std::vector<NNZ>>& sparse_data);
 
-    if(jacobian_information_0.size() != jacobian_information_1.size()){
-      return false;
-    }
+  bool is_sparse_data_within_bounds(
+      const std::vector<Jacobian_info_T>& jacobian_information,
+      const std::vector<std::vector<NNZ>>& sparse_data);
 
-    for(std::size_t i = 0; i < jacobian_information_0.size(); i++){
-      if((jacobian_information_0[i].domain_dimension() != 
-          jacobian_information_1[i].domain_dimension()) ||
-          (jacobian_information_0[i].codomain_dimension() !=
-           jacobian_information_1[i].codomain_dimension()) ||
-          (jacobian_information_0[i].number_of_edges() !=
-           jacobian_information_1[i].number_of_edges())){
-        return false;
-      }
-    }
-    return true;
-  }
-  
-  bool is_sparse_data_equal(
-      const std::vector<std::vector<NNZ>>& sparse_information_0,
-      const std::vector<std::vector<NNZ>>& sparse_information_1){
+  bool test_is_deterministic(std::size_t chain_length, std::size_t dimension_lb,
+      std::size_t dimension_ub, std::size_t seed);
 
-    if(sparse_information_0.size() != sparse_information_1.size()){
-      return false;
-    }
+  bool test_is_deterministic(std::size_t chain_length, std::size_t dimension_lb,
+      std::size_t dimension_ub, std::size_t number_edges_lb,
+      std::size_t number_edges_ub, std::size_t seed);
 
-    for(std::size_t jac_idx = 0; jac_idx < sparse_information_0.size(); jac_idx++){
-        if(sparse_information_0[jac_idx].size() != sparse_information_1[jac_idx].size()){
-          return false;
-        }
-      for(std::size_t nnz_idx = 0; nnz_idx < sparse_information_0[jac_idx].size(); nnz_idx++){
-        if(!(sparse_information_0[jac_idx][nnz_idx] == sparse_information_1[jac_idx][nnz_idx])){
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-
-  bool is_deterministic(std::size_t chain_length, std::size_t dimension_lb,
-      std::size_t dimension_ub, std::size_t n_E_lb, std::size_t n_E_ub,
-      double density_lb, double density_ub, std::size_t seed){
-
-    bool is_deterministic_ = true;
-
-    Generator<Matrix_free_sparse_information> gen_0{chain_length, dimension_lb, dimension_ub,
-      n_E_lb, n_E_ub, density_lb, density_ub, is_deterministic_, seed};
-
-    auto data_0 = gen_0.generate_data();
-
-    Generator<Matrix_free_sparse_information> gen_1{chain_length, dimension_lb, dimension_ub,
-    n_E_lb, n_E_ub, density_lb, density_ub, is_deterministic_, seed};
-
-    auto data_1 = gen_1.generate_data();
-
-    if(!is_information_data_equal(
-          data_0.jacobian_information, data_1.jacobian_information)){
-      return false;
-    }
-
-    if(!is_sparse_data_equal(
-          data_0.sparse_data, data_1.sparse_data)){
-      return false;
-    }
-
-    return true;
-  }
+  bool test_is_deterministic(std::size_t chain_length, std::size_t dimension_lb,
+      std::size_t dimension_ub, std::size_t number_edges_lb,
+      std::size_t number_edges_ub, double density_lb, double density_ub,
+      std::size_t seed);
 
 };
+
+template<class Jacobian_info_T>
+bool test_Generator<Jacobian_info_T>::input_output_dimension_check(
+        const std::vector<Jacobian_info_T>& information){
+    
+    for(std::size_t index= 0; index < information.size() - 1; index++){
+
+        if(information[index].codomain_dimension() !=
+            information[index+1].domain_dimension()){
+
+            return false;
+        }
+    }
+
+    return true;
+}
+
+template<class Jacobian_info_T>
+bool test_Generator<Jacobian_info_T>::is_generated_data_within_bounds(
+        const std::vector<Jacobian_info_T>& information,
+        std::size_t dimension_lb, std::size_t dimension_ub){
+
+    for(std::size_t index = 0; index < information.size(); index++){
+
+      if(information[index].domain_dimension() < dimension_lb ||
+          information[index].codomain_dimension() > dimension_ub ||
+          information[index].codomain_dimension() < dimension_lb ||
+          information[index].domain_dimension() > dimension_ub){
+
+        return false;
+      }
+    }
+
+    return true;
+}
+
+template<class Jacobian_info_T>
+bool test_Generator<Jacobian_info_T>::is_generated_data_within_bounds(
+    const std::vector<Jacobian_info_T>& information, std::size_t dimension_lb,
+    std::size_t dimension_ub, std::size_t number_edges_lb, std::size_t number_edges_ub){
+
+  for(std::size_t idx = 0; idx < information.size(); idx++){
+
+    if(information[idx].domain_dimension() < dimension_lb ||
+        information[idx].domain_dimension() > dimension_ub ||
+        information[idx].codomain_dimension() < dimension_lb ||
+        information[idx].codomain_dimension() > dimension_ub ||
+        information[idx].number_of_edges() < number_edges_lb ||
+        information[idx].number_of_edges() > number_edges_ub){
+      
+      return false;
+    }
+
+    if constexpr(std::is_same_v<Jacobian_info_T, Matrix_free_sparse_information>){
+
+      if((information[idx].number_of_nonzeros() < 
+          std::min(information[idx].domain_dimension(),information[idx].codomain_dimension())) ||
+          (information[idx].number_of_nonzeros() > 
+           information[idx].domain_dimension() * information[idx].codomain_dimension())){
+        
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+template<class Jacobian_info_T>
+bool test_Generator<Jacobian_info_T>::is_jacobian_information_equal(
+    const std::vector<Jacobian_info_T>& information_0,
+    const std::vector<Jacobian_info_T>& information_1){
+
+  if(information_0.size() != information_1.size()){
+
+    return false;
+  }
+
+  for(std::size_t index = 0; index < information_0.size(); index++){
+
+    if constexpr(std::is_same_v<Jacobian_info_T, Jacobian_information>){
+
+      if(information_0[index].domain_dimension() != information_1[index].domain_dimension() ||
+          information_0[index].codomain_dimension() !=information_1[index].codomain_dimension()){
+
+        return false;
+      }
+    }
+
+    else if constexpr(std::is_same_v<Jacobian_info_T, Matrix_free_information>){
+
+      if(information_0[index].domain_dimension() != information_1[index].domain_dimension() ||
+          information_0[index].codomain_dimension() !=information_1[index].codomain_dimension() ||
+          information_0[index].number_of_edges() != information_1[index].number_of_edges()){
+
+        return false;
+      }
+    }
+
+    else{
+
+      if(information_0[index].domain_dimension() != information_1[index].domain_dimension() ||
+          information_0[index].codomain_dimension() !=information_1[index].codomain_dimension() ||
+          information_0[index].number_of_edges() != information_1[index].number_of_edges() ||
+          information_0[index].number_of_nonzeros() != information_1[index].number_of_nonzeros()){
+
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+template<class Jacobian_info_T>
+bool test_Generator<Jacobian_info_T>::is_sparse_data_equal(
+    const std::vector<std::vector<NNZ>>& information_0,
+    const std::vector<std::vector<NNZ>>& information_1){
+
+  if(information_0.size() != information_1.size()){
+
+    return false;
+  }
+
+  for(std::size_t o_index = 0; o_index < information_0.size(); o_index++){
+
+    if(information_0[o_index].size() != information_1[o_index].size()){
+      
+      return false;
+    }
+
+    for(std::size_t i_index = 0; i_index < information_0[o_index].size(); i_index++){
+
+      if(!(information_0[o_index][i_index] == information_1[o_index][i_index])){
+
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+template<class Jacobian_info_T>
+bool test_Generator<Jacobian_info_T>::is_number_of_nnz_correct(
+    const std::vector<Jacobian_info_T>& jacobian_information,
+    const std::vector<std::vector<NNZ>>& sparse_data){
+
+  if(sparse_data.size() != jacobian_information.size()){
+
+    return false;
+  }
+
+  for(std::size_t index = 0; index < sparse_data.size(); index++){
+    
+    if(sparse_data[index].size() != jacobian_information[index].number_of_nonzeros()){
+
+      return false;
+    }
+  }
+
+  return true;
+}
+
+template<class Jacobian_info_T>
+bool test_Generator<Jacobian_info_T>::are_there_repeated_entries(
+    std::vector<NNZ> sparse_data){
+  
+  std::sort(sparse_data.begin(), sparse_data.end());
+
+  auto it = std::unique(sparse_data.begin(), sparse_data.end());
+
+  return !(it == sparse_data.end());
+}
+
+template<class Jacobian_info_T>
+bool test_Generator<Jacobian_info_T>::are_there_repeated_entries(
+    const std::vector<std::vector<NNZ>>& sparse_data){
+
+  for(std::size_t index = 0; index < sparse_data.size(); index++){
+
+    if(are_there_repeated_entries(sparse_data[index])){
+
+      return true;
+    }
+  }
+
+  return false;
+}
+
+template<class Jacobian_info_T>
+bool test_Generator<Jacobian_info_T>::is_sparse_data_within_bounds(
+    const std::vector<Jacobian_info_T>& jacobian_information,
+    const std::vector<std::vector<NNZ>>& sparse_data){
+
+  for(std::size_t o_index = 0; o_index < sparse_data.size(); o_index++){
+
+    for(std::size_t i_index = 0; i_index < sparse_data[o_index].size(); i_index++){
+
+      if((jacobian_information[o_index].codomain_dimension() <= 
+            sparse_data[o_index][i_index].row()) ||
+          (jacobian_information[o_index].domain_dimension() <=
+            sparse_data[o_index][i_index].col())){
+
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+template<class Jacobian_info_T>
+bool test_Generator<Jacobian_info_T>::all_columns_rows_have_nnz(
+    const std::vector<Jacobian_info_T>& jacobian_information,
+    const std::vector<std::vector<NNZ>>& sparse_data){
+
+  for(std::size_t o_index= 0; o_index < sparse_data.size(); o_index++){
+
+    //Checks that every row has a non zero entry.
+    for(std::size_t row = 0; row < jacobian_information[o_index].codomain_dimension(); row++){
+
+      if(std::find_if(sparse_data[o_index].begin(), sparse_data[o_index].end(),
+            [row](const NNZ& nnz){return nnz.row() == row;}) == sparse_data[o_index].end()){
+
+        return false;
+      }
+    }
+
+    //Checks that every column has a non zero entry 
+    for(std::size_t column = 0; column < jacobian_information[o_index].domain_dimension();
+        column++){
+
+      if(std::find_if(sparse_data[o_index].begin(), sparse_data[o_index].end(),
+            [column](const NNZ& nnz){return nnz.col() == column;}) == sparse_data[o_index].end()){
+        
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+template<class Jacobian_info_T>
+bool test_Generator<Jacobian_info_T>::test_is_deterministic(std::size_t chain_length,
+    std::size_t dimension_lb, std::size_t dimension_ub, std::size_t seed){
+
+  Generator<Jacobian_info_T>
+    generator_0{chain_length, dimension_lb, dimension_ub, true, seed};
+
+  auto jacobian_information_0 = generator_0.generate_jacobian_information();
+
+  Generator<Jacobian_info_T>
+    generator_1{chain_length, dimension_lb, dimension_ub, true, seed};
+
+  auto jacobian_information_1 = generator_1.generate_jacobian_information();
+
+  return is_jacobian_information_equal(jacobian_information_0,
+                                        jacobian_information_1);
+}
+
+template<class Jacobian_info_T>
+bool test_Generator<Jacobian_info_T>::test_is_deterministic(
+    std::size_t chain_length, std::size_t dimension_lb, std::size_t dimension_ub,
+    std::size_t number_edges_lb, std::size_t number_edges_ub, std::size_t seed){
+
+  Generator<Jacobian_info_T>
+    generator_0{chain_length, dimension_lb, dimension_ub, number_edges_lb,
+    number_edges_ub, true, seed};
+
+  Generator<Jacobian_info_T>
+    generator_1{chain_length, dimension_lb, dimension_ub, number_edges_lb,
+    number_edges_ub, true, seed};
+
+  auto jacobian_information_0 = generator_0.generate_jacobian_information();
+  auto jacobian_information_1 = generator_1.generate_jacobian_information();
+
+  return is_jacobian_information_equal(jacobian_information_0,
+                                        jacobian_information_1); 
+}
+
+template<class Jacobian_info_T>
+bool test_Generator<Jacobian_info_T>::test_is_deterministic(
+    std::size_t chain_length, std::size_t dimension_lb, std::size_t dimension_ub,
+    std::size_t number_edges_lb, std::size_t number_edges_ub, double density_lb,
+    double density_ub, std::size_t seed){
+
+  Generator<Jacobian_info_T>
+    generator_0{chain_length, dimension_lb, dimension_ub, number_edges_lb,
+    number_edges_ub, density_lb, density_ub, true, seed};
+
+  Generator<Jacobian_info_T>
+    generator_1{chain_length, dimension_lb, dimension_ub, number_edges_lb,
+    number_edges_ub, density_lb, density_ub, true, seed};
+
+  auto data_generator_0 = generator_0.generate_data();
+  auto data_generator_1 = generator_1.generate_data();
+
+  if(!is_jacobian_information_equal(data_generator_0.jacobian_information,
+                                    data_generator_1.jacobian_information)){
+
+    return false;
+  }
+
+  if(!is_sparse_data_equal(data_generator_0.sparse_data,
+                            data_generator_1.sparse_data)){
+    return false;
+  }
+
+  return true;
+}
+
+template<class Jacobian_info_T>
+void test_Generator<Jacobian_info_T>::print_test_state(){
+
+  if constexpr(std::is_same_v<Jacobian_info_T, Matrix_free_sparse_information>){
+
+    std::cout << "State of test_Generator sparse:\n";
+
+    std::cout << "test_jacobian_dimension_consistency: ";
+      if(test_jacobian_dimension_consistency){
+        std::cout << "successful.\n";
+      }
+      else{std::cout << "failed.\n";}
+
+    std::cout << "test_jacobian_data_bounds: ";
+      if(test_jacobian_data_bounds){
+        std::cout << "successful.\n";
+      }
+      else{std::cout << "failed.\n";}
+
+    std::cout << "test_no_repeated_entries: ";
+      if(test_no_repeated_entries){
+        std::cout << "successful.\n";
+      }
+      else{std::cout << "failed.\n";}
+
+    std::cout << "test_nnz_number: ";
+      if(test_nnz_number){
+        std::cout << "successful.\n";
+      }
+      else{std::cout << "failed.\n";}
+
+    std::cout << "test_all_columns_and_rows_have_nnz: ";
+      if(test_all_columns_and_rows_have_nnz){
+        std::cout << "successful.\n";
+      }
+      else{std::cout << "failed.\n";}
+
+    std::cout << "test_deterministic: ";
+      if(test_deterministic){
+        std::cout << "successful.\n";
+      }
+      else{std::cout << "failed.\n";}
+
+    std::cout << "were_all_test_successful: ";
+      if(were_all_test_successful){
+        std::cout << "successful.\n";
+      }
+      else{std::cout << "failed.\n";}
+  }
+
+  else{
+
+    if constexpr(std::is_same_v<Jacobian_info_T, Jacobian_information>){
+
+      std::cout << "State of test_Generator basic jacobian:\n";
+    }
+
+    else{
+
+      std::cout << "State of test_Generator dense:\n";
+    }
+
+    std::cout << "test_jacobian_dimension_consistency: ";
+      if(test_jacobian_dimension_consistency){
+        std::cout << "successful.\n";
+      }
+      else{std::cout << "failed.\n";}
+
+    std::cout << "test_jacobian_data_bounds: ";
+      if(test_jacobian_data_bounds){
+        std::cout << "successful.\n";
+      }
+      else{std::cout << "failed.\n";}
+
+    std::cout << "test_deterministic: ";
+      if(test_deterministic){
+        std::cout << "successful.\n";
+      }
+      else{std::cout << "failed.\n";}
+
+    std::cout << "were_all_test_successful: ";
+      if(were_all_test_successful){
+        std::cout << "successful.\n";
+      }
+      else{std::cout << "failed.\n";}
+  }
+}
+
 #endif
