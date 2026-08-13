@@ -68,5 +68,30 @@ int main(){
     /* test.print_test_state(); */
   }
 
+  //Testing split reversal chains
+  {
+    test_chain<Split_dense_Jacobian, Split_reversal_dense_information>
+      test{"case_0"};
+    /* test.print_test_state(); */
+  }
+
+  {
+    test_chain<Split_sparse_Jacobian, Split_reversal_sparse_information>
+      test{"case_1"};
+    /* test.print_test_state(); */
+  }
+
+  {
+    test_chain<Split_sparse_Jacobian, Split_reversal_sparse_information>
+      test{"case_0"};
+    /* test.print_test_state(); */
+  }
+
+  {
+    test_chain<Split_sparse_Jacobian, Split_reversal_sparse_information>
+      test{"case_1"};
+    /* test.print_test_state(); */
+  }
+
   return 0;
 }

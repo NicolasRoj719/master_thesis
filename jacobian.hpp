@@ -52,8 +52,22 @@ class Dense_Jacobian{
     return jacobian_basic_data.number_of_edges();
   }
 
- protected:
+ private:
   Matrix_free_information jacobian_basic_data;
+};
+
+class Split_dense_Jacobian: public Dense_Jacobian{
+ public:
+  Split_dense_Jacobian(Matrix_free_information jacobian_data, std::size_t function_cost):
+    Dense_Jacobian(std::move(jacobian_data)), function_cost_(function_cost){}
+
+  Split_dense_Jacobian(Dense_Jacobian jacobian, std::size_t function_cost):
+    Dense_Jacobian(std::move(jacobian)), function_cost_(function_cost){}
+
+  std::size_t function_cost() const {return function_cost_;}
+
+ protected:
+  std::size_t function_cost_;
 };
 
 class Sparse_Jacobian{
@@ -206,7 +220,6 @@ class Sparse_Jacobian{
     return max_number_nnz_column;
   }
 
-
   static Sparse_Jacobian from_file(const std::string& file_name){
     std::size_t domain_dim, codomain_dim;
     std::size_t number_edges, number_nnz;
@@ -219,24 +232,14 @@ class Sparse_Jacobian{
 
   friend Sparse_Jacobian operator*(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs);
 
-  friend void mul_CSR_CSC_2_CSR(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs, std::vector<size_t>& col_idx,
-      std::vector<std::size_t>& row_ptr);
+  friend void mul_CSR_CSC_2_CSR(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs,
+      std::vector<size_t>& col_idx, std::vector<std::size_t>& row_ptr);
 
-  friend void mul_CSR_CSC_2_CSC(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs, std::vector<size_t>& row_idx,
-      std::vector<std::size_t>& col_ptr);
+  friend void mul_CSR_CSC_2_CSC(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs,
+      std::vector<size_t>& row_idx, std::vector<std::size_t>& col_ptr);
 
- protected:
+ private:
   Matrix_free_sparse_information jacobian_basic_data;
-  std::vector<std::size_t> column_idx, row_pointer;
-  std::vector<std::size_t> row_idx, column_pointer;
-  std::vector<std::vector<std::size_t>> column_coloring;
-  std::vector<std::vector<std::size_t>> row_coloring;
-
-  std::size_t column_number_colors;
-  std::size_t row_number_colors;
-
-  std::size_t max_number_nnz_row;
-  std::size_t max_number_nnz_column;
 
   void sparse_data_non_repeated_entries(
       std::vector<NNZ>& sparse_data) const{
@@ -495,6 +498,17 @@ class Sparse_Jacobian{
     max_number_nnz_column = max_nnz_row_or_col(column_pointer);
   }
 
+ protected:
+  std::vector<std::size_t> column_idx, row_pointer;
+  std::vector<std::size_t> row_idx, column_pointer;
+  std::vector<std::vector<std::size_t>> column_coloring;
+  std::vector<std::vector<std::size_t>> row_coloring;
+
+  std::size_t column_number_colors;
+  std::size_t row_number_colors;
+
+  std::size_t max_number_nnz_row;
+  std::size_t max_number_nnz_column;
 };
 
 void mul_CSR_CSC_2_CSR(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs,
@@ -582,5 +596,36 @@ Sparse_Jacobian operator*(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs
       lhs.number_edges() + rhs.number_edges(), num_nnz,
       std::move(col_idx), std::move(row_ptr),
       std::move(row_idx), std::move(col_ptr));
+}
+
+class Split_sparse_Jacobian: public Sparse_Jacobian{
+ public:
+   Split_sparse_Jacobian(Sparse_Jacobian jacobian, std::size_t function_cost):
+     Sparse_Jacobian(std::move(jacobian)), function_cost_(function_cost){}
+
+   Split_sparse_Jacobian(Matrix_free_sparse_information jacobian_data,
+       std::vector<NNZ>& sparse_data, std::size_t function_cost):
+     Sparse_Jacobian(std::move(jacobian_data), sparse_data), function_cost_(function_cost){}
+
+   Split_sparse_Jacobian(Split_reversal_sparse_information split_information,
+       std::vector<NNZ>& sparse_data):
+     Sparse_Jacobian(static_cast<const Matrix_free_sparse_information&>(split_information),
+         sparse_data), function_cost_(split_information.function_cost()){}
+
+   friend Split_sparse_Jacobian operator*(
+       const Split_sparse_Jacobian lhs, const Split_sparse_Jacobian rhs);
+
+   std::size_t function_cost() const {return function_cost_;}
+
+ protected:
+  std::size_t function_cost_;
+}; 
+
+
+Split_sparse_Jacobian operator*(const Split_sparse_Jacobian lhs, const Split_sparse_Jacobian rhs){
+
+  return Split_sparse_Jacobian(
+      static_cast<const Sparse_Jacobian&>(lhs) * static_cast<const Sparse_Jacobian&>(rhs),
+      lhs.function_cost() + rhs.function_cost());
 }
 #endif

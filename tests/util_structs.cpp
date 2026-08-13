@@ -49,6 +49,29 @@ int main(){
     }
   }
 
+  //Test0 Split_reversal_dense_information
+  {
+    std::size_t domain_dimension = 6, codomain_dimension = 11;
+    std::size_t number_of_edges = 222;
+    std::size_t function_cost_estimate = 350;
+
+    test_split_reversal_dense_information
+     test_obj{domain_dimension, codomain_dimension, number_of_edges, function_cost_estimate};
+    
+  }
+
+  //Test0 Split_reversal_sparse_information
+  {
+    std::size_t domain_dimension = 6, codomain_dimension = 11;
+    std::size_t number_of_edges = 222, number_of_nonzeros = 22;
+    std::size_t function_cost_estimate = 350;
+
+    test_split_reversal_sparse_information
+      test_obj{domain_dimension, codomain_dimension, number_of_edges,
+                number_of_nonzeros, function_cost_estimate};
+
+  }
+
   return 0;
 }
 

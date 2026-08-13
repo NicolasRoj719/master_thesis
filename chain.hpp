@@ -12,47 +12,51 @@
 template<class Jacobian_type, class Basic_information_type>
 class jacobian_chain{
  public:
-   jacobian_chain(std::vector<Basic_information_type> basic_information){
+  jacobian_chain(std::vector<Basic_information_type> basic_information){
     if(!basic_information_dimension_check(basic_information)){
       throw std::runtime_error("Mismatching vector space dimension.\n"
           "Error encountered during jacobian chain initialization.");
     }
     chain_initializer(basic_information);
-   }
+  }
 
-   jacobian_chain(const std::string& file_name){
-     file_to_chain(file_name);
-   }
+  jacobian_chain(const std::string& file_name){
+   file_to_chain(file_name);
+  }
 
-   const Jacobian_type& operator[](std::size_t index) const{
+  const Jacobian_type& operator[](std::size_t index) const{
     return chain[index];
-   } 
+  } 
 
-   const Jacobian_type& at(std::size_t index) const{
+  const Jacobian_type& at(std::size_t index) const{
     return chain.at(index);
-   }
+  }
 
-   //This will be used to test table_cell and table implementation.
-   Jacobian_type copy(std::size_t index) const{
+  //This will be used to test table_cell and table implementation.
+  Jacobian_type copy(std::size_t index) const{
     return chain[index];
-   }
+  }
 
-   std::size_t size() const {return chain.size();}
+  Jacobian_type& get(std::size_t index){
+    return chain[index];
+  }
+
+  std::size_t size() const {return chain.size();}
 
  protected:
   std::vector<Jacobian_type> chain;
 
   bool basic_information_dimension_check
     (const std::vector<Basic_information_type>& basic_information) const{
-      for(std::size_t jacobian_idx = 0; jacobian_idx < basic_information.size() - 1;
+    for(std::size_t jacobian_idx = 0; jacobian_idx < basic_information.size() - 1;
           jacobian_idx++){
-       if(basic_information[jacobian_idx+1].domain_dimension() !=
+     if(basic_information[jacobian_idx+1].domain_dimension() !=
            basic_information[jacobian_idx].codomain_dimension()){
         return false;
-       } 
-      }
-      return true;
+     } 
     }
+    return true;
+  }
 
   //Data ownership is transfer to the jacobian object.
   void chain_initializer(std::vector<Basic_information_type>& basic_information){
@@ -138,6 +142,79 @@ void jacobian_chain<Jacobian_type, Basic_information_type>::file_to_chain(const 
 }
 
 template<>
+class jacobian_chain<Split_dense_Jacobian, Split_reversal_dense_information>{
+ public:
+  jacobian_chain(std::vector<Matrix_free_information> basic_information,
+      std::vector<std::size_t>& functions_cost){
+
+    chain.reserve(basic_information.size());
+
+    for(std::size_t idx = 0; idx < basic_information.size(); idx++){
+
+     chain.emplace_back(std::move(basic_information[idx]), functions_cost[idx]); 
+    }
+
+    functions_cost.clear();
+    functions_cost.shrink_to_fit();
+  }
+
+  jacobian_chain(const std::string& file_name, const std::string& functions_cost_file){
+
+    jacobian_chain<Dense_Jacobian, Matrix_free_information> 
+      dense_chain{file_name};
+
+    std::vector<size_t> functions_cost;
+    functions_cost.reserve(dense_chain.size());
+    file_to_functions_cost(functions_cost_file, functions_cost);
+    
+    for(std::size_t idx = 0; idx < dense_chain.size(); idx++){
+
+     chain.emplace_back(std::move(dense_chain.get(idx)), functions_cost[idx]); 
+    }
+
+    functions_cost.clear();
+    functions_cost.shrink_to_fit();
+  }
+  
+  static void file_to_functions_cost(const std::string& file_path,
+                              std::vector<std::size_t>& functions_cost);
+
+  const Split_dense_Jacobian& operator[](std::size_t index) const{
+    return chain[index];
+  }
+
+  const Split_dense_Jacobian& at(std::size_t index) const{
+    return chain.at(index);
+  }
+
+  std::size_t size() const{
+    return chain.size();
+  }
+
+
+ protected:
+  std::vector<Split_dense_Jacobian> chain;
+};
+
+void jacobian_chain<Split_dense_Jacobian,
+  Split_reversal_dense_information>::file_to_functions_cost(const std::string& file_path,
+      std::vector<std::size_t>& functions_cost){
+
+  std::ifstream file;
+  file.open(file_path);
+  if(!file.is_open()){
+    throw std::runtime_error("There was a problem opening the file: " + 
+        file_path);
+  }
+
+  std::size_t function_cost;
+  while(file >> function_cost){
+
+    functions_cost.push_back(function_cost);
+  }
+}
+
+template<>
 class jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>{
  public:
   jacobian_chain(Generator_data data){
@@ -171,6 +248,10 @@ class jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>{
   //
    //This will be used to test table_cell and table implementation.
    Sparse_Jacobian copy(std::size_t index) const{
+    return chain[index];
+   }
+
+   Sparse_Jacobian& get(std::size_t index){
     return chain[index];
    }
 
@@ -218,6 +299,8 @@ class jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>{
       chain.emplace_back(std::move(basic_information[jacobian_idx]), sparse_data[jacobian_idx]);
       sparse_data[jacobian_idx].clear();
     }
+
+    sparse_data.shrink_to_fit();
   }
 
   void file_to_sparse_data(const std::string& file_name,
@@ -275,5 +358,69 @@ class jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>{
       }
     }
   }
+};
+
+template<>
+class jacobian_chain<Split_sparse_Jacobian, Split_reversal_sparse_information>{
+ public:
+  jacobian_chain(Generator_data data, std::vector<size_t>& functions_cost){
+
+    if(data.jacobian_information.size() != functions_cost.size()){
+      
+      throw std::invalid_argument("Vector size mismatch encountered while building "
+          "the chain.");
+    }
+
+    for(std::size_t idx = 0; idx<functions_cost.size(); idx++){
+      chain.emplace_back(std::move(data.jacobian_information[idx]),
+                          data.sparse_data[idx], functions_cost[idx]);
+      data.sparse_data[idx].clear();
+      data.sparse_data[idx].shrink_to_fit();
+    }
+
+    functions_cost.clear();
+    functions_cost.shrink_to_fit();
+  }
+
+  jacobian_chain(const std::string& file_name, const std::string& functions_cost_file){
+    
+    jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>
+      sparse_chain{file_name};
+
+    std::vector<size_t> functions_cost;
+    functions_cost.reserve(sparse_chain.size());
+    file_to_functions_cost(functions_cost_file, functions_cost);
+
+    for(std::size_t idx = 0; idx < sparse_chain.size(); idx++){
+      
+      chain.emplace_back(std::move(sparse_chain.get(idx)), functions_cost[idx]);
+    }
+
+    functions_cost.clear();
+    functions_cost.shrink_to_fit();
+  }
+
+  static void file_to_functions_cost(const std::string& file_path, 
+                                      std::vector<std::size_t>& functions_cost){
+
+    return jacobian_chain<Split_dense_Jacobian, Split_reversal_dense_information>::
+            file_to_functions_cost(file_path, functions_cost);
+  }
+
+  const Split_sparse_Jacobian& operator[](std::size_t index) const{
+    return chain[index];
+  }
+
+  const Split_sparse_Jacobian& at(std::size_t index) const{
+    return chain.at(index);
+  }
+
+  std::size_t size() const{
+    return chain.size();
+  }
+
+
+ protected:
+  std::vector<Split_sparse_Jacobian> chain;
 };
 #endif

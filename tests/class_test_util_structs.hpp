@@ -103,4 +103,100 @@ class test_jacobian_information{
   }
   bool was_constructor_test_successful;
 };
+
+class test_split_reversal_dense_information{
+ public:
+  test_split_reversal_dense_information(std::size_t domain_dim, std::size_t codomain_dim,
+      std::size_t number_edges, std::size_t function_cost_estimate):
+    test_constructor{false}
+  {
+    Matrix_free_information jacobian_information{domain_dim, codomain_dim, number_edges};
+
+    Split_reversal_dense_information
+      split_reversal_information{jacobian_information, function_cost_estimate};
+
+    test_constructor = constructor_test(split_reversal_information, domain_dim,
+        codomain_dim, number_edges, function_cost_estimate);
+
+    if(!test_constructor){
+      print_test_state();
+    }
+  }
+
+  void print_test_state(){
+    std::cout << "State of test Split_reversal_dense_information:\n";
+
+    std::cout<< "test_constructor: ";
+    if(test_constructor){
+      std::cout<< "successful.\n";
+    }
+    else{std::cout << "failed.\n";}
+  }
+
+ protected:
+  bool test_constructor;
+  bool constructor_test(Split_reversal_dense_information split_reversal_information,
+      std::size_t domain_dim, std::size_t codomain_dim, std::size_t number_edges,
+      std::size_t function_cost_estimate){
+
+    if(split_reversal_information.domain_dimension() != domain_dim ||
+        split_reversal_information.codomain_dimension() != codomain_dim ||
+        split_reversal_information.number_of_edges() != number_edges ||
+        split_reversal_information.function_cost() != function_cost_estimate){
+  
+      return false;
+    }
+
+    return true;
+  }
+};
+
+class test_split_reversal_sparse_information{
+ public:
+   test_split_reversal_sparse_information(std::size_t domain_dim, std::size_t codomain_dim,
+       std::size_t number_edges, std::size_t number_nonzeros,
+       std::size_t function_cost_estimate): test_constructor{false} {
+
+     Matrix_free_sparse_information 
+       jacobian_information{domain_dim, codomain_dim, number_edges, number_nonzeros};
+
+     Split_reversal_sparse_information 
+       split_reversal_information{jacobian_information, function_cost_estimate};
+
+     test_constructor = constructor_test(split_reversal_information, domain_dim,
+         codomain_dim, number_edges, number_nonzeros, function_cost_estimate);
+
+     if(!test_constructor){
+       print_test_state();
+     }
+   }
+
+   void print_test_state(){
+     std::cout<<"State of test Split_reversal_sparse_information:\n";
+     
+     std::cout<<"test_constructor: ";
+     if(test_constructor){
+       std::cout<<"successful.\n";
+     }
+     else{std::cout<<"failed.\n";}
+   }
+
+ protected:
+  bool test_constructor;
+  bool constructor_test(Split_reversal_sparse_information split_reversal_information,
+      std::size_t domain_dim, std::size_t codomain_dim, std::size_t number_edges,
+      std::size_t number_nonzeros, std::size_t function_cost_estimate){
+
+    if(split_reversal_information.domain_dimension() != domain_dim ||
+        split_reversal_information.codomain_dimension() != codomain_dim ||
+        split_reversal_information.number_of_edges() != number_edges ||
+        split_reversal_information.number_of_nonzeros() != number_nonzeros ||
+        split_reversal_information.function_cost() != function_cost_estimate){
+
+      return false;
+    }
+
+    return true;
+  }
+};
 #endif
