@@ -1,6 +1,7 @@
 #include <cassert>
 #include <limits>
 #include <optional>
+#include <span>
 #include <stdexcept>
 #include <vector>
 #include "./chain.hpp"
@@ -25,11 +26,9 @@ class binomial_cell{
 
 class binomial_table{
  public:
-  //Problem instance t(j,i,c)
-  binomial_table(std::size_t j, std::size_t i, std::size_t number_checkpoints):
-    i_index(i), available_checkpoints(number_checkpoints)
-  {
-    cells_per_floor = ((j - i + 2) * (j - i + 1)) / 2;
+  binomial_table(std::size_t chain_length, std::size_t number_checkpoints){
+
+    cells_per_floor = (chain_length * (chain_length + 1)) / 2;
 
     table.reserve((number_checkpoints + 1) * cells_per_floor);
   }
@@ -40,7 +39,7 @@ class binomial_table{
   //c stands for number of available_checkpoints.
   const binomial_cell& get_cell(std::size_t j, std::size_t i, std::size_t c) const noexcept{
 
-    std::size_t accumulation = ((j - i_index + 1) * (j - i_index)) / 2;
+    std::size_t accumulation = ((j + 1) * j) / 2;
     std::size_t position = j - i;
 
     return table[c * cells_per_floor + accumulation + position];
@@ -63,34 +62,79 @@ class binomial_table{
   }
 
  private:
-  std::size_t i_index, available_checkpoints;
   std::size_t cells_per_floor;
   std::vector<binomial_cell> table;
+};
+
+//View_chain class allows using lightweight general subchains.
+template<class Split_type, class Split_information_type>
+class View_chain{
+ public:
+   View_chain(const jacobian_chain<Split_type, Split_information_type>& chain_,
+                std::size_t first_index, std::size_t number_elements,
+                const Split_type* ptr = nullptr){
+    
+     if(chain_.size() + 1 < first_index + number_elements){
+
+       throw std::invalid_argument("The subrange specified is not contained within "
+                                      "the chain given as an argument");
+     }
+
+     subrange = std::span<const Split_type>(chain_).subspan(first_index, number_elements);
+     split_ptr = ptr;
+   }
+
+   const Split_type& operator[](std::size_t index) const{
+      if(index < subrange.size()){
+        return subrange[index];
+      }
+
+      else if(index == subrange.size() && split_ptr != nullptr){
+        return *split_ptr;
+      }
+
+      throw std::out_of_range("Index out of bounds in View_chain");
+   }
+
+   std::size_t size() const{
+    
+     if(split_ptr == nullptr){
+      
+       return subrange.size();
+     }
+
+     else{
+       return subrange.size() + 1;
+     }
+   }
+
+ private:
+  std::span<const Split_type> subrange;
+  const Split_type* split_ptr;
 };
 
 template<class Split_type, class Split_information_type>
 class binomial_checkpointing{
  public:
-  //Problem instance t(j,i,c)
-  binomial_checkpointing(const jacobian_chain<Split_type, Split_information_type>& chain_,
-                          std::size_t j, std::size_t i, std::size_t checkpoints):
-    chain(chain_), table(j, i, checkpoints), j_index(j), i_index(i),
-    number_checkpoints(checkpoints){
+  //Problem instance: t(j - i, 0, c) if split_pointer == nullptr
+  //                  t(j-i+1, 0, c) else.
+  binomial_checkpointing(const jacobian_chain<Split_type, Split_information_type> chain_,
+                          std::size_t j, std::size_t i, std::size_t checkpoints,
+                          const Split_type* split_pointer = nullptr):
+    chain(chain_, i, j - i + 1, split_pointer), table(chain.size(), checkpoints){
 
-      fill_table(j, i, number_checkpoints);
+      fill_table(chain.size(), checkpoints);
   }
 
   //Constructor designed to test the methods additional_cost and advancing_cost. 
-  binomial_checkpointing(const jacobian_chain<Split_type, Split_information_type>& chain_,
+  binomial_checkpointing(const jacobian_chain<Split_type, Split_information_type> chain_,
                           std::size_t j, std::size_t i):
-    chain(chain_), table(), j_index(j), i_index(i), number_checkpoints(0){}
+    chain(chain_, i, j - i + 1), table(){}
 
   //Constructor designed to test additional_cost
-  binomial_checkpointing(const jacobian_chain<Split_type, Split_information_type>& chain_,
-                          binomial_table table_, std::size_t j, std::size_t i,
-                          std::size_t checkpoints):
-    chain(chain_), table(std::move(table_)), j_index(j), i_index(i),
-    number_checkpoints(checkpoints){}
+  binomial_checkpointing(const jacobian_chain<Split_type, Split_information_type> chain_,
+                          binomial_table table_, std::size_t j, std::size_t i):
+    chain(chain_, i, j - i + 1), table(std::move(table_)){}
 
   //Implementations:
   std::size_t additional_cost(std::size_t j, std::size_t i){
@@ -133,18 +177,16 @@ class binomial_checkpointing{
   }
 
  private:
-  const jacobian_chain<Split_type, Split_information_type>& chain;
+  View_chain<Split_type, Split_information_type> chain;
+
   binomial_table table;
-  //Problem_instance
-  std::size_t j_index, i_index, number_checkpoints;
 
-  void fill_table(std::size_t j_index, std::size_t i_index, std::size_t number_checkpoints);
-
+  void fill_table(std::size_t chain_length, std::size_t number_checkpoints);
 };
 
 template<class Split_type, class Split_information_type>
 void binomial_checkpointing<Split_type, Split_information_type>::fill_table(
-    std::size_t j_index, std::size_t i_index, std::size_t number_checkpoints){
+    std::size_t chain_length, std::size_t number_checkpoints){
 
   std::size_t k_min_j_k_i;
   std::size_t cost_min_j_k_i;
@@ -152,9 +194,9 @@ void binomial_checkpointing<Split_type, Split_information_type>::fill_table(
   std::size_t i;
 
   //Case available_checkpoints are equal to zero.
-  for(std::size_t j = i_index; j < j_index + 1; j++){
+  for(std::size_t j = 0; j < chain_length; j++){
     
-    for(std::size_t aux_var = 0; aux_var < j - i_index + 1; aux_var++){
+    for(std::size_t aux_var = 0; aux_var < j + 1; aux_var++){
       
       i = j - aux_var;
       //No checkpoints available to split the problem.
@@ -164,12 +206,12 @@ void binomial_checkpointing<Split_type, Split_information_type>::fill_table(
 
   for(std::size_t checkpoints = 1; checkpoints < number_checkpoints + 1; checkpoints++){
 
-    //Emplacing back problem instance (i,i,c)
-    table.emplace_back(additional_cost(i_index, i_index), checkpoints);
-    for(std::size_t j= i_index + 1; j < j_index + 1; j++){
+    //Emplacing back problem instance (i-i, 0, c)
+    table.emplace_back(additional_cost(0, 0), checkpoints);
+    for(std::size_t j= 1; j < chain_length; j++){
 
       table.emplace_back(additional_cost(j,j), checkpoints);
-      for(std::size_t aux_var = 1; aux_var < j - i_index + 1; aux_var++){
+      for(std::size_t aux_var = 1; aux_var < j + 1; aux_var++){
 
         i = j - aux_var;
         cost_min_j_k_i = std::numeric_limits<std::size_t>::max();

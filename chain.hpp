@@ -191,6 +191,14 @@ class jacobian_chain<Split_dense_Jacobian, Split_reversal_dense_information>{
     return chain.size();
   }
 
+  //Allows creating a span view of the jacobian_chain
+  const Split_dense_Jacobian* data() const{
+
+    return chain.data();
+  }
+
+  auto begin() const {return chain.begin();}
+  auto end() const {return chain.end();}
 
  protected:
   std::vector<Split_dense_Jacobian> chain;
@@ -419,6 +427,14 @@ class jacobian_chain<Split_sparse_Jacobian, Split_reversal_sparse_information>{
     return chain.size();
   }
 
+  //Allows creating a span view of the jacobian_chain
+  const Split_sparse_Jacobian* data() const{
+
+    return chain.data();
+  }
+
+  auto begin() const {return chain.begin();}
+  auto end() const {return chain.end();}
 
  protected:
   std::vector<Split_sparse_Jacobian> chain;

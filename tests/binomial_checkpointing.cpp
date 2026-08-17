@@ -18,11 +18,111 @@ int main(){
     else{test.set_test_binomial_cell(false);}
   }
 
+  //View_chain
+  {
+    //Creating a split_dense chain from data.
+    jacobian_chain<Split_dense_Jacobian, Split_reversal_dense_information>
+      chain{"./binomial_test_case/matrix_free_data",
+            "./binomial_test_case/functions_cost"};
+
+    bool test_view_3_1;
+    {
+      std::size_t j = 3, i = 1;
+      View_chain<Split_dense_Jacobian, Split_reversal_dense_information>
+        view_subchain_j_i{chain, i, j - i + 1};
+
+      if(view_subchain_j_i.size() != j - i + 1){
+        test_view_3_1 = false;
+      }
+      else{
+
+        if(view_subchain_j_i[0].function_cost() != 222 ||
+            view_subchain_j_i[1].function_cost() != 333 ||
+            view_subchain_j_i[2].function_cost() != 444){
+          
+          test_view_3_1 = false;
+        }
+        else{test_view_3_1 = true;}
+      }
+    }
+
+    bool test_view_4_2;
+    {
+      std::size_t j = 4, i = 2;
+      View_chain<Split_dense_Jacobian, Split_reversal_dense_information>
+        view_subchain_j_i{chain, i, j - i + 1};
+
+      if(view_subchain_j_i.size() != j - i + 1){
+        test_view_4_2 = false;
+      }
+      else{
+
+        if(view_subchain_j_i[0].function_cost() != 333 ||
+            view_subchain_j_i[1].function_cost() != 444 ||
+            view_subchain_j_i[2].function_cost() !=  555){
+          
+          test_view_4_2 = false;
+        }
+        else{test_view_4_2 = true;}
+      }
+
+    }
+
+    bool test_view_2_0;
+    {
+      std::size_t j = 2, i = 0;
+      View_chain<Split_dense_Jacobian, Split_reversal_dense_information>
+        view_subchain_j_i{chain, i, j - i + 1};
+
+      if(view_subchain_j_i.size() != j - i + 1){
+        test_view_2_0 = false;
+      }
+      else{
+
+        if(view_subchain_j_i[0].function_cost() != 111 ||
+            view_subchain_j_i[1].function_cost() != 222 ||
+            view_subchain_j_i[2].function_cost() !=  333){
+          
+          test_view_2_0 = false;
+        }
+        else{test_view_2_0 = true;}
+      }
+    }
+
+    bool test_view_with_ptr;
+    {
+      std::size_t j = 2, i = 0;
+      View_chain<Split_dense_Jacobian, Split_reversal_dense_information>
+        view_subchain_j_i{chain, i, j - i + 1, &chain[j+1]};
+
+      if(view_subchain_j_i.size() != j - i + 2){
+        test_view_with_ptr = false;
+      }
+      else{
+
+        if(view_subchain_j_i[0].function_cost() != 111 ||
+            view_subchain_j_i[1].function_cost() != 222 ||
+            view_subchain_j_i[2].function_cost() !=  333 ||
+            view_subchain_j_i[3].function_cost() != 444){
+          
+          test_view_with_ptr = false;
+        }
+        else{test_view_with_ptr = true;}
+      }
+    }
+
+    if(test_view_3_1 && test_view_4_2 && test_view_2_0 && test_view_with_ptr){
+      test.set_test_view_chain(true);
+    }
+
+    else{test.set_test_view_chain(false);}
+  }
+
   //Testing emplace_back and get_cell
   {
-    std::size_t j = 1, i = 0, checkpoints = 1;
+    std::size_t chain_length = 2, checkpoints = 1;
 
-    binomial_table table{j, i, checkpoints};
+    binomial_table table{chain_length, checkpoints};
 
     std::size_t additional_cost = 10;
 
@@ -42,7 +142,7 @@ int main(){
     //(1,1,1)
     table.emplace_back(additional_cost + 4, c);
     //(1,0,1)
-    table.emplace_back(additional_cost + 5, c, i);
+    table.emplace_back(additional_cost + 5, c, 0);
 
     if(table.size() != 6){
       test.set_test_table_emplace_back(false);
@@ -54,23 +154,25 @@ int main(){
 
     else{
 
-      if(table.get_cell(i, i, 0).additional_cost() != additional_cost ||
-          table.get_cell(i+1, i+1, 0).additional_cost() != additional_cost + 1 ||
-          table.get_cell(i+1, i, 0).additional_cost() != additional_cost + 2 ||
-          table.get_cell(i, i, 1).additional_cost() != additional_cost + 3 ||
-          table.get_cell(i+1, i+1, 1).additional_cost() != additional_cost + 4 ||
-          table.get_cell(i+1, i, 1).additional_cost() != additional_cost + 5){
+      if(table.get_cell(0, 0, 0).additional_cost() != additional_cost ||
+          table.get_cell(1, 1, 0).additional_cost() != additional_cost + 1 ||
+          table.get_cell(1, 0, 0).additional_cost() != additional_cost + 2 ||
+          table.get_cell(0, 0, 1).additional_cost() != additional_cost + 3 ||
+          table.get_cell(1, 1, 1).additional_cost() != additional_cost + 4 ||
+          table.get_cell(1, 0, 1).additional_cost() != additional_cost + 5){
 
         test.set_test_get_cell(false);
       }
 
       else{
-        if(*table.get_cell(i+1, i, 0).split_position() != i ||
-            *table.get_cell(i+1, i, 1).split_position() != i){
 
-          test.set_test_table_emplace_back(true);
-          test.set_test_get_cell(true);
+        test.set_test_get_cell(true);
+
+        if(*table.get_cell(1, 0, 1).split_position() != 0){
+
+          test.set_test_table_emplace_back(false);
         }
+        else{test.set_test_table_emplace_back(true);}
       }
     }
   }
@@ -102,7 +204,7 @@ int main(){
         binomial_algorithm.additional_cost(4,3) != 444 ||
         binomial_algorithm.additional_cost(2,0) != 111 + 222 + 111 ||
         binomial_algorithm.additional_cost(4,2) != 333 + 444 + 333 ||
-        binomial_algorithm.additional_cost(3, 0) != 111 + 222 + 333 + 111 + 222 + 111 ||
+        binomial_algorithm.additional_cost(3,0) != 111 + 222 + 333 + 111 + 222 + 111 ||
         binomial_algorithm.additional_cost(4,1) != 222 + 333 + 444 + 222 + 333 + 222){
 
       test.set_test_additional_cost_without_table(false);
@@ -116,7 +218,7 @@ int main(){
     //"./binomial_test_case/functions_cost" the subchain(3,0) will be used
     //to create the table manually and check compare the additional cost with 
     // the value returned by the functios additional_cost
-    binomial_table table{2, 0, 1};
+    binomial_table table{3, 1};
 
     //Ground floor available_checkpoints = 0
     //(0,0,0)
@@ -153,14 +255,15 @@ int main(){
     //additional_cost = advancing_cost(1,0) + table.get_cell(1,0,1).additional_cost() +
     //                  + table.get_cell(2,2,0)
     //                = (111 + 222) + 111 + 0 = 444
-    //Both can me tested.
+
     jacobian_chain<Split_dense_Jacobian, Split_reversal_dense_information>
       chain{"./binomial_test_case/matrix_free_data",
             "./binomial_test_case/functions_cost"};
 
     //Transfering data ownership to table inside algorithm
     //Probelm instance (2,0,1)
-    binomial_checkpointing algorithm{chain, std::move(table), 2, 0, 1};
+    binomial_checkpointing<Split_dense_Jacobian, Split_reversal_dense_information>
+      algorithm{chain, std::move(table), 2, 0};
 
     if(algorithm.additional_cost(1, 0, 0, 1) != 111 ||
         algorithm.additional_cost(2, 1, 1, 1) != 222 ||
@@ -246,59 +349,60 @@ int main(){
       else{test_algorithm_2_0_1 = false;}
     }
 
-    //Problem instance (4, 2, 1)
+    //Problem instance (4, 2, 1) chain point of view.
+    //Problem instance (2, 0, 1)
     {
       //Ground floor c = 0
+      //Table entry: (0, 0, 0)
+      //emplace_back(0, 0)
+      //Table entry: (1, 1, 0)
+      //emplace_back(0, 0)
+      //Table entry: (1, 0, 0)
+      //emplace_back(333, 0)
       //Table entry: (2, 2, 0)
       //emplace_back(0, 0)
-      //Table entry: (3, 3, 0)
-      //emplace_back(0, 0)
-      //Table entry: (3, 2, 0)
-      //emplace_back(333, 0)
-      //Table entry: (4, 4, 0)
-      //emplace_back(0, 0)
-      //Table entry: (4, 3, 0)
+      //Table entry: (2, 1, 0)
       //emplace_back(444, 0)
-      //Table entry: (4, 2, 0)
+      //Table entry: (2, 0, 0)
       //emplace_back(333 + 444 + 333, 0)
       //
       //First floor c = 1
+      //Table entry: (0, 0, 1)
+      //emplace_back(0, 1)
+      //Table entry: (1, 1, 1)
+      //emplace_back(0, 1)
+      //Table entry: (1, 0, 1)
+      //emplace_back(333, 1, 0)
       //Table entry: (2, 2, 1)
       //emplace_back(0, 1)
-      //Table entry: (3, 3, 1)
-      //emplace_back(0, 1)
-      //Table entry: (3, 2, 1)
-      //emplace_back(333, 1, 2)
-      //Table entry: (4, 4, 1)
-      //emplace_back(0, 1)
-      //Table entry: (4, 3, 1)
-      //emplace_back(444, 1, 3)
-      //Table entry: (4, 2, 1)
+      //Table entry: (2, 1, 1)
+      //emplace_back(444, 1, 1)
+      //Table entry: (2, 0, 1)
       //Split at 2: 
-      //additional_cost = 333 + (4, 3, 0).additional_cost() + (2, 2, 1).additional_cost()
+      //additional_cost = 333 + (2, 1, 0).additional_cost() + (0, 0, 1).additional_cost()
       //                = 333 + 444 + 0
       //                = 777
       //Split at 3:
-      //additional_cost = 333 + 444 + (4, 4, 0).additional_cost() + (3, 2, 1).additional_cost()
+      //additional_cost = 333 + 444 + (2, 2, 0).additional_cost() + (1, 0, 1).additional_cost()
       //                = 777 + 0 + 333 = 1110
-      //emplace_back(777, 1, 2)
+      //emplace_back(777, 1, 0)
       //Run the optimization algorithm with the constructor.
 
       binomial_checkpointing<Split_dense_Jacobian, Split_reversal_dense_information>
         binomial_algorithm{chain, 4, 2, 1};
 
-      if(test.check_cell(binomial_algorithm.get_cell(2, 2, 0), 0, 0) &&
-          test.check_cell(binomial_algorithm.get_cell(3, 3, 0), 0, 0) &&
-          test.check_cell(binomial_algorithm.get_cell(3, 2, 0), 333, 0) &&
-          test.check_cell(binomial_algorithm.get_cell(4, 4, 0), 0, 0) &&
-          test.check_cell(binomial_algorithm.get_cell(4, 3, 0), 444, 0) &&
-          test.check_cell(binomial_algorithm.get_cell(4, 2, 0), 1110, 0) &&
+      if(test.check_cell(binomial_algorithm.get_cell(0, 0, 0), 0, 0) &&
+          test.check_cell(binomial_algorithm.get_cell(1, 1, 0), 0, 0) &&
+          test.check_cell(binomial_algorithm.get_cell(1, 0, 0), 333, 0) &&
+          test.check_cell(binomial_algorithm.get_cell(2, 2, 0), 0, 0) &&
+          test.check_cell(binomial_algorithm.get_cell(2, 1, 0), 444, 0) &&
+          test.check_cell(binomial_algorithm.get_cell(2, 0, 0), 1110, 0) &&
+          test.check_cell(binomial_algorithm.get_cell(0, 0, 1), 0, 1) &&
+          test.check_cell(binomial_algorithm.get_cell(1, 1, 1), 0, 1) &&
+          test.check_cell(binomial_algorithm.get_cell(1, 0, 1), 333, 1, 0) &&
           test.check_cell(binomial_algorithm.get_cell(2, 2, 1), 0, 1) &&
-          test.check_cell(binomial_algorithm.get_cell(3, 3, 1), 0, 1) &&
-          test.check_cell(binomial_algorithm.get_cell(3, 2, 1), 333, 1, 2) &&
-          test.check_cell(binomial_algorithm.get_cell(4, 4, 1), 0, 1) &&
-          test.check_cell(binomial_algorithm.get_cell(4, 3, 1), 444, 1, 3) &&
-          test.check_cell(binomial_algorithm.get_cell(4, 2, 1), 777, 1, 2)){
+          test.check_cell(binomial_algorithm.get_cell(2, 1, 1), 444, 1, 1) &&
+          test.check_cell(binomial_algorithm.get_cell(2, 0, 1), 777, 1, 0)){
 
         test_algorithm_4_2_1 = true;
       }
