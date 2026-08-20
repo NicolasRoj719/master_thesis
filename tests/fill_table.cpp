@@ -2,6 +2,7 @@
 #include "./class_test_fill_table.hpp"
 #include "./../chain.hpp"
 #include "./../fill_table.hpp"
+/* #include "./../playground.hpp" */
 
 int main(){
 
@@ -38,23 +39,24 @@ int main(){
     bool test_tangent_sparse;
     bool test_tangent;
 
-    //Using the default constructor to test methods that do not depend
-    //on the table.
-    fill_table<Dense_Jacobian, Matrix_free_information> fill_table_methods_dense;
-    fill_table<Sparse_Jacobian, Matrix_free_sparse_information> fill_table_methods_sparse;
-
-    if(fill_table_methods_dense.tangent_cost(&chain_dense[0]) != 100 * 4 ||
-        fill_table_methods_dense.tangent_cost(&chain_dense[1]) != 150 * 2 ||
-        fill_table_methods_dense.tangent_cost(&chain_dense[2])  != 80 * 3){
+    if(fill_table<Dense_Jacobian, Matrix_free_information>::tangent_cost(&chain_dense[0]) !=
+        100 * 4 ||
+        fill_table<Dense_Jacobian, Matrix_free_information>::tangent_cost(&chain_dense[1]) !=
+        150 * 2 ||
+        fill_table<Dense_Jacobian, Matrix_free_information>::tangent_cost(&chain_dense[2]) !=
+        80 * 3){
 
       test_tangent_dense = false;
     }
 
     else{test_tangent_dense = true;}
 
-    if(fill_table_methods_sparse.tangent_cost(&chain_sparse[0]) != 100 * 2 ||
-        fill_table_methods_sparse.tangent_cost(&chain_sparse[1]) != 150 * 1 ||
-        fill_table_methods_sparse.tangent_cost(&chain_sparse[2]) != 80 * 1){
+    if(fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::tangent_cost(&chain_sparse[0])!=
+        100 * 2 ||
+        fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::tangent_cost(&chain_sparse[1])!=
+        150 * 1 ||
+        fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::tangent_cost(&chain_sparse[2])!=
+        80 * 1){
 
       test_tangent_sparse = false;
     }
@@ -71,9 +73,12 @@ int main(){
     bool test_adjoint_sparse;
     bool test_adjoint;
 
-    if(fill_table_methods_dense.adjoint_cost(&chain_dense[0]) != 100 * 2 ||
-        fill_table_methods_dense.adjoint_cost(&chain_dense[1]) != 150 * 3 ||
-        fill_table_methods_dense.adjoint_cost(&chain_dense[2])  != 80 * 4){
+    if(fill_table<Dense_Jacobian, Matrix_free_information>::adjoint_cost(&chain_dense[0]) !=
+        100 * 2 ||
+        fill_table<Dense_Jacobian, Matrix_free_information>::adjoint_cost(&chain_dense[1]) !=
+        150 * 3 ||
+        fill_table<Dense_Jacobian, Matrix_free_information>::adjoint_cost(&chain_dense[2]) !=
+        80 * 4){
 
       test_adjoint_dense = false;
     }
@@ -81,9 +86,12 @@ int main(){
 
     else{test_adjoint_dense = true;}
 
-    if(fill_table_methods_sparse.adjoint_cost(&chain_sparse[0]) != 100 * 1 ||
-        fill_table_methods_sparse.adjoint_cost(&chain_sparse[1]) != 150 * 2 ||
-        fill_table_methods_sparse.adjoint_cost(&chain_sparse[2]) != 80 * 2){
+    if(fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::adjoint_cost(&chain_sparse[0])!= 
+        100 * 1 ||
+        fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::adjoint_cost(&chain_sparse[1])!=
+        150 * 2 ||
+        fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::adjoint_cost(&chain_sparse[2])!=
+        80 * 2){
 
       test_adjoint_sparse = false;
     }
@@ -133,12 +141,12 @@ int main(){
         fill_table_methods_dense{std::move(table_dense)};
 
       if(
-          fill_table_methods_dense.accumulate_number_of_edges(1,0) != 100 + 150 ||
-          fill_table_methods_dense.accumulate_number_of_edges(2,1) != 150 + 80 ||
-          fill_table_methods_dense.accumulate_number_of_edges(2,0) != 100 + 150 + 80 ||
-          fill_table_methods_dense.accumulate_number_of_edges(0,0) != 100 ||
-          fill_table_methods_dense.accumulate_number_of_edges(1,1) != 150 ||
-          fill_table_methods_dense.accumulate_number_of_edges(2,2) != 80
+          fill_table_methods_dense.accumulate_edges(1,0) != 100 + 150 ||
+          fill_table_methods_dense.accumulate_edges(2,1) != 150 + 80 ||
+          fill_table_methods_dense.accumulate_edges(2,0) != 100 + 150 + 80 ||
+          fill_table_methods_dense.accumulate_edges(0,0) != 100 ||
+          fill_table_methods_dense.accumulate_edges(1,1) != 150 ||
+          fill_table_methods_dense.accumulate_edges(2,2) != 80
 
           ){
 
@@ -185,12 +193,12 @@ int main(){
         fill_table_methods_sparse{std::move(table_sparse)};
 
       if(
-          fill_table_methods_sparse.accumulate_number_of_edges(1,0) != 100 + 150 ||
-          fill_table_methods_sparse.accumulate_number_of_edges(2,1) != 150 + 80 ||
-          fill_table_methods_sparse.accumulate_number_of_edges(2,0) != 100 + 150 + 80 ||
-          fill_table_methods_sparse.accumulate_number_of_edges(0,0) != 100 ||
-          fill_table_methods_sparse.accumulate_number_of_edges(1,1) != 150 ||
-          fill_table_methods_sparse.accumulate_number_of_edges(2,2) != 80
+          fill_table_methods_sparse.accumulate_edges(1,0) != 100 + 150 ||
+          fill_table_methods_sparse.accumulate_edges(2,1) != 150 + 80 ||
+          fill_table_methods_sparse.accumulate_edges(2,0) != 100 + 150 + 80 ||
+          fill_table_methods_sparse.accumulate_edges(0,0) != 100 ||
+          fill_table_methods_sparse.accumulate_edges(1,1) != 150 ||
+          fill_table_methods_sparse.accumulate_edges(2,2) != 80
           ){
 
         test_edge_accumulation_sparse = false;
@@ -513,70 +521,9 @@ int main(){
 
   }
 
-  //Test seed_memory_load
-  {
-    std::size_t cost_0 = 12, cost_1 = 23, cost_2 = 34;
-    std::size_t cost_1_0 = 45, cost_2_1 = 56;
-
-    std::size_t split_pos_1_0 = 0, split_pos_2_1 = 1;
-    
-    Operation op_0 = Operation::ADJOINT, op_1 = Operation::TANGENT;
-    Operation op_2 = Operation::ADJOINT;
-
-    Operation op_1_0 = Operation::MULTIPLICATION, op_2_1 = Operation::ADJOINT;
-
-    std::size_t memory_0 = 33, memory_1 = 0, memory_2 = 44;
-    std::size_t memory_1_0 = memory_1 + memory_0;
-    std::size_t memory_2_1 = memory_2;
-
-    Table<Dense_Jacobian> table_dense{3};
-
-    table_dense.emplace_back(&chain_dense[0], cost_0, op_0, memory_0);
-    table_dense.emplace_back(&chain_dense[1], cost_1, op_1, memory_1);
-    table_dense.emplace_back(&chain_dense[2], cost_2, op_2, memory_2);
-
-    table_dense.emplace_back(cost_1_0, split_pos_1_0, op_1_0, memory_1_0);
-    table_dense.emplace_back(cost_2_1, split_pos_2_1, op_2_1, memory_2_1);
-
-    fill_table<Dense_Jacobian, Matrix_free_information>
-      fill_table{std::move(table_dense)};
-
-    //Test seed_memory_load
-    if(
-        fill_table.seed_memory_load(1,0,0, op_1_0) != memory_1_0
-        ||
-        fill_table.seed_memory_load(1,0,0, Operation::TANGENT) != memory_0
-        ||
-        fill_table.seed_memory_load(1,0,0, Operation::ADJOINT) != memory_1
-        ||
-        fill_table.seed_memory_load(2,1,1, op_2_1) != memory_2
-        ||
-        fill_table.seed_memory_load(2,1,1, Operation::TANGENT) != memory_1
-        ||
-        fill_table.seed_memory_load(2,0,0, Operation::TANGENT) != memory_0
-        ||
-        fill_table.seed_memory_load(2,0,0, Operation::ADJOINT) != memory_2_1
-        ||
-        fill_table.seed_memory_load(2,0,0, Operation::MULTIPLICATION) != memory_2_1 + memory_0
-        ||
-        fill_table.seed_memory_load(2,1,0, Operation::TANGENT) != memory_1_0
-        ||
-        fill_table.seed_memory_load(2,1,0, Operation::ADJOINT) != memory_2
-        ||
-        fill_table.seed_memory_load(2,1,0, Operation::MULTIPLICATION) != memory_2 + memory_1_0
-      ){
-
-        test.set_test_seed_memory_load(false);
-      }
-
-    else{ 
-
-      test.set_test_seed_memory_load(true);
-    }
-  }
-
-  //Fill method is tested using case_1.
-  test.run_test_case_1_tests();
+  //Fill method is tested using cases 1 and 2.
+  std::size_t memory_limit = 20;
+  test.run_test_cases(memory_limit);
   //Checking if all tests were successful.
   test.were_all_test_successful();
   //Printing the final state of the test.

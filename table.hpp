@@ -52,6 +52,11 @@ class Table{
 
       return cells_with_pointer[j_index];
   }
+
+  void clear(){
+     cells.clear();
+     cells_with_pointer.clear();
+  }
  
  protected:
   std::vector<cell<Jacobian_T>> cells;
