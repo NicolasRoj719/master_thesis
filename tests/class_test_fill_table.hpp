@@ -31,6 +31,18 @@ class test_fill_table{
    test_cost_tangent_adjoint_cell = arg;
   }
 
+  void set_test_function_cost_accumulation(bool arg){
+    test_function_cost_accumulation = arg;
+  }
+
+  void set_test_split_reversed_chain(bool arg){
+    test_split_reversed_chain = arg;
+  }
+
+  void set_test_is_split_reversable(bool arg){
+    test_is_split_reversable = arg;
+  }
+
   /* void set_test_seed_memory_load(bool arg){ */
 
   /*  test_seed_memory_load = arg; */
@@ -85,6 +97,24 @@ class test_fill_table{
 
     std::cout << "test_accumulate_number_edges: ";
     if(test_accumulate_number_edges){
+      std::cout<<"successful.\n";
+    }
+    else{std::cout<<"failed.\n";}
+
+    std::cout << "test_function_cost_accumulation: ";
+    if(test_function_cost_accumulation){
+      std::cout<<"successful.\n";
+    }
+    else{std::cout<<"failed.\n";}
+
+    std::cout << "test_split_reversed_chain: ";
+    if(test_split_reversed_chain){
+      std::cout<<"successful.\n";
+    }
+    else{std::cout<<"failed.\n";}
+
+    std::cout << "test_is_split_reversable: ";
+    if(test_is_split_reversable){
       std::cout<<"successful.\n";
     }
     else{std::cout<<"failed.\n";}
@@ -165,6 +195,13 @@ class test_fill_table{
   bool test_accumulate_number_edges;
 
   bool test_cases;
+
+  //Mixed formulation.
+  bool test_function_cost_accumulation;
+
+  bool test_split_reversed_chain;
+
+  bool test_is_split_reversable;
 
   bool were_all_test_successful_;
 
@@ -337,44 +374,12 @@ bool test_fill_table::run_test_case_dense(const std::string& path_to_chain_file,
   std::size_t cost_2_0, split_pos_2_0;
   Operation op_2_0;
 
-  //cost_2_0 = cost_2_0_0_mul
-  cost_2_0 = cost_0 + cost_2_1 +
-              chain[2].codomain_dim() * chain[0].domain_dim() * chain[0].codomain_dim();
-
-  op_2_0 = Operation::MULTIPLICATION;
-  split_pos_2_0 = 0;
-
-  //cost_2_0_0_tan
-  cost_tmp = cost_0 +
-              chain[0].domain_dim() * (chain[1].number_edges() + chain[2].number_edges());
-
-  //cost_2_0_0_tan < cost_2_0_0_mul
-  if(cost_tmp < cost_2_0){
-
-    cost_2_0 = cost_tmp;
-    op_2_0 = Operation::TANGENT;
-  }
-
-  //cost_2_0_0_adj
-  cost_tmp = cost_2_1 + chain[2].codomain_dim() * chain[0].number_edges();
-  //cost_2_0_0_adj < cost_2_0
-  if(cost_tmp < cost_2_0 && chain[0].number_edges() <= memory_limit){
-  
-    cost_2_0 = cost_tmp;
-    op_2_0 = Operation::ADJOINT;
-  }
-
   //cost_2_1_0_mul
-  cost_tmp = cost_1_0 + cost_2 +
+  cost_2_0 = cost_1_0 + cost_2 +
               chain[2].codomain_dim() * chain[0].domain_dim() * chain[1].codomain_dim();
 
-  //cost_2_1_0_mul < cost_2_0
-  if(cost_tmp < cost_2_0){
-
-    cost_2_0 = cost_tmp;
-    op_2_0 = Operation::MULTIPLICATION;
-    split_pos_2_0 = 1;
-  }
+  op_2_0 = Operation::MULTIPLICATION;
+  split_pos_2_0 = 1;
 
   //cost_2_1_0_tan
   cost_tmp = cost_1_0 + chain[0].domain_dim() * chain[2].number_edges();
@@ -396,6 +401,39 @@ bool test_fill_table::run_test_case_dense(const std::string& path_to_chain_file,
     cost_2_0 = cost_tmp;
     op_2_0 = Operation::ADJOINT;
     split_pos_2_0 = 1;
+  }
+
+  //cost_2_0 = cost_2_0_0_mul
+  cost_tmp= cost_0 + cost_2_1 +
+              chain[2].codomain_dim() * chain[0].domain_dim() * chain[0].codomain_dim();
+
+  if(cost_tmp < cost_2_0){
+    
+    cost_2_0 = cost_tmp;
+    op_2_0 = Operation::MULTIPLICATION;
+    split_pos_2_0 = 0;
+  }
+
+  //cost_2_0_0_tan
+  cost_tmp = cost_0 +
+              chain[0].domain_dim() * (chain[1].number_edges() + chain[2].number_edges());
+
+  //cost_2_0_0_tan < cost_2_0_0_mul
+  if(cost_tmp < cost_2_0){
+
+    cost_2_0 = cost_tmp;
+    op_2_0 = Operation::TANGENT;
+    split_pos_2_0 = 0;
+  }
+
+  //cost_2_0_0_adj
+  cost_tmp = cost_2_1 + chain[2].codomain_dim() * chain[0].number_edges();
+  //cost_2_0_0_adj < cost_2_0
+  if(cost_tmp < cost_2_0 && chain[0].number_edges() <= memory_limit){
+  
+    cost_2_0 = cost_tmp;
+    op_2_0 = Operation::ADJOINT;
+    split_pos_2_0 = 0;
   }
 
   {
@@ -561,54 +599,21 @@ bool test_fill_table::run_test_case_sparse(const std::string& path_to_chain_file
   }
 
   std::size_t cost_2_0;
-  std::size_t split_pos_2_0 = 0;
+  std::size_t split_pos_2_0;
   Operation op_2_0;
   {
     //Propagating sparsity pattern
     auto sparse_jacobian_2_0 = (chain[2] * chain[1]) * chain[0];
 
     {
-      //Cost calculation
-      //cost_2_0_0_mul
-      cost_2_0 = cost_2_1 + cost_0 + sparse_jacobian_2_0.number_nnz()*
-      std::min(max_row_number_nnz_2_1, chain[0].get_max_number_nnz_column());
+     //Cost calculation
+     //cost_2_1_0_mul
+      cost_2_0 = cost_2 + cost_1_0 + sparse_jacobian_2_0.number_nnz() *
+      std::min(chain[2].get_max_number_nnz_row(), max_column_number_nnz_1_0);
 
       op_2_0 = Operation::MULTIPLICATION;
 
-      //cost_2_0_0_tan
-      cost_tmp = cost_0 + sparse_jacobian_2_0.get_column_number_colors() *
-                                  (chain[1].number_edges() + chain[2].number_edges());
-
-      //cost_2_0_0_tan < cost_2_0_0_mul
-      if(cost_tmp < cost_2_0){
-        
-        cost_2_0 = cost_tmp;
-        op_2_0 = Operation::TANGENT;
-      }
-
-      //cost_2_0_0_adj
-      cost_tmp = cost_2_1 + sparse_jacobian_2_0.get_row_number_colors() *
-                                    chain[0].number_edges();
-
-      if(cost_tmp < cost_2_0 && chain[0].number_edges() <= memory_limit){
-
-        cost_2_0 = cost_tmp;
-        op_2_0 = Operation::ADJOINT;
-      }
-    }
-
-    {
-     //Cost calculation
-     //cost_2_1_0_mul
-      cost_tmp = cost_2 + cost_1_0 + sparse_jacobian_2_0.number_nnz() *
-      std::min(chain[2].get_max_number_nnz_row(), max_column_number_nnz_1_0);
-
-      if(cost_tmp < cost_2_0){
-
-        cost_2_0 = cost_tmp;
-        op_2_0 = Operation::MULTIPLICATION;
-        split_pos_2_0 = 1;
-      }
+      split_pos_2_0 = 1;
 
       //cost_2_1_0_tan
       cost_tmp = cost_1_0 + sparse_jacobian_2_0.get_column_number_colors() *
@@ -630,6 +635,43 @@ bool test_fill_table::run_test_case_sparse(const std::string& path_to_chain_file
         cost_2_0 = cost_tmp;
         op_2_0 = Operation::ADJOINT;
         split_pos_2_0 = 1;
+      }
+    }
+
+    {
+      //Cost calculation
+      //cost_2_0_0_mul
+      cost_tmp = cost_2_1 + cost_0 + sparse_jacobian_2_0.number_nnz()*
+      std::min(max_row_number_nnz_2_1, chain[0].get_max_number_nnz_column());
+
+      if(cost_tmp < cost_2_0){
+        
+        cost_2_0 = cost_tmp;
+        op_2_0 = Operation::MULTIPLICATION;
+        split_pos_2_0 = 0;
+      }
+
+      //cost_2_0_0_tan
+      cost_tmp = cost_0 + sparse_jacobian_2_0.get_column_number_colors() *
+                                  (chain[1].number_edges() + chain[2].number_edges());
+
+      //cost_2_0_0_tan < cost_2_0 
+      if(cost_tmp < cost_2_0){
+        
+        cost_2_0 = cost_tmp;
+        op_2_0 = Operation::TANGENT;
+        split_pos_2_0 = 0;
+      }
+
+      //cost_2_0_0_adj
+      cost_tmp = cost_2_1 + sparse_jacobian_2_0.get_row_number_colors() *
+                                    chain[0].number_edges();
+
+      if(cost_tmp < cost_2_0 && chain[0].number_edges() <= memory_limit){
+
+        cost_2_0 = cost_tmp;
+        op_2_0 = Operation::ADJOINT;
+        split_pos_2_0 = 0;
       }
     }
   }

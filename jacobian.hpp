@@ -64,6 +64,11 @@ class Split_dense_Jacobian: public Dense_Jacobian{
   Split_dense_Jacobian(Dense_Jacobian jacobian, std::size_t function_cost):
     Dense_Jacobian(std::move(jacobian)), function_cost_(function_cost){}
 
+  Split_dense_Jacobian(std::size_t domain_dimension, std::size_t codomain_dimension,
+      std::size_t number_of_edges, std::size_t function_cost):
+    Dense_Jacobian(domain_dimension, codomain_dimension, number_of_edges),
+    function_cost_(function_cost){}
+
   std::size_t function_cost() const {return function_cost_;}
 
  protected:
@@ -612,8 +617,12 @@ class Split_sparse_Jacobian: public Sparse_Jacobian{
      Sparse_Jacobian(static_cast<const Matrix_free_sparse_information&>(split_information),
          sparse_data), function_cost_(split_information.function_cost()){}
 
+   Split_sparse_Jacobian(Split_sparse_Jacobian&& jacobian) noexcept:
+     Sparse_Jacobian(std::move(jacobian)), function_cost_(jacobian.function_cost()){}
+
+
    friend Split_sparse_Jacobian operator*(
-       const Split_sparse_Jacobian lhs, const Split_sparse_Jacobian rhs);
+       const Split_sparse_Jacobian& lhs, const Split_sparse_Jacobian& rhs);
 
    std::size_t function_cost() const {return function_cost_;}
 
@@ -622,7 +631,7 @@ class Split_sparse_Jacobian: public Sparse_Jacobian{
 }; 
 
 
-Split_sparse_Jacobian operator*(const Split_sparse_Jacobian lhs, const Split_sparse_Jacobian rhs){
+Split_sparse_Jacobian operator*(const Split_sparse_Jacobian& lhs,const Split_sparse_Jacobian& rhs){
 
   return Split_sparse_Jacobian(
       static_cast<const Sparse_Jacobian&>(lhs) * static_cast<const Sparse_Jacobian&>(rhs),

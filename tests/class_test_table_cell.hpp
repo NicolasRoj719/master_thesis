@@ -133,18 +133,9 @@ class test_table_cell{
   bool check_cell_initialization(const cell<Dense_Jacobian>& cell,
       std::size_t cost, std::size_t split_position, Operation operation);
 
-  bool check_cell_initialization(const cell<Dense_Jacobian>& cell,
-      std::size_t cost, std::size_t split_position,
-      Operation operation, std::size_t memory);
-
   bool check_cell_initialization(const cell<Sparse_Jacobian>& cell,
         const Sparse_Jacobian& jacobian, std::size_t cost,
         std::size_t split_position, Operation operation);
-
-  bool check_cell_initialization(const cell<Sparse_Jacobian>& cell,
-        const Sparse_Jacobian& jacobian, std::size_t cost,
-        std::size_t split_position, Operation operation,
-        std::size_t memory);
 
   bool check_cell_initialization(const cell_with_pointer<Jacobian>& cell,
         const Jacobian& jacobian);
@@ -153,19 +144,9 @@ class test_table_cell{
         const Dense_Jacobian& jacobian, std::size_t cost,
         Operation operation);
 
-  bool check_cell_initialization(const cell_with_pointer<Dense_Jacobian>& cell,
-        const Dense_Jacobian& jacobian, std::size_t cost,
-        Operation operation, std::size_t memory);
-
   bool check_cell_initialization(const cell_with_pointer<Sparse_Jacobian>& cell,
         const Sparse_Jacobian& jacobian, std::size_t cost,
         Operation operation);
-
-
-  bool check_cell_initialization(const cell_with_pointer<Sparse_Jacobian>& cell,
-        const Sparse_Jacobian& jacobian, std::size_t cost,
-        Operation operation, std::size_t memory);
-  
 
  protected:
   bool test_jacobian_cell;
@@ -192,16 +173,7 @@ class test_table_cell{
 
   template<class Cell_type>
   bool check_cell_data(const Cell_type& cell,
-      std::size_t cost, std::size_t split_position,
-      Operation operation, std::size_t memory);
-
-  template<class Cell_type>
-  bool check_cell_data(const Cell_type& cell,
       std::size_t cost, Operation operation);
-
-  template<class Cell_type>
-  bool check_cell_data(const Cell_type& cell, std::size_t cost,
-      Operation operation, std::size_t memory);
 
   template <class Cell_type, class Jacobian_T>
   bool check_cell_jacobian_information(const Cell_type& cell,
@@ -274,22 +246,6 @@ bool test_table_cell::check_cell_data(const Cell_type& cell,
     return true;
 }
 
-template <class Cell_type>
-bool test_table_cell::check_cell_data(const Cell_type& cell,
-    std::size_t cost, std::size_t split_position,
-    Operation operation, std::size_t memory){
-
-    if(cell.accumulated_cost() != cost ||
-        cell.split_position() != split_position ||
-        cell.operation() != operation ||
-        cell.accumulated_memory() != memory){
-
-        return false;
-    }
-
-    return true;
-}
-
 template<class Cell_type>
 bool test_table_cell::check_cell_data(const Cell_type& cell,
       std::size_t cost, Operation operation){
@@ -297,20 +253,6 @@ bool test_table_cell::check_cell_data(const Cell_type& cell,
   if(cell.accumulated_cost() != cost ||
       cell.operation() != operation){
     
-    return false;
-  }
-
-  return true;
-}
-
-template<class Cell_type>
-bool test_table_cell::check_cell_data(const Cell_type& cell, std::size_t cost,
-      Operation operation, std::size_t memory){
-
-  if(cell.accumulated_cost() != cost ||
-      cell.operation() != operation ||
-      cell.accumulated_memory() != memory){
-
     return false;
   }
 
@@ -395,13 +337,6 @@ bool test_table_cell::check_cell_initialization(const cell<Dense_Jacobian>& cell
     return(check_cell_data(cell, cost, split_position, operation));
 }
 
-bool test_table_cell::check_cell_initialization(const cell<Dense_Jacobian>& cell,
-            std::size_t cost, std::size_t split_position,
-            Operation operation, std::size_t memory){
-
-    return(check_cell_data(cell, cost, split_position, operation, memory));
-}
-
 bool test_table_cell::check_cell_initialization(const cell<Sparse_Jacobian>& cell,
         const Sparse_Jacobian& jacobian, std::size_t cost,
         std::size_t split_position, Operation operation){
@@ -417,25 +352,6 @@ bool test_table_cell::check_cell_initialization(const cell<Sparse_Jacobian>& cel
     }
 
     if(!check_cell_sparse_data(cell, jacobian)){
-
-        return false;
-    }
-
-    return true;
-}
-
-bool test_table_cell::check_cell_initialization(const cell<Sparse_Jacobian>& cell,
-        const Sparse_Jacobian& jacobian, std::size_t cost,
-        std::size_t split_position, Operation operation,
-        std::size_t memory){
-
-    if(!check_cell_initialization(cell, jacobian, cost,
-                split_position, operation)){
-
-        return false;
-    }
-
-    if(cell.accumulated_memory() != memory){
 
         return false;
     }
@@ -467,23 +383,6 @@ bool test_table_cell::check_cell_initialization(const cell_with_pointer<Dense_Ja
     return true;
 }
 
-bool test_table_cell::check_cell_initialization(const cell_with_pointer<Dense_Jacobian>& cell,
-            const Dense_Jacobian& jacobian, std::size_t cost,
-            Operation operation, std::size_t memory){
-
-    if(!check_cell_initialization(cell, jacobian, cost, operation)){
-
-        return false;
-    }
-
-    if(cell.accumulated_memory() != memory){
-
-        return false;
-    }
-
-    return true;
-}
-
 bool test_table_cell::check_cell_initialization(const cell_with_pointer<Sparse_Jacobian>& cell,
             const Sparse_Jacobian& jacobian, std::size_t cost,
             Operation operation){
@@ -505,21 +404,3 @@ bool test_table_cell::check_cell_initialization(const cell_with_pointer<Sparse_J
 
     return true;
 }
-
-bool test_table_cell::check_cell_initialization(const cell_with_pointer<Sparse_Jacobian>& cell,
-            const Sparse_Jacobian& jacobian, std::size_t cost,
-            Operation operation, std::size_t memory){
-
-    if(!check_cell_initialization(cell, jacobian, cost, operation)){
-        
-        return false;
-    }
-
-    if(cell.accumulated_memory() != memory){
-
-        return false;
-    }
-
-    return true;
-}
-

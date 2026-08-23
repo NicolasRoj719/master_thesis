@@ -61,6 +61,10 @@ class binomial_table{
     return table.size();
   }
 
+  const binomial_cell& back() const{
+    return table.back();
+  }
+
  private:
   std::size_t cells_per_floor;
   std::vector<binomial_cell> table;
@@ -89,7 +93,7 @@ class View_chain{
         return subrange[index];
       }
 
-      else if(index == subrange.size() && split_ptr != nullptr){
+      if(index == subrange.size() && split_ptr != nullptr){
         return *split_ptr;
       }
 
@@ -132,7 +136,7 @@ class binomial_checkpointing{
     chain(chain_, i, j - i + 1), table(){}
 
   //Constructor designed to test additional_cost
-  binomial_checkpointing(const jacobian_chain<Split_type, Split_information_type> chain_,
+  binomial_checkpointing(const jacobian_chain<Split_type, Split_information_type>& chain_,
                           binomial_table table_, std::size_t j, std::size_t i):
     chain(chain_, i, j - i + 1), table(std::move(table_)){}
 
@@ -174,6 +178,15 @@ class binomial_checkpointing{
     return table.get_cell(split_position, i, available_checkpoints).additional_cost() +
            table.get_cell(j, split_position + 1, available_checkpoints - 1).additional_cost() +
            advancing_cost(split_position, i);
+  }
+
+  //Method to obtain the additional_cost that is expected when executing the binomial checkpoint 
+  //algorithm to the 
+  //Problem instance: t(j - i, 0, c) if split_pointer == nullptr
+  //                  t(j-i+1, 0, c) else.
+  std::size_t get_additional_cost(){
+    
+    return table.back().additional_cost();
   }
 
  private:

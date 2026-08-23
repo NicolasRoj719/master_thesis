@@ -12,7 +12,7 @@ enum class Operation: std::uint8_t{
   MULTIPLICATION = 0,
   TANGENT,
   ADJOINT,
-  NONE,
+  ADJOINT_SPLIT
 };
 
 std::string to_string(Operation op){
@@ -23,8 +23,8 @@ std::string to_string(Operation op){
       return "TAN";
     case Operation::ADJOINT:
       return "ADJ";
-    case Operation::NONE:
-      return "NONE";
+    case Operation::ADJOINT_SPLIT:
+      return "ADJ_SPLIT";
     default:
       return "NOT DEFINED";
   }
@@ -57,37 +57,31 @@ class cell<Dense_Jacobian>: public cell<Jacobian>{
   cell(std::size_t cost_, std::size_t split_pos, Operation op):
     cell<Jacobian>(cost_, split_pos), operation_(op){}
 
-  cell(std::size_t cost_, std::size_t split_pos, Operation op,
-      std::size_t memory_):
-    cell<Jacobian>(cost_, split_pos), operation_(op), memory(memory_){}
-
   Operation operation() const {return operation_;}
-
-  std::optional<std::size_t> accumulated_memory() const{
-    
-    return memory;
-  }  
 
  protected:
   Operation operation_;
+};
 
-  std::optional<std::size_t> memory;
+template<>
+class cell<Split_dense_Jacobian>: public cell<Dense_Jacobian>{
+  public:
+    cell(std::size_t cost_, std::size_t split_pos, Operation op):
+      cell<Dense_Jacobian>(cost_, split_pos, op){}
 };
 
 template<>
 class cell<Sparse_Jacobian>: public cell<Dense_Jacobian>{
  public:
-  cell(Sparse_Jacobian sparse_jacobian_, std::size_t cost_, std::size_t split_pos,
+  cell(const Sparse_Jacobian& sparse_jacobian_, std::size_t cost_, std::size_t split_pos,
      Operation op):
     cell<Dense_Jacobian>(cost_, split_pos, op), sparse_jacobian(std::move(sparse_jacobian_)){}
 
-  cell(Sparse_Jacobian sparse_jacobian_, std::size_t cost_, std::size_t split_pos,
-     Operation op, std::size_t memory_):
-    cell<Dense_Jacobian>(cost_, split_pos, op, memory_),
-    sparse_jacobian(std::move(sparse_jacobian_)){}
+  cell(Sparse_Jacobian&& sparse_jacobian_, std::size_t cost_, std::size_t split_pos,
+      Operation op):
+    cell<Dense_Jacobian>(cost_, split_pos, op), sparse_jacobian(std::move(sparse_jacobian_)){}
 
   //Wrappers
-
   std::size_t domain_dim() const {return sparse_jacobian.domain_dim();}
 
   std::size_t codomain_dim() const {return sparse_jacobian.codomain_dim();}
@@ -138,9 +132,47 @@ class cell<Sparse_Jacobian>: public cell<Dense_Jacobian>{
     return sparse_jacobian;
   }
 
-
- protected:
+ private:
   Sparse_Jacobian sparse_jacobian;
+};
+
+template<>
+class cell<Split_sparse_Jacobian>: public cell<Dense_Jacobian>{
+ public:
+   cell(Split_sparse_Jacobian split_sparse_, std::size_t cost_,
+       std::size_t split_pos, Operation op):
+  cell<Dense_Jacobian>(cost_, split_pos, op), split_sparse(std::move(split_sparse_)){}
+
+   //Wrappers
+   std::size_t number_edges() const{return split_sparse.number_edges();}
+
+   std::size_t number_nnz() const{return split_sparse.number_nnz();}
+
+   std::size_t column_number_colors() const {
+    
+     return split_sparse.get_column_number_colors();
+   }
+
+   std::size_t row_number_colors() const{
+    
+     return split_sparse.get_row_number_colors();
+   }
+
+   std::size_t max_number_nnz_row() const{
+      return split_sparse.get_max_number_nnz_row();
+   }
+
+   std::size_t max_number_nnz_column() const{
+      return split_sparse.get_max_number_nnz_column();
+   }
+
+   const Split_sparse_Jacobian& get_jacobian() const{
+
+      return split_sparse;
+   }
+
+ private:
+  Split_sparse_Jacobian split_sparse;
 };
 
 template <class Jacobian_type>
@@ -169,11 +201,6 @@ class cell_with_pointer<Dense_Jacobian>{
  public:
   cell_with_pointer(const Dense_Jacobian* jac_ptr, std::size_t cost_, Operation op):
     jacobian_ptr(jac_ptr), cost(cost_), operation_(op){}
-
-  cell_with_pointer(const Dense_Jacobian* jac_ptr, std::size_t cost_, 
-      Operation op, std::size_t memory_):
-    jacobian_ptr(jac_ptr), cost(cost_), operation_(op), memory(memory_){}
-
   
   //Wrappers
   std::size_t domain_dim() const {return jacobian_ptr -> domain_dim();}
@@ -187,11 +214,6 @@ class cell_with_pointer<Dense_Jacobian>{
 
   Operation operation() const {return operation_;}
 
-  std::optional<std::size_t> accumulated_memory() const{
-    
-    return memory;
-  }  
-
   const Dense_Jacobian* get_pointer() const {return jacobian_ptr;}
 
  private:
@@ -200,8 +222,36 @@ class cell_with_pointer<Dense_Jacobian>{
   std::size_t cost;
 
   Operation operation_;
+};
 
-  std::optional<std::size_t> memory;
+template<>
+class cell_with_pointer<Split_dense_Jacobian>{
+ public:
+   cell_with_pointer(const Split_dense_Jacobian* jac_ptr, std::size_t cost_, Operation op):
+     jacobian_ptr(jac_ptr), cost(cost_), operation_(op){}
+
+   //Wrappers
+   std::size_t domain_dim() const {return jacobian_ptr -> domain_dim();}
+
+   std::size_t codomain_dim() const {return jacobian_ptr -> codomain_dim();}
+
+   std::size_t number_edges() const {return jacobian_ptr -> number_edges();}
+
+   std::size_t function_cost() const {return jacobian_ptr -> function_cost();}
+
+   //Cell information
+   std::size_t accumulated_cost() const {return cost;}
+
+   Operation operation() const {return operation_;}
+
+   const Split_dense_Jacobian* get_pointer() const {return jacobian_ptr;}
+
+ private:
+   const Split_dense_Jacobian* jacobian_ptr;
+
+   std::size_t cost;
+
+   Operation operation_;
 };
 
 template <>
@@ -210,21 +260,7 @@ class cell_with_pointer<Sparse_Jacobian>{
   cell_with_pointer(const Sparse_Jacobian* jac_ptr, std::size_t cost_, Operation op):
     jacobian_ptr(jac_ptr), cost(cost_), operation_(op){}
 
-  cell_with_pointer(const Sparse_Jacobian* jac_ptr, std::size_t cost_,
-      Operation op, std::size_t memory_):
-    jacobian_ptr(jac_ptr), cost(cost_), operation_(op), memory(memory_){}
-
-  cell_with_pointer(const Sparse_Jacobian* jac_ptr, std::size_t cost_,
-      std::size_t split_pos, Operation op):
-    jacobian_ptr(jac_ptr), cost(cost_), k(split_pos), operation_(op){}
-
-  cell_with_pointer(const Sparse_Jacobian* jac_ptr, std::size_t cost_,
-      std::size_t split_pos, Operation op, std::size_t memory_):
-    jacobian_ptr(jac_ptr), cost(cost_), k(split_pos),
-    operation_(op), memory(memory_){}
-
   //Wrappers
-
   std::size_t domain_dim() const {return jacobian_ptr -> domain_dim();}
 
   std::size_t codomain_dim() const {return jacobian_ptr -> codomain_dim();}
@@ -273,18 +309,8 @@ class cell_with_pointer<Sparse_Jacobian>{
   //Cell information
   std::size_t accumulated_cost() const {return cost;}
 
-  std::optional<std::size_t> split_position() const{
-
-    return k;
-  }
-
   Operation operation() const {return operation_;}
 
-
-  std::optional<std::size_t> accumulated_memory() const{
-    
-    return memory;
-  }  
 
   const Sparse_Jacobian& get_jacobian() const{
     return *jacobian_ptr;
@@ -298,11 +324,53 @@ class cell_with_pointer<Sparse_Jacobian>{
 
   std::size_t cost;
 
-  std::optional<std::size_t> k;
-
   Operation operation_;
+};
 
-  std::optional<std::size_t> memory;
+template<>
+class cell_with_pointer<Split_sparse_Jacobian>{
+ public:
+   cell_with_pointer(const Split_sparse_Jacobian* jac_ptr, std::size_t cost_, Operation op):
+     jacobian_ptr(jac_ptr), cost(cost_), operation_(op){}
+
+   //Wrappers
+   std::size_t number_edges() const {return jacobian_ptr -> number_edges();}
+
+   std::size_t number_nnz() const {return jacobian_ptr -> number_nnz();}
+
+   std::size_t column_number_colors() const{
+      return jacobian_ptr -> get_column_number_colors();
+   }
+
+   std::size_t row_number_colors() const{
+    return jacobian_ptr -> get_row_number_colors();
+   }
+
+   std::size_t max_number_nnz_row() const {
+    return jacobian_ptr -> get_max_number_nnz_row(); 
+   }
+
+   std::size_t max_number_nnz_column() const{
+    return jacobian_ptr -> get_max_number_nnz_column();
+   }
+
+   //Cell information
+   std::size_t accumulated_cost() const {return cost;}
+
+   Operation operation() const {return operation_;}
+
+   const Split_sparse_Jacobian& get_jacobian() const{
+    return *jacobian_ptr;
+   }
+
+   const Split_sparse_Jacobian* get_pointer() const {return jacobian_ptr;}
+
+ private:
+   const Split_sparse_Jacobian* jacobian_ptr;
+
+   std::size_t cost;
+
+   Operation operation_;
 };
 
 #endif

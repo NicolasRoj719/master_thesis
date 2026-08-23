@@ -4,6 +4,7 @@
 #include "./../chain.hpp"
 #include "./../table_cell.hpp"
 #include "./../table.hpp"
+/* #include "./../playground.hpp" */
 #include "./../jacobian.hpp"
 
 
@@ -90,30 +91,26 @@ int main(){
 
     std::size_t split_pos_1_0 = 0, split_pos_2_1 = 1, split_pos_2_0 = 1;
 
-    //memory values
-    std::size_t memory_0 = 0, memory_1 = 15, memory_2 = 0;
-    std::size_t memory_1_0 = 15, memory_2_1 = 45, memory_2_0 = 0;
-
     //Emplacing back cell_0, cell_1 and cell_2
-    table.emplace_back(&chain[0], cost_0, op_0, memory_0);
-    table.emplace_back(&chain[1], cost_1, op_1, memory_1);
-    table.emplace_back(&chain[2], cost_2, op_2, memory_2);
+    table.emplace_back(&chain[0], cost_0, op_0);
+    table.emplace_back(&chain[1], cost_1, op_1);
+    table.emplace_back(&chain[2], cost_2, op_2);
 
     //Emplacing back cell_1_0, cell_2_1, cell_2_0
-    table.emplace_back(cost_1_0, split_pos_1_0, op_1_0, memory_1_0);
-    table.emplace_back(cost_2_1, split_pos_2_1, op_2_1, memory_2_1);
-    table.emplace_back(cost_2_0, split_pos_2_0, op_2_0, memory_2_0);
+    table.emplace_back(cost_1_0, split_pos_1_0, op_1_0);
+    table.emplace_back(cost_2_1, split_pos_2_1, op_2_1);
+    table.emplace_back(cost_2_0, split_pos_2_0, op_2_0);
 
     //Checking cell initialization of cells with pointers.
     if(
         test_cell.check_cell_initialization(table.get_cell(0), chain[0],
-          cost_0, op_0, memory_0) &&
+          cost_0, op_0) &&
 
         test_cell.check_cell_initialization(table.get_cell(1), chain[1],
-          cost_1, op_1, memory_1) &&
+          cost_1, op_1) &&
 
         test_cell.check_cell_initialization(table.get_cell(2), chain[2],
-          cost_2, op_2, memory_2)
+          cost_2, op_2)
         ){
 
       test.set_test_emplace_back_dense_with_pointer(true);
@@ -123,13 +120,13 @@ int main(){
 
     if(
         test_cell.check_cell_initialization(table.get_cell(1,0), cost_1_0,
-          split_pos_1_0, op_1_0, memory_1_0) &&
+          split_pos_1_0, op_1_0) &&
 
         test_cell.check_cell_initialization(table.get_cell(2,1), cost_2_1,
-          split_pos_2_1, op_2_1, memory_2_1) &&
+          split_pos_2_1, op_2_1) &&
 
         test_cell.check_cell_initialization(table.get_cell(2,0), cost_2_0,
-          split_pos_2_0, op_2_0, memory_2_0)
+          split_pos_2_0, op_2_0)
         ){
 
       test.set_test_emplace_back_dense(true);
@@ -159,33 +156,29 @@ int main(){
 
     std::size_t split_pos_1_0 = 0, split_pos_2_1 = 1, split_pos_2_0 = 1;
 
-    //memory values
-    std::size_t memory_0 = 0, memory_1 = 40, memory_2 = 0;
-    std::size_t memory_1_0 = 55, memory_2_1 = 50, memory_2_0 = 30;
-
     //Emplacing back cell_0, cell_1 and cell_2
-    table.emplace_back(&chain[0], cost_0, op_0, memory_0);
-    table.emplace_back(&chain[1], cost_1, op_1, memory_1);
-    table.emplace_back(&chain[2], cost_2, op_2, memory_2);
+    table.emplace_back(&chain[0], cost_0, op_0);
+    table.emplace_back(&chain[1], cost_1, op_1);
+    table.emplace_back(&chain[2], cost_2, op_2);
 
     //Emplacing back cell_1_0, cell_2_1, cell_2_0
     //For simplicity no jacobian multiplication will be considered.
     //Inside cell_1_0 jacobian_1 will be stored while in cell_2_1 and
     //cell_2_0 jacobian 2 will be stored.
-    table.emplace_back(chain.copy(0), cost_1_0, split_pos_1_0, op_1_0, memory_1_0);
-    table.emplace_back(chain.copy(1), cost_2_1, split_pos_2_1, op_2_1, memory_2_1);
-    table.emplace_back(chain.copy(2), cost_2_0, split_pos_2_0, op_2_0, memory_2_0);
+    table.emplace_back(chain.copy(0), cost_1_0, split_pos_1_0, op_1_0);
+    table.emplace_back(chain.copy(1), cost_2_1, split_pos_2_1, op_2_1);
+    table.emplace_back(chain.copy(2), cost_2_0, split_pos_2_0, op_2_0);
 
     //Checking cell initialization of cells with pointers.
     if(
         test_cell.check_cell_initialization(table.get_cell(0), chain[0],
-          cost_0, op_0, memory_0) &&
+          cost_0, op_0) &&
 
         test_cell.check_cell_initialization(table.get_cell(1), chain[1],
-          cost_1, op_1, memory_1) &&
+          cost_1, op_1) &&
 
         test_cell.check_cell_initialization(table.get_cell(2), chain[2],
-          cost_2, op_2, memory_2)
+          cost_2, op_2)
         ){
 
       test.set_test_emplace_back_sparse_with_pointer(true);
@@ -195,13 +188,13 @@ int main(){
 
     if(
         test_cell.check_cell_initialization(table.get_cell(1,0), cost_1_0,
-          split_pos_1_0, op_1_0, memory_1_0) &&
+          split_pos_1_0, op_1_0) &&
 
         test_cell.check_cell_initialization(table.get_cell(2,1), cost_2_1,
-          split_pos_2_1, op_2_1, memory_2_1) &&
+          split_pos_2_1, op_2_1) &&
 
         test_cell.check_cell_initialization(table.get_cell(2,0), cost_2_0,
-          split_pos_2_0, op_2_0, memory_2_0)
+          split_pos_2_0, op_2_0)
         ){
 
       test.set_test_emplace_back_sparse(true);

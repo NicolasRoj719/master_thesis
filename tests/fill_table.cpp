@@ -521,9 +521,78 @@ int main(){
 
   }
 
+
   //Fill method is tested using cases 1 and 2.
-  std::size_t memory_limit = 20;
+  std::size_t memory_limit = 30;
   test.run_test_cases(memory_limit);
+
+  //Mixed formulation
+  {
+    jacobian_chain<Split_dense_Jacobian, Split_reversal_dense_information>
+      chain{"./chain_test_cases/case_1_matrix_free",
+            "./chain_test_cases/case_1_functions_cost"};
+
+    Table<Split_dense_Jacobian> table{chain.size()};
+
+    //Emplace back cells with pointers
+    //table(0)
+      table.emplace_back(&chain[0],
+                          chain[0].codomain_dim() * chain[0].number_edges(),
+                          Operation::ADJOINT);
+    //table(1)
+    table.emplace_back(&chain[1],
+                        chain[1].domain_dim() * chain[1].number_edges(),
+                        Operation::TANGENT);
+    //table(2)
+    table.emplace_back(&chain[2],
+                        chain[2].domain_dim() * chain[2].number_edges(),
+                        Operation::TANGENT);
+
+    //test accumulate_function_cost
+    if(tool_box_split::accumulate_function_cost(table, 0, 0) != 222 ||
+        tool_box_split::accumulate_function_cost(table, 1, 1) != 111 ||
+        tool_box_split::accumulate_function_cost(table, 2, 2) != 99 ||
+        tool_box_split::accumulate_function_cost(table, 1, 0) != 222 + 111 ||
+        tool_box_split::accumulate_function_cost(table, 2, 1) != 111 + 99 ||
+        tool_box_split::accumulate_function_cost(table, 2, 0) != 222 + 111 + 99){
+
+      test.set_test_function_cost_accumulation(false);
+    }
+    else{test.set_test_function_cost_accumulation(true);}
+
+    //test is_split_reversable
+    if(tool_box_split::is_split_reversable(table, 2, 0, 200) != true ||
+        tool_box_split::is_split_reversable(table, 2, 0, 150) != true ||
+        tool_box_split::is_split_reversable(table, 2, 0, 150 - 1) != false ||
+        tool_box_split::is_split_reversable(table, 2, 0, 30) != false ||
+        tool_box_split::is_split_reversable(table, 2, 1, 160) != true ||
+        tool_box_split::is_split_reversable(table, 2, 1, 150) != true ||
+        tool_box_split::is_split_reversable(table, 2, 1, 150-1) != false ||
+        tool_box_split::is_split_reversable(table, 1, 0, 155) != true ||
+        tool_box_split::is_split_reversable(table, 1, 0, 150) != true ||
+        tool_box_split::is_split_reversable(table, 1, 0, 140) != false ||
+        tool_box_split::is_split_reversable(table, 2, 2, 100) != true ||
+        tool_box_split::is_split_reversable(table, 2, 2, 80) != true ||
+        tool_box_split::is_split_reversable(table, 2, 2, 80 - 1) != false){
+
+        test.set_test_is_split_reversable(false);
+    }
+    else{test.set_test_is_split_reversable(true);}   
+
+    //test split_reversed_chain
+    if(tool_box_split::split_reversed_chain(table, 0, 80 + 150 + 100, 80 + 150 + 100 -1) != 0 ||
+        tool_box_split::split_reversed_chain(table, 0, 80 + 150 + 100, 80 + 150) != 0 ||
+        tool_box_split::split_reversed_chain(table, 0, 80 + 150 + 100, 80 + 150 -1) != 1 ||
+        tool_box_split::split_reversed_chain(table, 0, 80 + 150 + 100, 80 + 1) != 1 ||
+        tool_box_split::split_reversed_chain(table, 1, 80 + 150, 80 + 150 - 1) != 1 ||
+        tool_box_split::split_reversed_chain(table, 1, 80 + 150, 80) != 1){
+      
+      test.set_test_split_reversed_chain(false);
+    }
+    else{test.set_test_split_reversed_chain(true);}
+
+  }
+
   //Checking if all tests were successful.
   test.were_all_test_successful();
   //Printing the final state of the test.

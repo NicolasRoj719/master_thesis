@@ -33,7 +33,7 @@ int main(){
     test_split_dense_Jacobian 
       test{domain_dimension, codomain_dimension, number_of_edges, function_cost};
 
-    test.print_test_state();
+    /* test.print_test_state(); */
   }
 
   {
@@ -107,7 +107,7 @@ int main(){
     std::size_t function_cost = 234;
     test_split_sparse_Jacobian test{path_to_file, function_cost};
 
-    test.print_test_state();
+    /* test.print_test_state(); */
   }
 
 }

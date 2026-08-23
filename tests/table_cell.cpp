@@ -45,22 +45,18 @@ int main(){
     Operation operation_0 = Operation::TANGENT, operation_1 = Operation::ADJOINT;
     Operation operation_2 = Operation::MULTIPLICATION;
 
-    std::size_t memory_0 = 100, memory_2 = 150;
-
-
-    cell<Dense_Jacobian> cell_0{cost_0, split_pos_0, operation_0, memory_0};
-    //Case wihtout memory bound.
+    cell<Dense_Jacobian> cell_0{cost_0, split_pos_0, operation_0};
     cell<Dense_Jacobian> cell_1{cost_1, split_pos_1, operation_1};
-    cell<Dense_Jacobian> cell_2{cost_2, split_pos_2, operation_2, memory_2};
+    cell<Dense_Jacobian> cell_2{cost_2, split_pos_2, operation_2};
 
     bool result_test_0 = test.check_cell_initialization(cell_0,
-                        cost_0, split_pos_0, operation_0, memory_0);
+                        cost_0, split_pos_0, operation_0);
 
     bool result_test_1 = test.check_cell_initialization(cell_1,
                         cost_1, split_pos_1, operation_1);
 
     bool result_test_2 = test.check_cell_initialization(cell_2,
-                        cost_2, split_pos_2, operation_2, memory_2);
+                        cost_2, split_pos_2, operation_2);
 
     if(result_test_0 && result_test_1 && result_test_2){
 
@@ -89,26 +85,24 @@ int main(){
     Operation operation_0 = Operation::ADJOINT, operation_1 = Operation::TANGENT;
     Operation operation_2 = Operation::MULTIPLICATION;
 
-    std::size_t memory_0 = 111, memory_2 = 121;
+    /* Sparse_Jacobian sparse_0 = chain.copy(0); */
+    /* Sparse_Jacobian sparse_1 = chain.copy(1); */
+    /* Sparse_Jacobian sparse_2 = chain.copy(2); */
 
+    cell<Sparse_Jacobian> cell_0{chain.copy(0), cost_0, split_pos_0, operation_0};
 
-    cell<Sparse_Jacobian> cell_0{chain.copy(0), cost_0, split_pos_0,
-                                operation_0, memory_0};
+    cell<Sparse_Jacobian> cell_1{chain.copy(1), cost_1, split_pos_1, operation_1};
 
-    cell<Sparse_Jacobian> cell_1{chain.copy(1), cost_1, split_pos_1,
-                                operation_1};
-
-    cell<Sparse_Jacobian> cell_2{chain.copy(2), cost_2, split_pos_2,
-                                operation_2, memory_2};
+    cell<Sparse_Jacobian> cell_2{chain.copy(2), cost_2, split_pos_2, operation_2};
 
     bool result_test_0 = test.check_cell_initialization(cell_0, chain[0],
-                          cost_0, split_pos_0, operation_0, memory_0);
+                          cost_0, split_pos_0, operation_0);
 
     bool result_test_1 = test.check_cell_initialization(cell_1, chain[1],
                           cost_1, split_pos_1, operation_1);
 
     bool result_test_2 = test.check_cell_initialization(cell_2, chain[2],
-                          cost_2, split_pos_2, operation_2, memory_2);
+                          cost_2, split_pos_2, operation_2);
 
     if(result_test_0 && result_test_1 && result_test_2){
 
@@ -165,22 +159,17 @@ int main(){
     Operation operation_0 = Operation::MULTIPLICATION, operation_1 = Operation::TANGENT;
     Operation operation_2 = Operation::MULTIPLICATION;
 
-    std::size_t memory_0 = 11, memory_1 = 23;
+    cell_with_pointer<Dense_Jacobian> cell_0{&chain[0], cost_0, operation_0};
 
-    cell_with_pointer<Dense_Jacobian> cell_0{&chain[0], cost_0, operation_0, memory_0};
-
-    cell_with_pointer<Dense_Jacobian> cell_1{&chain[1], cost_1, operation_1, memory_1};
+    cell_with_pointer<Dense_Jacobian> cell_1{&chain[1], cost_1, operation_1};
 
     cell_with_pointer<Dense_Jacobian> cell_2{&chain[2], cost_2, operation_2};
 
-    bool result_test_0 = test.check_cell_initialization(cell_0, chain[0], cost_0,
-                                                        operation_0, memory_0);
+    bool result_test_0 = test.check_cell_initialization(cell_0, chain[0], cost_0, operation_0);
 
-    bool result_test_1 = test.check_cell_initialization(cell_1, chain[1], cost_1,
-                                                        operation_1, memory_1);
+    bool result_test_1 = test.check_cell_initialization(cell_1, chain[1], cost_1, operation_1);
 
-    bool result_test_2 = test.check_cell_initialization(cell_2, chain[2], cost_2,
-                                                        operation_2);
+    bool result_test_2 = test.check_cell_initialization(cell_2, chain[2], cost_2, operation_2);
 
     if(result_test_0 && result_test_1 && result_test_2){
 
@@ -207,17 +196,14 @@ int main(){
     Operation operation_0 = Operation::ADJOINT, operation_1 = Operation::TANGENT;
     Operation operation_2 = Operation::MULTIPLICATION;
 
-    std::size_t memory_0 = 11;
-
-
-    cell_with_pointer<Sparse_Jacobian> cell_0{&chain[0], cost_0, operation_0, memory_0};
+    cell_with_pointer<Sparse_Jacobian> cell_0{&chain[0], cost_0, operation_0};
 
     cell_with_pointer<Sparse_Jacobian> cell_1{&chain[1], cost_1, operation_1};
 
     cell_with_pointer<Sparse_Jacobian> cell_2{&chain[2], cost_2, operation_2};
 
     bool result_test_0 = test.check_cell_initialization(cell_0, chain[0],
-                          cost_0, operation_0, memory_0);
+                          cost_0, operation_0);
 
     bool result_test_1 = test.check_cell_initialization(cell_1, chain[1],
                           cost_1, operation_1);
