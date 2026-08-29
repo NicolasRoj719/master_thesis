@@ -1,3 +1,10 @@
+/**
+ * @file jacobian.hpp
+ * @brief Implementation of Dense, Sparse, and Split Jacobian matrix classes.
+ */
+#ifndef JACOBIAN_HPP
+#define JACOBIAN_HPP
+
 #include <cstdint>
 #include <iostream>
 #include <vector>
@@ -12,14 +19,26 @@
 
 #include "util_structs.hpp"
 
-#ifndef JACOBIAN_HPP
-#define JACOBIAN_HPP
 
+/**
+ * @brief Base class for basic Jacobian metadata.
+ */
 class Jacobian{
  public:
+   /**
+    * @brief Construct Jacobian object from metadata.
+    *
+    * @param jacobian_obj Metadata structure containing domain and codomain dimensions.
+    */
   Jacobian(Jacobian_information jacobian_obj):
     jacobian_basic_data(std::move(jacobian_obj)){}
 
+  /**
+   * @brief Construct Jacobian object from explicit dimensions.
+   *
+   * @param domain_dimension Domain (input) space dimension.
+   * @param codomain_dimension Codomain (output) space dimension.
+   */
   Jacobian(std::size_t domain_dimension, std::size_t codomain_dimension):
     jacobian_basic_data(domain_dimension, codomain_dimension){}
 
@@ -31,14 +50,30 @@ class Jacobian{
   }
 
  protected:
+  /// Basic Jacobian dimensions metadata.
   Jacobian_information jacobian_basic_data;
 };
 
+/**
+ * @brief Dense Jacobian representation.
+ */
 class Dense_Jacobian{
  public:
+  /**
+   * @brief Construct Dense_Jacobian object from metadata.
+   * 
+   * @param jacobian_obj Matrix-free metadata object.
+   */
   Dense_Jacobian(Matrix_free_information jacobian_obj):
     jacobian_basic_data(std::move(jacobian_obj)){}
 
+  /**
+   * @brief Construct Dense_Jacobian from explicit parameters.
+   *
+   * @param domain_dimension Domain space dimension. 
+   * @param codomain_dimension Codomain space dimension. 
+   * @param number_of_edges Number of edges in the computation graph representation. 
+   */
   Dense_Jacobian(std::size_t domain_dimension, std::size_t codomain_dimension,
       std::size_t number_of_edges):
     jacobian_basic_data(domain_dimension, codomain_dimension, number_of_edges){}
@@ -54,17 +89,41 @@ class Dense_Jacobian{
   }
 
  private:
+  /// Matrix-free metadata. 
   Matrix_free_information jacobian_basic_data;
 };
 
+/**
+ * @brief Dense Jacobian extended with computational execution cost estimates.
+ */
 class Split_dense_Jacobian: public Dense_Jacobian{
  public:
+  /**
+   * @brief Construct from metadata and subprogram cost.
+   *
+   * @param jacobian_data Matrix-free metadata structure.
+   * @param function_cost Subprogram execution cost estimate (in fused multiply-add operations).
+   */
   Split_dense_Jacobian(Matrix_free_information jacobian_data, std::size_t function_cost):
     Dense_Jacobian(std::move(jacobian_data)), function_cost_(function_cost){}
 
+  /**
+   * @brief Construct from an existing Dense_Jacobian and cost estimate.
+   *
+   * @param jacobian Base Dense_Jacobian instance.
+   * @param function_cost Subprogram execution cost estimate.
+   */
   Split_dense_Jacobian(Dense_Jacobian jacobian, std::size_t function_cost):
     Dense_Jacobian(std::move(jacobian)), function_cost_(function_cost){}
 
+  /**
+   * @brief Construct from explicit dimension, edge counts, and execution cost.
+   *
+   * @param domain_dimension Domain space dimension.
+   * @param codomain_dimension Codomain space dimension.
+   * @param number_of_edges Number of edges in the computation graph representation. 
+   * @param function_cost Subprogram execution cost estimate.
+   */
   Split_dense_Jacobian(std::size_t domain_dimension, std::size_t codomain_dimension,
       std::size_t number_of_edges, std::size_t function_cost):
     Dense_Jacobian(domain_dimension, codomain_dimension, number_of_edges),
@@ -73,16 +132,27 @@ class Split_dense_Jacobian: public Dense_Jacobian{
   std::size_t function_cost() const {return function_cost_;}
 
  protected:
+  /// Subprogram execution cost estimate in terms of fused multiply-add operations.
   std::size_t function_cost_;
 };
 
+/**
+ * @brief Sparse Jacobian matrix supporting CSR and CSC formats alongside graph coloring. 
+ */
 class Sparse_Jacobian{
  public:
 
   Sparse_Jacobian(Sparse_Jacobian&& sparse_jacobian) = default;
   Sparse_Jacobian(const Sparse_Jacobian&) = default;
   
-
+  /**
+   * @brief Construct from metadata and raw sparsity data.
+   *
+   * @param jacobian_obj Matrix-free sparse metadata.
+   * @param[in] sparse_data Non-zero sparsity entries (sorted and deduplicated upon construction).
+   *
+   * @throws std::invalid_argument If sparse_data size does not match expected non-zero counts.
+   */
   Sparse_Jacobian(Matrix_free_sparse_information jacobian_obj,
       std::vector<NNZ>& sparse_data):
     jacobian_basic_data(std::move(jacobian_obj)){
@@ -95,6 +165,17 @@ class Sparse_Jacobian{
       from_sparse_data_initializer(sparse_data);
     }
 
+  /**
+   * @brief Construct from explicit parameters and raw sparsity pattern data.
+   *
+   * @param domain_dimension Domain space dimension.
+   * @param codomain_dimension Codomain space dimension.
+   * @param number_edges Number of edges in the computation graph representation. 
+   * @param number_nnz_ Promised number of non-zero entries.
+   * @param[in, out] sparse_data Raw non-zero entries.
+   *
+   * @throws std::invalid_argument If non-zero counts do not match input array size.
+   */
   Sparse_Jacobian(std::size_t domain_dimension, std::size_t codomain_dimension,
       std::size_t number_edges, std::size_t number_nnz_,
       std::vector<NNZ>& sparse_data):
@@ -109,6 +190,21 @@ class Sparse_Jacobian{
     }
 
 
+  /**
+   * @brief Construct directly from pre-built CSC and CSC index and pointer arrays.
+   *
+   * @param domain_dimension Domain space dimension.
+   * @param codomain_dimension Codomain space dimension.
+   * @param number_of_edges Number of edges in the computation graph representation.
+   * @param number_nonzeros Total number of non-zero entries.
+   * @param col_idx CSR column indices array.
+   * @param row_ptr CSR row pointers array.
+   * @param row_idx CSC row indices array.
+   * @param col_ptr CSC column pointers array.
+   *
+   * @throws std::invalid_argument If array dimensions mismatch.
+   * @throws std::invalid_argument If pointer arrays are non-increasing.
+   */
   Sparse_Jacobian(std::size_t domain_dimension, std::size_t codomain_dimension,
       std::size_t number_of_edges, std::size_t number_nonzeros,
       std::vector<std::size_t> col_idx, std::vector<std::size_t> row_ptr,
@@ -157,6 +253,7 @@ class Sparse_Jacobian{
     }
 
   
+  // Dimension and Accessor Methods
   std::size_t domain_dim() const {
     return jacobian_basic_data.domain_dimension();
   }
@@ -226,6 +323,14 @@ class Sparse_Jacobian{
     return max_number_nnz_column;
   }
 
+  /**
+   * @brief Factory method to initialize a Sparse_Jacobian object from a formatted data file.
+   *
+   * @param file_name Path to the input file containing sparse jacobian metadata and sparsity pattern.
+   * @return Initialized Sparse_Jacobian object.
+   * 
+   * @throws std::runtime_error If file cannot be read or contains invalid information.
+   */
   static Sparse_Jacobian from_file(const std::string& file_name){
     std::size_t domain_dim, codomain_dim;
     std::size_t number_edges, number_nnz;
@@ -236,17 +341,44 @@ class Sparse_Jacobian{
         number_nnz, sparse_data);
   }
 
+  /**
+   * @brief Computes the structural matrix product of two Sparse_Jacobian objects.
+   *
+   * @param lhs Left-hand side operand.
+   * @param rhs Right-hand side operand.
+   * @return A new Sparse_Jacobian representic the sumbolic matrix product.
+   *
+   * @throws std::invalid_argument If dimensions are incompatible for multiplication.
+   */
   friend Sparse_Jacobian operator*(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs);
 
+  /**
+   * @brief Multiplilcation helper constructing CSR data arrays for the matrix product.
+   * 
+   * @param[in] lhs Left-hand side operand.
+   * @param[in] rhs Right-hand side operand.
+   * @param[in,out] col_idx Column index array for the product.
+   * @param[in,out] row_ptr Row pointer array for the product.
+   */
   friend void mul_CSR_CSC_2_CSR(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs,
       std::vector<size_t>& col_idx, std::vector<std::size_t>& row_ptr);
 
+  /**
+   * @brief Multiplilcation hlper constructing CSC data arrays for the matrix product.
+   * 
+   * @param[in] lhs Left-hand side operand.
+   * @param[in] rhs Right-hand side operand.
+   * @param[in,out] row_idx Row index array for the product.
+   * @param[in,out] col_ptr Column pointer array for the product.
+   */
   friend void mul_CSR_CSC_2_CSC(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs,
       std::vector<size_t>& row_idx, std::vector<std::size_t>& col_ptr);
 
  private:
+  /// Matrix-free metadata.
   Matrix_free_sparse_information jacobian_basic_data;
 
+  /// Sorts non-zero entries and removes duplicate coordinates.
   void sparse_data_non_repeated_entries(
       std::vector<NNZ>& sparse_data) const{
     std::sort(sparse_data.begin(), sparse_data.end());
@@ -255,6 +387,7 @@ class Sparse_Jacobian{
         sparse_data.end());
   }
 
+  /// Builds Compressed Sparse Row (CSR) and Compressed Sparse Column (CSC) index and pointer arrays.
   void build_CSR_CSC_format(const std::vector<NNZ>& sparse_data){
     row_pointer.assign(codomain_dim() + 1, 0);
     column_pointer.assign(domain_dim() + 1, 0);
@@ -294,11 +427,17 @@ class Sparse_Jacobian{
     }
   }
 
-  //Assumption: for indeces within a same line or column
-  // they are stored in increasing order.
-  //Build graph:
-  //Vertices: indexed columns or rows.
-  //Edges: Pairs of non orthogonal columns or rows.
+  /**
+   * @brief Constructs an intersection graph from Compressed Format for coloring algorithms.
+   * Vertices: indexed columns or rows.
+   * Edges: Pairs of indexed columns or rows that are structurally non orthogonal.
+   *
+   * @param[in] idx_arr Compressed format index array.
+   * @param[in] ptr_arr Compressed format pointer array.
+   * @param domain_or_codomain_dim Space dimension for the graph node count.
+   *
+   * @pre \p idx_arr must be monotonically increasing within indices stored in \p ptr_arr.
+   */
   std::vector<std::vector<std::size_t>> build_cig_from_compressed(
       const std::vector<std::size_t>& idx_arr, const std::vector<std::size_t>& ptr_arr,
       const std::size_t domain_or_codomain_dim) const{
@@ -336,7 +475,13 @@ class Sparse_Jacobian{
     return graph;
   } 
   
-  // Greedy graph coloring
+  /**
+   * @brief Performs greedy coloring on a graph representation.
+   *
+   * @param[in] graph Column or Row intersection graph.
+   * @param[in,out] max_color Returns maximum color index assigned.
+   * @return Color assignment for each node.
+   */
   std::vector<int> color_graph(const std::vector<std::vector<std::size_t>>& graph,
       std::size_t& max_color) const{
 
@@ -374,10 +519,13 @@ class Sparse_Jacobian{
    return color;
   }
 
-  // coloring stores for every row or color its assigned
-  // color.
-  // new_coloring_format groups rows or columns by 
-  // assigned color.
+  /**
+   * @brief Formats raw color assignments into index sets grouped by assigned color.
+   *
+   * @param[in] coloring Array with assigned colors per index.
+   * @param[in,out] new_coloring_format Arrays of index groups per color.
+   * @param number_of_colors Number of distinct colors used.
+   */
   void coloring_formatting(const std::vector<int>& coloring, 
       std::vector<std::vector<std::size_t>>& new_coloring_format,
       const std::size_t& number_of_colors){
@@ -398,6 +546,7 @@ class Sparse_Jacobian{
     }
   } 
 
+  /// Runs the complete coloring routine for rows or columns based on CSC/CSR input data.
   void coloring_algorithm(const std::vector<std::size_t>& idx_arr,
       const std::vector<std::size_t>& ptr_arr,
       std::vector<std::vector<std::size_t>>& color_arr,
@@ -408,6 +557,7 @@ class Sparse_Jacobian{
     coloring_formatting(coloring, color_arr, number_of_colors);
   }
 
+  /// Calculates the maximum number of non-zero entries present in any single row or column.
   std::size_t max_nnz_row_or_col(const std::vector<std::size_t>& ptr_arr){
     std::size_t max_nnz = 0;
     std::size_t local_nnz;
@@ -420,6 +570,12 @@ class Sparse_Jacobian{
     return max_nnz;
   }
 
+  /**
+   * @brief Sorts index array segments to guarantee monotonic ordering.
+   *
+   * @param[in,out] idx_arr Compressed format index array.
+   * @param[in] ptr_arr Compressed format pointer array.
+   */
   void increasing_index_array(std::vector<std::size_t>& idx_arr,
       const std::vector<std::size_t>& ptr_arr){
     
@@ -429,6 +585,7 @@ class Sparse_Jacobian{
     }
   }
   
+  /// Validates whether pointer array is strictly monotonically increasing.
   bool is_ptr_array_increasing(const std::vector<size_t>& ptr_arr){
     for(std::size_t i = 0; i < ptr_arr.size() - 1; i++){
       if(ptr_arr[i+1] < ptr_arr[i]){
@@ -438,6 +595,16 @@ class Sparse_Jacobian{
     return true;
   }
 
+  /**
+   * @brief Reads sparsity Jacobian metadata and sparsity pattern from an input file path.
+   *
+   * @param file_name Path to the input file.
+   * @param[in, out] domain_dim Domain space dimension.
+   * @param[in, out] codomain_dim Codomain space dimension.
+   * @param[in, out] number_of_edges Number of edges in the computation graph representation.
+   * @param[in, out] number_nnz Total number of non-zeros.
+   * @param[in, out] sparse_data Output vector filled with raw sparsity entries.
+   */
   static void sparse_file_to_sparse_data(const std::string& file_name,
       std::size_t& domain_dim, std::size_t& codomain_dim,
       std::size_t& number_of_edges, std::size_t& number_nnz,
@@ -489,14 +656,21 @@ class Sparse_Jacobian{
 
   }
 
+  /// Internal initializer routine executing sorting, format conversion, and graph coloring.
   void from_sparse_data_initializer(std::vector<NNZ>& sparse_data){
+    //This function call fulfills two roles:
+    //1) Sanity check that there are no repeated entries in the sparsity structure.
+    //2) Ordering the non zeros entries following the dictionary order. (Check util_structs.hpp)
+    //for more information regarding the order relation of NNZ datatype.
     sparse_data_non_repeated_entries(sparse_data);
 
     build_CSR_CSC_format(sparse_data);
 
+    //Coloring rows.
     coloring_algorithm(column_idx, row_pointer, column_coloring,
         domain_dim(), column_number_colors);
 
+    //Coloring columns.
     coloring_algorithm(row_idx, column_pointer, row_coloring,
         codomain_dim(), row_number_colors);
 
@@ -505,15 +679,23 @@ class Sparse_Jacobian{
   }
 
  protected:
+  /// Compressed Sparse Column (CSC) format arrays.
   std::vector<std::size_t> column_idx, row_pointer;
+  /// Compressed Sparse Row (CSR) format arrays.
   std::vector<std::size_t> row_idx, column_pointer;
+  /// Column indices grouped by assigned color. 
   std::vector<std::vector<std::size_t>> column_coloring;
+  /// Row indices grouped by assigned color.
   std::vector<std::vector<std::size_t>> row_coloring;
 
+  /// Column number of colors.
   std::size_t column_number_colors;
+  /// Row number of colors.
   std::size_t row_number_colors;
 
+  /// Maximum number of non zeros per row.
   std::size_t max_number_nnz_row;
+  /// Maximum number of non zeros per column.
   std::size_t max_number_nnz_column;
 };
 
@@ -528,13 +710,17 @@ void mul_CSR_CSC_2_CSR(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs,
   for(std::size_t ptr_row = 0; ptr_row < lhs.codomain_dim(); ptr_row++){
     first_nnz_row = lhs.row_pointer[ptr_row];
     first_nnz_next_row = lhs.row_pointer[ptr_row + 1];
+
     for(std::size_t ptr_col = 0; ptr_col < rhs.domain_dim(); ptr_col++){
       first_nnz_col = rhs.column_pointer[ptr_col];
       first_nnz_next_col = rhs.column_pointer[ptr_col + 1];
+
       for(std::size_t col_idx_lhs = first_nnz_row; col_idx_lhs < first_nnz_next_row; col_idx_lhs++){
           col_lhs = lhs.column_idx[col_idx_lhs];
+
         for(std::size_t row_idx_rhs = first_nnz_col; row_idx_rhs < first_nnz_next_col; row_idx_rhs++){
             row_rhs = rhs.row_idx[row_idx_rhs];
+
             if(col_lhs == row_rhs){
               col_idx.push_back(col_idx_val);
               counter++;
@@ -604,30 +790,66 @@ Sparse_Jacobian operator*(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs
       std::move(row_idx), std::move(col_ptr));
 }
 
+/**
+ * @brief Sparse Jacobian extended with execution cost estimate.
+ */
 class Split_sparse_Jacobian: public Sparse_Jacobian{
  public:
+   /**
+    * @brief Construct from base Sparse_Jacobian and execution cost.
+    *
+    * @param jacobian Base Sparse_Jacobian instance.
+    * @param function_cost Subprogram execution cost estimate.
+    */
    Split_sparse_Jacobian(Sparse_Jacobian jacobian, std::size_t function_cost):
      Sparse_Jacobian(std::move(jacobian)), function_cost_(function_cost){}
 
+   /**
+    * @brief Construct from sparse metadata, sparsity pattern and execution cost.
+    *
+    * @param jacobian_data Matrix-free sparse metadata.
+    * @param sparse_data Sparsity pattern entries.
+    * @param function_cost Subprogram execution cost estimate.
+    */
    Split_sparse_Jacobian(Matrix_free_sparse_information jacobian_data,
        std::vector<NNZ>& sparse_data, std::size_t function_cost):
      Sparse_Jacobian(std::move(jacobian_data), sparse_data), function_cost_(function_cost){}
 
+   /**
+    * @brief Construct from split metadata and sparsity pattern.
+    *
+    * @param split_information Split metadata object.
+    * @param sparse_data Sparsity pattern entries.
+    */
    Split_sparse_Jacobian(Split_reversal_sparse_information split_information,
        std::vector<NNZ>& sparse_data):
      Sparse_Jacobian(static_cast<const Matrix_free_sparse_information&>(split_information),
          sparse_data), function_cost_(split_information.function_cost()){}
 
+   /**
+    * @brief Move constructor.
+    *
+    * @param jacobian Split_sparse_Jacobian object to move from.
+    */
    Split_sparse_Jacobian(Split_sparse_Jacobian&& jacobian) noexcept:
      Sparse_Jacobian(std::move(jacobian)), function_cost_(jacobian.function_cost()){}
 
 
+  /**
+   * @brief Computes the structural matrix product and combines exection costs.
+   *
+   * @param lhs Left hand-side operand.
+   * @param rhs Right hand-side operand.
+   *
+   * @return Product instance with accumulated subprogram cost.
+   */
    friend Split_sparse_Jacobian operator*(
        const Split_sparse_Jacobian& lhs, const Split_sparse_Jacobian& rhs);
 
    std::size_t function_cost() const {return function_cost_;}
 
  protected:
+  /// Subprogram execution cost estimate in terms of fused multiply-add operations.
   std::size_t function_cost_;
 }; 
 
@@ -638,4 +860,4 @@ Split_sparse_Jacobian operator*(const Split_sparse_Jacobian& lhs,const Split_spa
       static_cast<const Sparse_Jacobian&>(lhs) * static_cast<const Sparse_Jacobian&>(rhs),
       lhs.function_cost() + rhs.function_cost());
 }
-#endif
+#endif //JACOBIAN_HPP

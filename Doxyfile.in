@@ -1,0 +1,31 @@
+#========================================================
+# Doxygen Configuration Template for Cmake
+#========================================================
+
+# Project Information
+PROJECT_NAME        = "@CMAKE_PROJECT_NAME@"
+PROJECT_NUMBER      = "@PROJECT_VERSION@"
+PROJECT_BRIEF       = "Master Thesis C++ Library API Documentation"
+
+# Path Options
+# Tells Doxygen to scan the include/ folder in your repository root
+INPUT               = "@CMAKE_CURRENT_SOURCE_DIR@/include"
+RECURSIVE           = YES
+
+# Output Folder (Generates inside build/html)
+OUTPUT_DIRECTORY    = "@CMAKE_CURRENT_BINARY_DIR@/doc"
+
+# File Extraction Rules
+FILE_PATTERNS       = *.hpp
+EXTRACT_ALL         = YES
+EXTRACT_PRIVATE     = YES
+EXTRACT_STATIC      = YES
+
+# Visual Presentation
+GENERATE_HTML       = YES
+HTML_OUTPUT         = html
+GENERATE_LATEX      = NO
+
+# Warnings (helps you catch undocumented code)
+WARN_IF_UNDOCUMENTED = YES
+WARN_IF_DOC_ERROR   = YES

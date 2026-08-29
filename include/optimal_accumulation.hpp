@@ -1,13 +1,15 @@
+#ifndef OPTIMAL_ACCUMULATION_HPP
+#define OPTIMAL_ACCUMULATION_HPP
+
 #include <iostream>
 #include <optional>
 #include <type_traits>
 #include <vector>
+
 #include "./fill_table.hpp"
 #include "./table.hpp"
 #include "./table_cell.hpp"
 
-#ifndef OPTIMAL_ACCUMULATION_HPP
-#define OPTIMAL_ACCUMULATION_HPP
 
 class operation_node{
  public:

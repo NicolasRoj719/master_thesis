@@ -1,12 +1,13 @@
+#ifndef TEST_GENERATOR_HPP
+#define TEST_GENERATOR_HPP
 #include <algorithm>
 #include <stdexcept>
 #include <type_traits>
 #include <vector>
-#include "./../util_structs.hpp"
-#include "./../generator.hpp"
 
-#ifndef TEST_GENERATOR_HPP
-#define TEST_GENERATOR_HPP
+#include "util_structs.hpp"
+#include "generator.hpp"
+
 
 template<class Jacobian_info_T>
 class test_Generator{

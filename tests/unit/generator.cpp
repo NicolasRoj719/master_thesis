@@ -1,6 +1,7 @@
 #include <cstdint>
-#include "./class_test_generator.hpp"
-#include "./../generator.hpp"
+
+#include "class_test_generator.hpp"
+#include "generator.hpp"
 
 int main(){
 
@@ -13,8 +14,8 @@ int main(){
       test{chain_length, dimension_lower_bound, dimension_upper_bound,
             is_deterministic, seed};
 
-    test.print_test_state();
-    std::cout << '\n';
+    /* test.print_test_state(); */
+    /* std::cout << '\n'; */
   }
 
   {
@@ -25,8 +26,8 @@ int main(){
     test_Generator<Jacobian_information> 
       test{chain_length, dimension_lower_bound, dimension_upper_bound,
             is_deterministic, seed};
-    test.print_test_state();
-    std::cout << '\n';
+    /* test.print_test_state(); */
+    /* std::cout << '\n'; */
   }
 
   {
@@ -40,8 +41,8 @@ int main(){
       test{chain_length, dimension_lower_bound, dimension_upper_bound,
             number_edges_lower_bound, number_edges_upper_bound, 
             is_deterministic, seed};
-    test.print_test_state();
-    std::cout << '\n';
+    /* test.print_test_state(); */
+    /* std::cout << '\n'; */
 
   }
 
@@ -56,8 +57,8 @@ int main(){
       test{chain_length, dimension_lower_bound, dimension_upper_bound,
             number_edges_lower_bound, number_edges_upper_bound, 
             is_deterministic, seed};
-    test.print_test_state();
-    std::cout << '\n';
+    /* test.print_test_state(); */
+    /* std::cout << '\n'; */
   }
 
   {
@@ -72,8 +73,8 @@ int main(){
       test{chain_length, dimension_lower_bound, dimension_upper_bound,
             number_edges_lower_bound, number_edges_upper_bound, density_lower_bound,
             density_upper_bound, is_deterministic, seed};
-    test.print_test_state();
-    std::cout << '\n';
+    /* test.print_test_state(); */
+    /* std::cout << '\n'; */
   }
 
   {
@@ -88,8 +89,8 @@ int main(){
       test{chain_length, dimension_lower_bound, dimension_upper_bound,
             number_edges_lower_bound, number_edges_upper_bound, density_lower_bound,
             density_upper_bound, is_deterministic, seed};
-    test.print_test_state();
-    std::cout << '\n';
+    /* test.print_test_state(); */
+    /* std::cout << '\n'; */
   }
 
 }

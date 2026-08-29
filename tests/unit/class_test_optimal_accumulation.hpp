@@ -1,5 +1,6 @@
 #include <iostream>
-#include "./../table_cell.hpp"
+
+#include "table_cell.hpp"
 
 class test_optimal_accumulation{
  public:

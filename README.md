@@ -1,3 +1,21 @@
+#Sparse Jacobian Chaining
+**Author:** Nicolas David Rojas Rojas
+**Degree** Master of Science in Simulation Sciences
+**Institution** RWTH University | STCE
+**Advisors** Simon Maertens and Dr.rer.nat Uwe Naumann
+**Date** 08, 2026
+
+## Overview
+The scope of the master thesis is to investigate the Matrix-Free Sparse Jacobian Chaining
+Product Bracketing along the side with Binomial Checkpointing. The present code implementation
+is meant to be used as a tool to minimize the operation count in terms of fused multiplied add
+(fma) during the calculation of the Jacobian of a differentiable subprogram. It is assumed that 
+the program is made up of sequential call of differentiable subprograms with correspoinding 
+jacobians, refered to as elemental jacobians. 
+
+## Repository structure
+
+
 Description:
     This first working version of the code implements dynamic programming solvers for: 
     Dense Jacobian Chain Product Bracketing problem (DJCPB) 

@@ -1,9 +1,10 @@
 #include <vector>
-#include "./class_test_optimal_accumulation.hpp"
-#include "./../jacobian.hpp"
-#include "./../table.hpp"
-#include "./../table_cell.hpp"
-#include "./../optimal_accumulation.hpp"
+
+#include "class_test_optimal_accumulation.hpp"
+#include "jacobian.hpp"
+#include "table.hpp"
+#include "table_cell.hpp"
+#include "optimal_accumulation.hpp"
 
 //The optimal accumulation method does not check
 //correctness of the accumulated cost value it simply
