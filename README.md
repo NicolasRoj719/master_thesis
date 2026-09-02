@@ -1,10 +1,14 @@
 # Sparse Jacobian Chaining
 
 **Author:** Nicolas David Rojas Rojas
+
 **Degree** Master of Science in Simulation Sciences
+
 **Institution** RWTH University | STCE
+
 **Advisors** Simon Maertens and Dr.rer.nat Uwe Naumann
-**Date** August 2026
+
+**Date** August, 2026
 
 ## Overview
 A modern C++ 20 header-only template library designed to solve Dense Jacobian Chain Product 
