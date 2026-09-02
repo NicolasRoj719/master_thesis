@@ -1,3 +1,13 @@
+/**
+ * @file binomial_checkpointing.hpp
+ * @brief Dynamic programming algorithm and lookup structures for optimal binomial checkpointing in
+ * Algorithmic Differentiation.
+ *
+ * Provides classes and data structures (`binomial_cell`, `binomial_table`, `View_chain`, and 
+ * `binomial_checkpointing`)
+ * to evaluate and store optimal checkpoint placement sequences and re-execution costs across 
+ * Jacobian chain subranges.
+ */
 #ifndef BINOMIAL_CHECKPOINTING
 #define BINOMIAL_CHECKPOINTING
 
@@ -364,6 +374,14 @@ class binomial_checkpointing{
   std::size_t get_additional_cost(){
     
     return table.back().additional_cost();
+  }
+
+  /**
+   * @brief gets constant reference to dynamic programming lookup table.
+   * @return constant reference to table.
+   */
+  const binomial_table& get_table(){
+    return table;
   }
 
  private:

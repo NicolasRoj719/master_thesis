@@ -1,505 +1,507 @@
+#include <iostream>
+#include <optional>
 #include <vector>
 
+#include "binomial_checkpointing.hpp"
 #include "class_test_optimal_accumulation.hpp"
 #include "jacobian.hpp"
 #include "table.hpp"
 #include "table_cell.hpp"
 #include "optimal_accumulation.hpp"
 
-//The optimal accumulation method does not check
-//correctness of the accumulated cost value it simply
-//assumes that the table data is correct and checks
-//for the optimal problem partition.
-
-bool test_jacobian(Jacobian* jac_0, Jacobian* jac_1){
-
-  Table<Jacobian> table{2};
-
-  table.emplace_back(jac_0);
-
-  table.emplace_back(jac_1);
-
-  table.emplace_back(11, 0);
-
-  serial_accumulation_sequence<Jacobian> serial_accumulation{table, 2};
-
-  //Test problem 1_0
-  if(serial_accumulation[0].get_j() != 1 ||
-      *serial_accumulation[0].get_i() != 0 ||
-      serial_accumulation[0].operation()){
-
-    return false;
-  }
-
-  return true;
-}
-
-
-bool test_jacobian(Jacobian* jac_0, Jacobian* jac_1, Jacobian* jac_2){
-
-  Table<Jacobian> table{3};
-
-  table.emplace_back(jac_0);
-  
-  table.emplace_back(jac_1);
-
-  table.emplace_back(jac_2);
-
-  table.emplace_back(23, 0);
-
-  table.emplace_back(33, 1);
-
-  table.emplace_back(44, 1);
-
-  serial_accumulation_sequence<Jacobian> serial_accumulation{table, 3};
-
-  //Test problem 2_0
-  if(serial_accumulation[0].get_j() != 2 ||
-      *serial_accumulation[0].get_i() != 0 ||
-      serial_accumulation[0].operation()){
-
-    return false;
-  }
-
-  //Test problem 1_0
-  if(serial_accumulation[1].get_j() != 1 ||
-      serial_accumulation[1].get_i() != 0 ||
-      serial_accumulation[1].operation()){
-
-    return false;
-  }
-
-  /* serial_accumulation.parser_sequence_2_graphviz_format(); */
-  return true;
-}
-
-bool test_tangent_dense(Dense_Jacobian* jac_0, Dense_Jacobian* jac_1){
-
-  Table<Dense_Jacobian> table{2};
-
-  table.emplace_back(jac_0, 10, Operation::TANGENT);
-
-  table.emplace_back(jac_1, 20, Operation::ADJOINT);
-
-  table.emplace_back( 30, 0, Operation::TANGENT);
-
-  serial_accumulation_sequence<Dense_Jacobian> serial_accumulation{table, 2};
-
-  //Test problem 1_0
-  if(serial_accumulation[0].get_j() != 1 ||
-      *serial_accumulation[0].get_i() != 0 ||
-      *serial_accumulation[0].operation() != Operation::TANGENT){
-
-    return false;
-  }
-
-  //Test Subproblem 0
-  if(serial_accumulation[1].get_j() != 0 ||
-      serial_accumulation[1].get_i() ||
-      *serial_accumulation[1].operation() != Operation::TANGENT){
-
-    return false;
-  }
-
-  /* serial_accumulation.parser_sequence_2_graphviz_format(); */
-
-return true;
-}
-
-bool test_adjoint_dense(Dense_Jacobian* jac_0, Dense_Jacobian* jac_1){
-
-  Table<Dense_Jacobian> table{2};
-
-  table.emplace_back(jac_0, 15, Operation::TANGENT);
-
-  table.emplace_back(jac_1, 25, Operation::ADJOINT);
-
-  table.emplace_back(32, 0, Operation::ADJOINT);
-
-  serial_accumulation_sequence<Dense_Jacobian> serial_accumulation{table, 2};
-
-  //Tests problem 1_0
-  if(serial_accumulation[0].get_j() != 1 ||
-       *serial_accumulation[0].get_i() != 0 ||
-       *serial_accumulation[0].operation() != Operation::ADJOINT){
-
-    return false;
-  }
-
-  //Test subproblem 1
-  if(serial_accumulation[1].get_j() != 1 ||
-       serial_accumulation[1].get_i() ||
-       *serial_accumulation[1].operation() != Operation::ADJOINT){
-  
-      return false;
-  }
-
-  /* serial_accumulation.parser_sequence_2_graphviz_format(); */
-  return true;
-}
-
-bool test_multiplication_dense(Dense_Jacobian* jac_0, Dense_Jacobian* jac_1){
-
-  Table<Dense_Jacobian> table{2};
-
-  table.emplace_back(jac_0, 17, Operation::TANGENT);
-
-  table.emplace_back(jac_1, 27, Operation::ADJOINT);
-
-  table.emplace_back(40, 0, Operation::MULTIPLICATION);
-
-  serial_accumulation_sequence<Dense_Jacobian> serial_accumulation{table, 2};
-
-  //Test problem 1_0
-  if(serial_accumulation[0].get_j() != 1 ||
-      *serial_accumulation[0].get_i() != 0 ||
-      *serial_accumulation[0].operation() != Operation::MULTIPLICATION){
-
-    return false;
-  }
-
-  //Test subproblem 0
-  if(serial_accumulation[1].get_j() != 0 ||
-      serial_accumulation[1].get_i() ||
-      *serial_accumulation[1].operation() != Operation::TANGENT){
-
-    return false;
-  }
-
-  //Test subproblem 1
-  if(serial_accumulation[2].get_j() != 1 ||
-      serial_accumulation[2].get_i() ||
-      *serial_accumulation[2].operation() != Operation::ADJOINT){
-
-    return false;
-  }
-
-  /* serial_accumulation.parser_sequence_2_graphviz_format(); */
-  return true;
-}
-
-bool test_dense_jacobian(Dense_Jacobian* jac_0,
-    Dense_Jacobian* jac_1, Dense_Jacobian* jac_2){
-
-  Table<Dense_Jacobian> table{3};
-
-  table.emplace_back(jac_0, 21, Operation::TANGENT);
-
-  table.emplace_back(jac_1, 31, Operation::ADJOINT);
-
-  table.emplace_back(jac_2, 41, Operation::TANGENT);
-
-  table.emplace_back(55, 0, Operation::ADJOINT);
-
-  table.emplace_back(66, 1, Operation::TANGENT);
-
-  table.emplace_back(100, 0, Operation::MULTIPLICATION);
-
-  serial_accumulation_sequence<Dense_Jacobian> serial_accumulation{table, 3};
-
-  //Test problem 2_0
-  if(serial_accumulation[0].get_j() != 2 ||
-      *serial_accumulation[0].get_i() != 0 ||
-      *serial_accumulation[0].operation() != Operation::MULTIPLICATION){
-
-    return false;
-  }
-
-  //Test subproblem 0
-  if(serial_accumulation[1].get_j() != 0 ||
-      serial_accumulation[1].get_i() ||
-      *serial_accumulation[1].operation() != Operation::TANGENT){
-
-    return false;
-  }
-
-  //Test subproblem 2_1
-  if(serial_accumulation[2].get_j() != 2 ||
-      *serial_accumulation[2].get_i() != 1 ||
-      *serial_accumulation[2].operation() != Operation::TANGENT){
-
-    return false;
-  }
-
-  //Test subproblem 1
-  if(serial_accumulation[3].get_j() != 1 ||
-      serial_accumulation[3].get_i() ||
-      *serial_accumulation[3].operation() != Operation::ADJOINT){
-
-    return false;
-  }
-
-  /* serial_accumulation.parser_sequence_2_graphviz_format(); */
-  return true;
-}
-
-void graph_test_0(Jacobian* jac_0){
-
-  const std::size_t chain_length = 4;
-  Table<Jacobian> table{chain_length};
-
-  for(std::size_t i= 0; i < chain_length; i++){
-    table.emplace_back(jac_0);
-  }
-
-  //[1,0]
-  table.emplace_back(11, 0);
-  //[2,1] does not matter
-  table.emplace_back(13, 1);
-  //[2,0] does not matter
-  table.emplace_back(15, 1);
-  //[3,2]
-  table.emplace_back(25,2);
-  //[3,1] does not matter
-  table.emplace_back(35,1);
-  //[3,0]
-  table.emplace_back(60,1);
-
-  serial_accumulation_sequence<Jacobian> serial_accumulation{table, chain_length};
-
-  serial_accumulation.parser_sequence_2_graphviz_format();
-}
-
-void graph_test_0(Dense_Jacobian* jac_0){  
-
-  const std::size_t chain_length = 3;
-  Table<Dense_Jacobian> table{chain_length};
-
-  //[0]
-  table.emplace_back(jac_0, 11, Operation::ADJOINT);
-  //[1]
-  table.emplace_back(jac_0, 15, Operation::ADJOINT);
-  //[2]
-  table.emplace_back(jac_0, 19, Operation::TANGENT);
-  //[1,0]
-  table.emplace_back(21, 0, Operation::MULTIPLICATION);
-  //[2,1] does not matter
-  table.emplace_back(31, 1, Operation::ADJOINT);
-  //[2,0]
-  table.emplace_back(40, 1, Operation::MULTIPLICATION);
-
-  serial_accumulation_sequence<Dense_Jacobian> serial_accumulation{table, chain_length};
-  
-  serial_accumulation.parser_sequence_2_graphviz_format();
-}
-
-void graph_test_1(Jacobian* jac_0){
-
-  const std::size_t chain_length = 5;
-  Table<Jacobian> table{chain_length};
-
-  for(std::size_t i= 0; i < chain_length; i++){
-    table.emplace_back(jac_0);
-  }
-
-  //[1,0] does not matter.
-  table.emplace_back(12, 0);
-  //[2,1]
-  table.emplace_back(15, 1);
-  //[2,0]
-  table.emplace_back(28, 0);
-  //[3,2] does not matter
-  table.emplace_back(23, 2);
-  //[3,1] does not matter
-  table.emplace_back(45, 1);
-  //[3,0] does not matter
-  table.emplace_back(65, 1);
-  //[4,3]
-  table.emplace_back(11, 3);
-  //[4,2] does not matter
-  table.emplace_back(31, 3);
-  //[4,1] does not matter
-  table.emplace_back(45,1);
-  //[4,0]
-  table.emplace_back(60,2);
-
-  serial_accumulation_sequence<Jacobian> serial_accumulation{table, chain_length};
-
-  serial_accumulation.parser_sequence_2_graphviz_format();
-}
-
-void graph_test_1(Dense_Jacobian* jac_0){
-
-  const std::size_t chain_length = 3;
-  Table<Dense_Jacobian> table{chain_length};
-
-  //[0]
-  table.emplace_back(jac_0, 21, Operation::TANGENT);
-  //[1]
-  table.emplace_back(jac_0, 17, Operation::ADJOINT);
-  //[2]
-  table.emplace_back(jac_0, 11, Operation::ADJOINT);
-  //[1,0] does not matter. 
-  table.emplace_back(30, 0, Operation::TANGENT);
-  //[2,1]
-  table.emplace_back(45, 1, Operation::MULTIPLICATION);
-  //[2,0]
-  table.emplace_back(60, 0, Operation::MULTIPLICATION);
-
-  serial_accumulation_sequence<Dense_Jacobian> serial_accumulation{table, chain_length};
-
-  serial_accumulation.parser_sequence_2_graphviz_format();
-}
-
-void graph_test_2(Jacobian* jac_0){
-
-  const std::size_t chain_length = 4;
-  Table<Jacobian> table{chain_length};
-
-  for(std::size_t idx = 0; idx < chain_length; idx++){
-
-    table.emplace_back(jac_0);
-  }
-
-  //[1,0]
-  table.emplace_back(13, 0);
-  //[2,1]
-  table.emplace_back(16, 1);
-  //[2,0]
-  table.emplace_back(23, 1);
-  //[3,2] does not matter
-  table.emplace_back(28, 2);
-  //[3,1] does not matter
-  table.emplace_back(44, 1);
-  //[3,0]
-  table.emplace_back(56, 2);
-
-  serial_accumulation_sequence<Jacobian> serial_accumulation{table, chain_length};
-
-  serial_accumulation.parser_sequence_2_graphviz_format();
-}
-
-void graph_test_2(Dense_Jacobian* jac_0){
-
-  const std::size_t chain_length = 4;
-  Table<Dense_Jacobian> table{chain_length};
-
-  //[0]
-  table.emplace_back(jac_0, 15, Operation::ADJOINT);
-  //[1] does not matter.
-  table.emplace_back(jac_0, 20, Operation::TANGENT);
-  //[2]
-  table.emplace_back(jac_0, 22, Operation::TANGENT);
-  //[3]
-  table.emplace_back(jac_0, 25, Operation::ADJOINT);
-  //[1,0]
-  table.emplace_back(42, 0, Operation::MULTIPLICATION);
-  //[2,1] does not matter.
-  table.emplace_back(53, 1, Operation::TANGENT);
-  //[2,0] does not matter
-  table.emplace_back(100, 0, Operation::ADJOINT);
-  //[3,2]
-  table.emplace_back(64, 2, Operation::MULTIPLICATION);
-  //[3,1] does not matter
-  table.emplace_back(111, 1, Operation::TANGENT);
-  //[3,0]
-  table.emplace_back(173, 1, Operation::MULTIPLICATION);
-
-  serial_accumulation_sequence<Dense_Jacobian> serial_accumulation{table, chain_length};
-
-  serial_accumulation.parser_sequence_2_graphviz_format();
-}
-
-void graph_test_3(Jacobian* jac_0){
-
-  const std::size_t chain_length = 4;
-  Table<Jacobian> table{chain_length};
-
-  for(std::size_t idx = 0; idx < chain_length; idx++){
-
-    table.emplace_back(jac_0);
-  }
-
-  //[1,0]
-  table.emplace_back(12, 0);
-  //[2,1]
-  table.emplace_back(15, 1);
-  //[2,0]
-  table.emplace_back(23, 2);
-  //[3,2]
-  table.emplace_back(17, 2);
-  //[3,1]
-  table.emplace_back(33, 1);
-  //[3,0]
-  table.emplace_back(50, 0);
-
-  serial_accumulation_sequence<Jacobian> serial_accumulation{table, chain_length};
-
-  serial_accumulation.parser_sequence_2_graphviz_format();
-}
-
-void graph_test_3(Dense_Jacobian* jac_0){
-
-  const std::size_t chain_length = 4;
-  Table<Dense_Jacobian> table{chain_length};
-
-  //[0]
-  table.emplace_back(jac_0, 11, Operation::TANGENT);
-  //[1]
-  table.emplace_back(jac_0, 13, Operation::ADJOINT);
-  //[2] does not matter
-  table.emplace_back(jac_0, 17, Operation::ADJOINT);
-  //[3]
-  table.emplace_back(jac_0, 18, Operation::ADJOINT);
-  //[1,0]
-  table.emplace_back(25, 0, Operation::MULTIPLICATION);
-  //[2,1] does not matter
-  table.emplace_back(30, 1, Operation::TANGENT);
-  //[2,0]
-  table.emplace_back(53, 1, Operation::TANGENT);
-  //[3,2] does not matter
-  table.emplace_back(32, 2, Operation::ADJOINT);
-  //[3,1] does not matter
-  table.emplace_back(53, 1, Operation::ADJOINT);
-  //[3,0]
-  table.emplace_back(78, 2, Operation::MULTIPLICATION);
-
-  serial_accumulation_sequence<Dense_Jacobian> serial_accumulation{table, chain_length};
-
-  serial_accumulation.parser_sequence_2_graphviz_format();
-}
-
 int main(){
-  //test object used to store test results and print test state.
-  test_optimal_accumulation test_object;
 
+  test_optimal_accumulation test{};
+  
+
+  //Homogeneous tangent test.
   {
-    Jacobian jac_0{4, 6};
-    Jacobian jac_1{6, 5};
-    Jacobian jac_2{5, 5};
+    const std::size_t chain_length = 2;
+    Table<Dense_Jacobian> table{chain_length};
+    // Constructor arguments: domain space dimension, codomain space dimension, number of edges.
+    Dense_Jacobian jac_0{5, 15, 100};
+    Dense_Jacobian jac_1{15, 24, 150};
 
-    test_object.set_test_jacobian_small(test_jacobian(&jac_0, &jac_1));
+    //Emplace back node with pointers.
+    //Constructor arguments: jacobian_pointer, preaccumulation_cost, operation.
+    table.emplace_back(&jac_0, jac_0.domain_dim() * jac_0.number_edges(), Operation::TANGENT);
+    table.emplace_back(&jac_1, jac_1.domain_dim() * jac_1.number_edges(), Operation::TANGENT);
+    //Emplace back node without pointer.
+    //Constructor arguments: accumulation_cost, split_position, operation.
+    table.emplace_back(jac_0.domain_dim() * (jac_0.number_edges() + jac_1.number_edges()),
+                        0, Operation::TANGENT);
 
-    test_object.set_test_jacobian_medium(test_jacobian(&jac_0, &jac_1, &jac_2));
+    //operation_sequence_accumulation arguments: reference to table, chain length, pointer to ostream. 
+    std::vector<Node_matrix_free> accumulation_sequence = 
+      operation_sequence_accumulation<Node_matrix_free>(table, chain_length, nullptr);
 
-    /* graph_test_1(&jac_0); */
+    //Validate Node_matrix_free information.
+    if(test.check_node_information(accumulation_sequence[0], 1, 0, Operation::TANGENT, 1) &&
+        test.check_node_information(accumulation_sequence[1], 0, std::nullopt, Operation::TANGENT, 2)){
+
+      test.set_matrix_free_homogeneous_tangent_result(true);
+    }
+    else{
+      test.set_matrix_free_homogeneous_tangent_result(false);
+    }
+  }
+  //Homogeneous adjoint test.
+  {
+    const std::size_t chain_length = 2;
+    Table<Dense_Jacobian> table{chain_length};
+    // Constructor arguments: domain space dimension, codomain space dimension, number of edges.
+    Dense_Jacobian jac_0{24, 15, 100};
+    Dense_Jacobian jac_1{15, 4, 150};
+
+    //Emplace back node with pointers.
+    //Constructor arguments: jacobian_pointer, preaccumulation_cost, operation.
+    table.emplace_back(&jac_0, jac_0.codomain_dim() * jac_0.number_edges(), Operation::ADJOINT);
+    table.emplace_back(&jac_1, jac_1.codomain_dim() * jac_1.number_edges(), Operation::ADJOINT);
+
+    //Emplace back node without pointer.
+    //Constructor arguments: accumulation_cost, split_position, operation.
+    table.emplace_back(jac_1.codomain_dim() * (jac_0.number_edges() + jac_1.number_edges()),
+                        0, Operation::ADJOINT);
+
+    //operation_sequence_accumulation arguments: reference to table, chain length, pointer to ostream. 
+    std::vector<Node_matrix_free> accumulation_sequence = 
+      operation_sequence_accumulation<Node_matrix_free>(table, chain_length, nullptr);
+
+    //Validate Node_matrix_free information.
+    if(test.check_node_information(accumulation_sequence[0], 1, 0, Operation::ADJOINT, 1) &&
+        test.check_node_information(accumulation_sequence[1], 1, std::nullopt, Operation::ADJOINT, 2)){
+
+      test.set_matrix_free_homogeneous_adjoint_result(true);
+    }
+    else{
+      test.set_matrix_free_homogeneous_adjoint_result(false);
+    }
   }
   
+  // Multiplication test
   {
+    const std::size_t chain_length = 2;
+    Table<Dense_Jacobian> table {chain_length};
 
-    //Base Jacobians
-    Dense_Jacobian jac_0{3, 5, 25};
-    Dense_Jacobian jac_1{5, 4, 40};
-    Dense_Jacobian jac_2{4, 8, 55};
+    // Constructor arguments: domain space dimension, codomain space dimension, number of edges.
+    Dense_Jacobian jac_0{24, 15, 100};
+    Dense_Jacobian jac_1{15, 24, 150};
 
-    test_object.set_test_tangent_dense_jacobian(
-        test_tangent_dense(&jac_0, &jac_1));
+    //Emplace back node with pointers.
+    //Constructor arguments: jacobian_pointer, preaccumulation_cost, operation.
+    table.emplace_back(&jac_0, jac_0.codomain_dim() * jac_0.number_edges(), Operation::ADJOINT);
+    table.emplace_back(&jac_1, jac_1.domain_dim() * jac_1.number_edges(), Operation::TANGENT);
+
+    //Emplace back node without pointer.
+    //Constructor arguments: accumulation_cost, split_position, operation.
+    //Warning: this operation does not correspond to the optimal accumulation method.
+    table.emplace_back(jac_0.codomain_dim() * jac_0.number_edges() + 
+                      jac_1.domain_dim() * jac_1.number_edges() + 
+                      jac_1.codomain_dim()* jac_0.codomain_dim() * jac_0.domain_dim(),
+                      0, Operation::MULTIPLICATION);
+
+    //operation_sequence_accumulation arguments: reference to table, chain length, pointer to ostream. 
+    std::vector<Node_matrix_free> accumulation_sequence = 
+      operation_sequence_accumulation<Node_matrix_free>(table, chain_length, nullptr);
+
+    //Validate Node_matrix_free information.
+    if(test.check_node_information(accumulation_sequence[0], 1, 0, Operation::MULTIPLICATION, 1) &&
+        test.check_node_information(accumulation_sequence[1], 1, std::nullopt, Operation::TANGENT, 2) &&
+        test.check_node_information(accumulation_sequence[2], 0, std::nullopt, Operation::ADJOINT, 2)){
+
+      test.set_matrix_free_multiplication_result(true);
+    }
+    else{
+      test.set_matrix_free_multiplication_result(false);
+    }
+  }
+  
+  //Matrix-free test_case_0
+  {
+    const std::size_t chain_length = 3;
+    Table<Dense_Jacobian> table {chain_length};
+
+    // Constructor arguments: domain space dimension, codomain space dimension, number of edges.
+    Dense_Jacobian jac_0{24, 15, 100};
+    Dense_Jacobian jac_1{15, 24, 150};
+    Dense_Jacobian jac_2{24, 20, 80};
+
+    //Emplace back node with pointers.
+    //Constructor arguments: jacobian_pointer, preaccumulation_cost, operation.
+    table.emplace_back(&jac_0, jac_0.codomain_dim() * jac_0.number_edges(), Operation::ADJOINT);
+    table.emplace_back(&jac_1, jac_1.domain_dim() * jac_1.number_edges(), Operation::TANGENT);
+    table.emplace_back(&jac_2, jac_2.codomain_dim() * jac_2.number_edges(), Operation::ADJOINT);
+
+    //Warning: the following data is not intended to match the actual optimal data. It is simply 
+    //mock data to test operation_sequence_accumulation method.
+    //Problem instance (1,0)
+    table.emplace_back(150, 0, Operation::TANGENT);
+    //Problem (2,1)
+    table.emplace_back(300, 1, Operation::TANGENT);
+    //Problem (2,0)
+    table.emplace_back(315, 1, Operation::MULTIPLICATION);
+
+    //operation_sequence_accumulation arguments: reference to table, chain length, pointer to ostream. 
+    std::vector<Node_matrix_free> accumulation_sequence = 
+      operation_sequence_accumulation<Node_matrix_free>(table, chain_length, nullptr);
+
+    //Validate Node_matrix_free information.
+    if(test.check_node_information(accumulation_sequence[0], 2, 0, Operation::MULTIPLICATION, 1) &&
+        test.check_node_information(accumulation_sequence[1], 2, std::nullopt, Operation::ADJOINT, 2) &&
+        test.check_node_information(accumulation_sequence[2], 1, 0, Operation::TANGENT, 2) &&
+        test.check_node_information(accumulation_sequence[3], 0, std::nullopt, Operation::ADJOINT, 3)){
+
+      test.set_matrix_free_test_case_0(true);
+    }
+    else{
+      test.set_matrix_free_test_case_0(false);
+    }
+  }
+
+  //Matrix-free test_case_1
+  {
+    const std::size_t chain_length = 4;
+    Table<Dense_Jacobian> table {chain_length};
+
+    // Constructor arguments: domain space dimension, codomain space dimension, number of edges.
+    Dense_Jacobian jac_0{24, 15, 100};
+    Dense_Jacobian jac_1{15, 24, 150};
+    Dense_Jacobian jac_2{24, 20, 80};
+    Dense_Jacobian jac_3{20, 18, 180};
+
+    //Emplace back node with pointers.
+    //Constructor arguments: jacobian_pointer, preaccumulation_cost, operation.
+    table.emplace_back(&jac_0, jac_0.codomain_dim() * jac_0.number_edges(), Operation::ADJOINT);
+    table.emplace_back(&jac_1, jac_1.domain_dim() * jac_1.number_edges(), Operation::TANGENT);
+    table.emplace_back(&jac_2, jac_2.codomain_dim() * jac_2.number_edges(), Operation::ADJOINT);
+    table.emplace_back(&jac_3, jac_2.codomain_dim() * jac_2.number_edges(), Operation::ADJOINT);
+
+    //Warning: the following data is not intended to match the actual optimal data. It is simply 
+    //mock data to test operation_sequence_accumulation method.
+    //Problem instance (1,0)
+    table.emplace_back(150, 0, Operation::MULTIPLICATION);
+    //Problem (2,1)
+    table.emplace_back(300, 1, Operation::TANGENT);
+    //Problem (2,0)
+    table.emplace_back(315, 1, Operation::ADJOINT);
+    //Problem (3,2)
+    table.emplace_back(400, 2, Operation::MULTIPLICATION);
+    //Problem (3,1)
+    table.emplace_back(500, 1, Operation::TANGENT);
+    //Problem (3,0)
+    table.emplace_back(600, 1, Operation::MULTIPLICATION);
+
+    //operation_sequence_accumulation arguments: reference to table, chain length, pointer to ostream. 
+    std::vector<Node_matrix_free> accumulation_sequence = 
+      operation_sequence_accumulation<Node_matrix_free>(table, chain_length, nullptr);
+
+    //Validate Node_matrix_free information.
+    if(test.check_node_information(accumulation_sequence[0], 3, 0, Operation::MULTIPLICATION, 1) &&
+        test.check_node_information(accumulation_sequence[1], 3, 2, Operation::MULTIPLICATION, 2) &&
+        test.check_node_information(accumulation_sequence[2], 3, std::nullopt, Operation::ADJOINT, 3) &&
+        test.check_node_information(accumulation_sequence[3], 2, std::nullopt, Operation::ADJOINT, 3) &&
+        test.check_node_information(accumulation_sequence[4], 1, 0, Operation::MULTIPLICATION, 2) &&
+        test.check_node_information(accumulation_sequence[5], 1, std::nullopt, Operation::TANGENT, 3) &&
+        test.check_node_information(accumulation_sequence[6], 0, std::nullopt, Operation::ADJOINT, 3)){
+
+      test.set_matrix_free_test_case_1(true);
+    }
+    else{
+      test.set_matrix_free_test_case_1(false);
+    }
+  }
+
+  //-----DENSE JACOBIAN CHAIN PRODUCT BRACKETING OPERATION ACCUMULATION TEST-----
+  //Test case 0
+  {
+    const std::size_t chain_length = 3;
+    Table<Jacobian> table{chain_length};
+
+    //Constructor arguments: domain space dimension and codomain space dimension.
+    Jacobian jac_0{5, 10};
+    Jacobian jac_1{10, 8};
+    Jacobian jac_2{8, 8};
+
+    //Emplace back node with pointers.
+    //Constructor arguments: reference to a cell.
+    table.emplace_back(&jac_0);
+    table.emplace_back(&jac_1);
+    table.emplace_back(&jac_2);
+
+    //Cell without pointers constructor arguments: accumulation cost, split position.
+    //Problem instance (1,0)
+    table.emplace_back(jac_1.codomain_dim() * jac_0.domain_dim() * jac_0.codomain_dim(), 0);
+    //Problem instance (2,1)
+    table.emplace_back(jac_2.codomain_dim() * jac_1.domain_dim() * jac_1.codomain_dim(), 1);
+    //Warning to simplify the script the optimal cost value will not be calculated. A arbitrary 
+    //number is used to initialize the optimal cost.
+    //Problem instance (2,0)
+    table.emplace_back(200, 1);
+
+    //operation_sequence_accumulation arguments: reference to table, chain length and pointer to ostream.
+    std::vector<Node_jacobian> accumulation_sequence =
+      operation_sequence_accumulation<Node_jacobian>(table, chain_length, nullptr);
+
+    //Validate Node_jacobian information.
+    if(test.check_node_information(accumulation_sequence[0], 2, 0, 1) &&
+        test.check_node_information(accumulation_sequence[1], 2, std::nullopt, 2) &&
+        test.check_node_information(accumulation_sequence[2], 1, 0, 2)){
+      
+      test.set_jacobian_test_case_0(true);
+    }
+    else{test.set_jacobian_test_case_0(false);}
+  }
+  //Test case 1
+  {
+    const std::size_t chain_length = 3;
+    Table<Jacobian> table{chain_length};
+
+    //Constructor arguments: domain space dimension and codomain space dimension.
+    Jacobian jac_0{8, 8};
+    Jacobian jac_1{8, 10};
+    Jacobian jac_2{10, 5};
+
+    //Emplace back node with pointers.
+    //Constructor arguments: reference to a cell.
+    table.emplace_back(&jac_0);
+    table.emplace_back(&jac_1);
+    table.emplace_back(&jac_2);
+
+    //Cell without pointers constructor arguments: accumulation cost, split position.
+    //Problem instance (1,0)
+    table.emplace_back(jac_1.codomain_dim() * jac_0.domain_dim() * jac_0.codomain_dim(), 0);
+    //Problem instance (2,1)
+    table.emplace_back(jac_2.codomain_dim() * jac_1.domain_dim() * jac_1.codomain_dim(), 1);
+    //Warning to simplify the script the optimal cost value will not be calculated. A arbitrary 
+    //number is used to initialize the optimal cost.
+    //Problem instance (2,0)
+    table.emplace_back(200, 0);
+
+    //operation_sequence_accumulation arguments: reference to table, chain length and pointer to ostream.
+    std::vector<Node_jacobian> accumulation_sequence =
+      operation_sequence_accumulation<Node_jacobian>(table, chain_length, nullptr);
+
+    //Validate Node_jacobian information.
+    if(test.check_node_information(accumulation_sequence[0], 2, 0, 1) &&
+        test.check_node_information(accumulation_sequence[1], 2, 1, 2) &&
+        test.check_node_information(accumulation_sequence[2], 0, std::nullopt, 2)){
+
+      test.set_jacobian_test_case_1(true);
+    }
+    else{test.set_jacobian_test_case_1(false);}
+  }
+
+  //Test case 2
+  {
+    const std::size_t chain_length = 4;
+    Table<Jacobian> table{chain_length};
+
+    //Constructor arguments: domain space dimension and codomain space dimension.
+    Jacobian jac_0{8, 8};
+    Jacobian jac_1{8, 10};
+    Jacobian jac_2{10, 7};
+    Jacobian jac_3{7, 9};
+
+    //Cell without pointers constructor arguments: accumulation cost, split position.
+    //Problem instance (1,0)
+    table.emplace_back(jac_1.codomain_dim() * jac_0.domain_dim() * jac_0.codomain_dim(), 0);
+    //Problem instance (2,1)
+    table.emplace_back(jac_2.codomain_dim() * jac_1.domain_dim() * jac_1.codomain_dim(), 1);
+    //Warning: from this point on, accumulated costs are set to mock values. 
+    //Problem instance (2,0)
+    table.emplace_back(250, 0);
+    //Problem instance (3,2)
+    table.emplace_back(300, 2);
+    //Problem instance (3,1)
+    table.emplace_back(700, 1);
+    //Problem instance (3,0)
+    table.emplace_back(450, 2);
+
+    //operation_sequence_accumulation arguments: reference to table, chain length and pointer to ostream.
+    std::vector<Node_jacobian> accumulation_sequence =
+      operation_sequence_accumulation<Node_jacobian>(table, chain_length, nullptr);
+
+    //Validate Node_jacobian information.
+    if(test.check_node_information(accumulation_sequence[0], 3, 0, 1) &&
+        test.check_node_information(accumulation_sequence[1], 3, std::nullopt, 2) &&
+        test.check_node_information(accumulation_sequence[2], 2, 0, 2) &&
+        test.check_node_information(accumulation_sequence[3], 2, 1, 3) &&
+        test.check_node_information(accumulation_sequence[4], 0, std::nullopt, 3)){
+      
+      test.set_jacobian_test_case_2(true);
+    }
+    else{test.set_jacobian_test_case_2(false);}
+  }
+
+  //---------------BINOMIAL_CHECKPOINTING---------------
+  //Test case 0
+  {
+    const std::size_t chain_length = 5;
+    const std::size_t available_checkpoints = 2;
+    binomial_table table{chain_length, available_checkpoints};
+
+    std::vector<Matrix_free_information> problem_dense_data;
+    problem_dense_data.reserve(chain_length);
+
+    //Matrix_free_information constructor arguments: domain space dimension, codomian space dimension,
+    // number of edges.
+    problem_dense_data.emplace_back(10, 15, 150);
+    problem_dense_data.emplace_back(15, 13, 200);
+    problem_dense_data.emplace_back(13, 20, 180);
+    problem_dense_data.emplace_back(20, 23, 280);
+    problem_dense_data.emplace_back(23, 18, 250);
+
+    //Function execution cost estimate
+    std::vector<std::size_t> execution_costs;
+    execution_costs.reserve(chain_length);
+    execution_costs.emplace_back(100);
+    execution_costs.emplace_back(200);
+    execution_costs.emplace_back(300);
+    execution_costs.emplace_back(400);
+    execution_costs.emplace_back(500);
+
+    //Build Split dense.
+    jacobian_chain<Split_dense_Jacobian, Split_reversal_dense_information> 
+      chain{problem_dense_data, execution_costs};
+
+    //Call dynamic programming algorithm to fill the look up table.
+    binomial_checkpointing<Split_dense_Jacobian, Split_reversal_dense_information>
+      algorithm{chain, chain_length - 1, 0, available_checkpoints, nullptr};
+
+    //Accumulate operation nodes.
+    //operation_sequence_accumulation arguments: reference to lookup table, chain length, number of
+    //available checkpoints and address of a ostream object (e.g. std::cout).
+    std::vector<Node_binomial_checkpointing> accumulation_sequence =
+      subproblem_sequence_accumulation(algorithm.get_table(), chain_length,
+                                        available_checkpoints, nullptr);
+
+    //Validate Node_binomial_checkpointing information (j, i, c) and level.
+    if(test.check_node_information(accumulation_sequence[0], 4, 0, 2, 1) &&
+        test.check_node_information(accumulation_sequence[1], 4, 2, 1, 2) &&
+        test.check_node_information(accumulation_sequence[2], 4, 3, 0, 3) &&
+        test.check_node_information(accumulation_sequence[3], 2, 2, 1, 3) &&
+        test.check_node_information(accumulation_sequence[4], 1, 0, 2, 2)){
+
+      test.set_binomial_case_0(true);
+    }
+    else{test.set_binomial_case_0(false);}
+  }
+
+  //Test case 1
+  {
+    const std::size_t chain_length = 5;
+    const std::size_t available_checkpoints = 2;
+    binomial_table table{chain_length, available_checkpoints};
+
+    std::vector<Matrix_free_information> problem_dense_data;
+    problem_dense_data.reserve(chain_length);
+
+    //Matrix_free_information constructor arguments: domain space dimension, codomian space dimension,
+    // number of edges.
+    problem_dense_data.emplace_back(10, 15, 150);
+    problem_dense_data.emplace_back(15, 13, 200);
+    problem_dense_data.emplace_back(13, 20, 180);
+    problem_dense_data.emplace_back(20, 23, 280);
+    problem_dense_data.emplace_back(23, 18, 250);
+
+    //Function execution cost estimate
+    std::vector<std::size_t> execution_costs;
+    execution_costs.reserve(chain_length);
+    execution_costs.emplace_back(500);
+    execution_costs.emplace_back(400);
+    execution_costs.emplace_back(300);
+    execution_costs.emplace_back(200);
+    execution_costs.emplace_back(100);
+
+    //Build Split dense.
+    jacobian_chain<Split_dense_Jacobian, Split_reversal_dense_information> 
+      chain{problem_dense_data, execution_costs};
+
+    //Call dynamic programming algorithm to fill the look up table.
+    binomial_checkpointing<Split_dense_Jacobian, Split_reversal_dense_information>
+      algorithm{chain, chain_length - 1, 0, available_checkpoints, nullptr};
+
+    //Accumulate operation nodes.
+    //operation_sequence_accumulation arguments: reference to lookup table, chain length, number of
+    //available checkpoints and address of a ostream object (e.g. std::cout).
+    std::vector<Node_binomial_checkpointing> accumulation_sequence =
+      subproblem_sequence_accumulation(algorithm.get_table(), chain_length,
+                                        available_checkpoints, nullptr);
+
+    //Validate Node_binomial_checkpointing information (j, i, c) and level.
+    if(test.check_node_information(accumulation_sequence[0], 4, 0, 2, 1) &&
+        test.check_node_information(accumulation_sequence[1], 4, 1, 1, 2) &&
+        test.check_node_information(accumulation_sequence[2], 4, 2, 0, 3) &&
+        test.check_node_information(accumulation_sequence[3], 1, 1, 1, 3) &&
+        test.check_node_information(accumulation_sequence[4], 0, 0, 2, 2)){
+
+      test.set_binomial_case_1(true);
+    }
+    else{test.set_binomial_case_1(false);}
+  }
+
+  //Test case 2
+  {
+    const std::size_t chain_length = 6;
+    const std::size_t available_checkpoints = 2;
+    binomial_table table{chain_length, available_checkpoints};
+
+    std::vector<Matrix_free_information> problem_dense_data;
+    problem_dense_data.reserve(chain_length);
+
+    //Matrix_free_information constructor arguments: domain space dimension, codomian space dimension,
+    // number of edges.
+    problem_dense_data.emplace_back(10, 15, 150);
+    problem_dense_data.emplace_back(15, 13, 200);
+    problem_dense_data.emplace_back(13, 20, 180);
+    problem_dense_data.emplace_back(20, 23, 280);
+    problem_dense_data.emplace_back(23, 18, 250);
+    problem_dense_data.emplace_back(18, 18, 350);
+
+    //Function execution cost estimate
+    std::vector<std::size_t> execution_costs;
+    execution_costs.reserve(chain_length);
+    execution_costs.emplace_back(100);
+    execution_costs.emplace_back(200);
+    execution_costs.emplace_back(300);
+    execution_costs.emplace_back(400);
+    execution_costs.emplace_back(500);
+    execution_costs.emplace_back(600);
+
+    //Build Split dense.
+    jacobian_chain<Split_dense_Jacobian, Split_reversal_dense_information> 
+      chain{problem_dense_data, execution_costs};
+
+    //Call dynamic programming algorithm to fill the look up table.
+    binomial_checkpointing<Split_dense_Jacobian, Split_reversal_dense_information>
+      algorithm{chain, chain_length - 1, 0, available_checkpoints, nullptr};
+
+    //Accumulate operation nodes.
+    //operation_sequence_accumulation arguments: reference to lookup table, chain length, number of
+    //available checkpoints and address of a ostream object (e.g. std::cout).
+    std::vector<Node_binomial_checkpointing> accumulation_sequence =
+      subproblem_sequence_accumulation(algorithm.get_table(), chain_length,
+                                        available_checkpoints, nullptr);
     
-    test_object.set_test_adjoint_dense_jacobian(
-        test_adjoint_dense(&jac_0, &jac_1));
 
-    test_object.set_test_multiplication_dense_jacobian(
-        test_multiplication_dense(&jac_0, &jac_1));
+    //Validate Node_binomial_checkpointing information (j, i, c) and level.
+    if(test.check_node_information(accumulation_sequence[0], 5, 0, 2, 1) &&
+        test.check_node_information(accumulation_sequence[1], 5, 3, 1, 2) &&
+        test.check_node_information(accumulation_sequence[2], 5, 4, 0, 3) &&
+        test.check_node_information(accumulation_sequence[3], 3, 3, 1, 3) &&
+        test.check_node_information(accumulation_sequence[4], 2, 0, 2, 2) &&
+        test.check_node_information(accumulation_sequence[5], 2, 1, 1, 3) &&
+        test.check_node_information(accumulation_sequence[6], 0, 0, 2, 3)){
 
-    test_object.set_test_dense_jacobian_accumulation(
-        test_dense_jacobian(&jac_0, &jac_1, &jac_2));
-
-    /* graph_test_3(&jac_0); */
+      test.set_binomial_case_2(true);
+    }
+    else{test.set_binomial_case_2(false);}
   }
+  //Checks the state of all tests carried out. If one or more fail then the test state is going 
+  //to be printed to the terminal automatically.
+  test.were_all_tests_successful();
+  //Print test state:
+  /* test.print_test_state(); */
 
-  //Checks if all tests were successful.
-  test_object.set_were_all_tests_successful();
-  test_object.print_test_state();
-  
   return 0;
 }

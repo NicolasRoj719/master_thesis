@@ -15,8 +15,8 @@
 #include <type_traits>
 #include <vector>
 
-#include "./jacobian.hpp"
-#include "./table_cell.hpp"
+#include "jacobian.hpp"
+#include "table_cell.hpp"
 
 
 /**

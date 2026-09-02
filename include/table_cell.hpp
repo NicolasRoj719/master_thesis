@@ -11,7 +11,7 @@
 #include <string>
 #include <type_traits>
 
-#include "./jacobian.hpp"
+#include "jacobian.hpp"
 
 
 /**

@@ -1,7 +1,7 @@
 /**
  * @file chain.hpp
  *
- * @brief Constructs and manages sequences (chains) of Dense, Split Dense, Sparse, and
+ * @brief Constructs and manages sequences (chain) of Dense, Split Dense, Sparse, and
  * Split Sparse Jacobian matrices from metadata structures of files.
  */
 

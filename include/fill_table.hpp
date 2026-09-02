@@ -1,5 +1,5 @@
 /**
- * @file fill_dptable.hpp 
+ * @file fill_table.hpp 
  * @brief Dynamic programming (DP) algorithms look tables for optimal Jacobian chain bracketing.
  */
 #ifndef FILL_TABLE
@@ -737,6 +737,11 @@ namespace tool_box_split{
  *
  * @details Embeds Binomial Checkpointing into the Dense Jacobian Chain Product Bracketing DP
  * formulation to handle memory-constrained reverse-mode automatic differentiation.
+ *
+ * @details THIS CLASS IS EXPERIMENTAL. EMBEEDING BINOMIAL CHECKPOINTING INTO THE OPTIMAL 
+ * BRACKETING FORMULATION HAD NO BENEFITIAL EFFECT ON THE OUTCOME OF THE ALGORITHM. THEREFORE 
+ * ITS USED IS DISCOURGE. THE METHODS CONTAINED INSIDE ARE NEVER THE LESS USEFUL, WHICH JUSTIFIES 
+ * THE EXISTANCE OF THIS TEMPLATE SPECIALIZATION.
  */
 template<>
 class fill_table<Split_dense_Jacobian, Split_reversal_dense_information>{
