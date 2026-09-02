@@ -63,6 +63,7 @@ dynamic algorithm performance.
 
 ## Core API & Class Reference
 Dynamic Programming:
+
     fill_table<JacobianType, InformationType>: Dynamic programming solver for Dense Jacobian Chain
     Product Bracketing and Matrix-Free Dense and Sparse Jacobian Chain Product Bracketing.
 
@@ -70,6 +71,7 @@ Dynamic Programming:
     Checkpointing.
 
 Jacobians & Metadata
+
     Jacobian_information: Base class containing domain and codomian space dimension information.
 
     Matrix_free_information: Extends Jacobian_information with computational graph edge counts for 
@@ -92,6 +94,7 @@ Jacobians & Metadata
     multiply-add operations.
 
 Chain & Views
+
     jacobian_chain<JacobianType, InformationType>: Main container wrapping an ordered sequence of
     JacobianType objects.
 
@@ -99,6 +102,7 @@ Chain & Views
 
 
 Schedule & Generator
+
     Node_jacobian, Node_matrix_free: Nodes representing subchain operations in the optimal accumulation
     sequence.
 
@@ -118,6 +122,7 @@ Schedule & Generator
     patterns.
 
 Requirements:
+
     Compiler: C++20 compliant compiler (GCC >= 10, Clang >= 11, or MSVC 2019+).
 
     Build System: CMake >= 3.16.
@@ -125,12 +130,18 @@ Requirements:
     Optional: Doxygen (for generating documentation).
 
 Building and Testing:
+
 1. Configure and Build
+
 Because this is a header-only library, linking against the target master_thesis_lib configures 
 include paths automatically.
 
+```text
+
 # Clone the repository
+
 git clone https://github.com/NicolasRoj719/master_thesis 
+
 cd master_thesis 
 
 # Create build directory and configure
@@ -138,19 +149,23 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release
 
 # Build all test executables
 cmake --build build
+```
 
 2. Run Tests
+
 Unit test sources in tests/unit/ are automatically discovered and build as standalone test 
 executables via CTest.
-
+```text
 cd build
 ctest --output-on-failure
+```
 
 Generating API Documentation
 If Doxygen is installed on your system, CMake will automatically configure a custom doc target.
-
+```text
 # Build the documentation target
 cmake --build build --target doc
+```
 
 The generated HTML documentation will be placed in your build directory as specified by Doxyfile.
 
