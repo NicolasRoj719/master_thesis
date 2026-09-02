@@ -59,6 +59,7 @@ dynamic algorithm performance.
 └── tests/                          # Unit testing suite
     ├── fixture/                    # Test fixtures
     └── unit/                       # Unit test source files
+```
 
 ## Core API & Class Reference
 Dynamic Programming:
