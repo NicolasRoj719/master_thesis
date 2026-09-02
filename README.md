@@ -62,7 +62,7 @@ dynamic algorithm performance.
 ```
 
 ## Core API & Class Reference
-Dynamic Programming:
+* **Dynamic Programming:**
 
     fill_table<JacobianType, InformationType>: Dynamic programming solver for Dense Jacobian Chain
     Product Bracketing and Matrix-Free Dense and Sparse Jacobian Chain Product Bracketing.
@@ -70,7 +70,7 @@ Dynamic Programming:
     binomial_checkpointing<SplitType, Information_Type>: Dynamic programming solver for Binomial 
     Checkpointing.
 
-Jacobians & Metadata
+* **Jacobians & Metadata**
 
     Jacobian_information: Base class containing domain and codomian space dimension information.
 
@@ -93,7 +93,7 @@ Jacobians & Metadata
     Split_sparse_Jacobian: Extends Sparse_Jacobian with subprogram execution cost estimate in fused 
     multiply-add operations.
 
-Chain & Views
+* **Chain & Views**
 
     jacobian_chain<JacobianType, InformationType>: Main container wrapping an ordered sequence of
     JacobianType objects.
@@ -101,7 +101,7 @@ Chain & Views
     View_chain: Lightweight, non-owning subrange view over a segment of a JacobianType chain.
 
 
-Schedule & Generator
+* **Schedule & Generator**
 
     Node_jacobian, Node_matrix_free: Nodes representing subchain operations in the optimal accumulation
     sequence.
@@ -121,7 +121,7 @@ Schedule & Generator
     Generator_data: struct containing chain Matrix_free_sparse_information and corresponding sparsity 
     patterns.
 
-Requirements:
+##Requirements:
 
     Compiler: C++20 compliant compiler (GCC >= 10, Clang >= 11, or MSVC 2019+).
 
@@ -129,17 +129,15 @@ Requirements:
 
     Optional: Doxygen (for generating documentation).
 
-Building and Testing:
+##Building and Testing:
 
 1. Configure and Build
 
 Because this is a header-only library, linking against the target master_thesis_lib configures 
 include paths automatically.
 
-```text
-
+```bash
 # Clone the repository
-
 git clone https://github.com/NicolasRoj719/master_thesis 
 
 cd master_thesis 
@@ -155,14 +153,14 @@ cmake --build build
 
 Unit test sources in tests/unit/ are automatically discovered and build as standalone test 
 executables via CTest.
-```text
+```bash
 cd build
 ctest --output-on-failure
 ```
 
 Generating API Documentation
 If Doxygen is installed on your system, CMake will automatically configure a custom doc target.
-```text
+```bash
 # Build the documentation target
 cmake --build build --target doc
 ```
