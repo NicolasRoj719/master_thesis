@@ -121,7 +121,7 @@ dynamic algorithm performance.
     Generator_data: struct containing chain Matrix_free_sparse_information and corresponding sparsity 
     patterns.
 
-##Requirements:
+## Requirements:
 
     Compiler: C++20 compliant compiler (GCC >= 10, Clang >= 11, or MSVC 2019+).
 
@@ -129,7 +129,7 @@ dynamic algorithm performance.
 
     Optional: Doxygen (for generating documentation).
 
-##Building and Testing:
+## Building and Testing:
 
 1. Configure and Build
 
