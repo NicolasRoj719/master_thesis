@@ -34,6 +34,7 @@ dynamic algorithm performance.
 **Modern C++20 Header-Only Design:** Clean implementation with zero external runtime dependencies.
 
 ## Directory structure
+```text
 .
 ├── CMakeLists.txt                  # Build configuration
 ├── Doxyfile.in                     # Template configuration for Doxygen
