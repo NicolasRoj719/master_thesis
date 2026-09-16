@@ -251,6 +251,7 @@ int main(){
     }
     else{test.set_jacobian_test_case_0(false);}
   }
+
   //Test case 1
   {
     const std::size_t chain_length = 3;
@@ -351,7 +352,7 @@ int main(){
     problem_dense_data.emplace_back(20, 23, 280);
     problem_dense_data.emplace_back(23, 18, 250);
 
-    //Function execution cost estimate
+    //Subprograms execution cost estimate
     std::vector<std::size_t> execution_costs;
     execution_costs.reserve(chain_length);
     execution_costs.emplace_back(100);
@@ -361,12 +362,11 @@ int main(){
     execution_costs.emplace_back(500);
 
     //Build Split dense.
-    jacobian_chain<Split_dense_Jacobian, Split_reversal_dense_information> 
-      chain{problem_dense_data, execution_costs};
+    jacobian_chain<Dense_Jacobian, Matrix_free_information> chain{problem_dense_data};
 
     //Call dynamic programming algorithm to fill the look up table.
-    binomial_checkpointing<Split_dense_Jacobian, Split_reversal_dense_information>
-      algorithm{chain, chain_length - 1, 0, available_checkpoints, nullptr};
+    binomial_checkpointing 
+      algorithm{execution_costs, chain_length - 1, 0, available_checkpoints, 0};
 
     //Accumulate operation nodes.
     //operation_sequence_accumulation arguments: reference to lookup table, chain length, number of
@@ -404,7 +404,7 @@ int main(){
     problem_dense_data.emplace_back(20, 23, 280);
     problem_dense_data.emplace_back(23, 18, 250);
 
-    //Function execution cost estimate
+    //Subprograms execution cost estimate
     std::vector<std::size_t> execution_costs;
     execution_costs.reserve(chain_length);
     execution_costs.emplace_back(500);
@@ -414,12 +414,11 @@ int main(){
     execution_costs.emplace_back(100);
 
     //Build Split dense.
-    jacobian_chain<Split_dense_Jacobian, Split_reversal_dense_information> 
-      chain{problem_dense_data, execution_costs};
+    jacobian_chain<Dense_Jacobian, Matrix_free_information> chain{problem_dense_data};
 
     //Call dynamic programming algorithm to fill the look up table.
-    binomial_checkpointing<Split_dense_Jacobian, Split_reversal_dense_information>
-      algorithm{chain, chain_length - 1, 0, available_checkpoints, nullptr};
+    binomial_checkpointing 
+      algorithm{execution_costs, chain_length - 1, 0, available_checkpoints, 0};
 
     //Accumulate operation nodes.
     //operation_sequence_accumulation arguments: reference to lookup table, chain length, number of
@@ -458,7 +457,7 @@ int main(){
     problem_dense_data.emplace_back(23, 18, 250);
     problem_dense_data.emplace_back(18, 18, 350);
 
-    //Function execution cost estimate
+    //Subprograms execution cost estimate
     std::vector<std::size_t> execution_costs;
     execution_costs.reserve(chain_length);
     execution_costs.emplace_back(100);
@@ -469,12 +468,11 @@ int main(){
     execution_costs.emplace_back(600);
 
     //Build Split dense.
-    jacobian_chain<Split_dense_Jacobian, Split_reversal_dense_information> 
-      chain{problem_dense_data, execution_costs};
+    jacobian_chain<Dense_Jacobian, Matrix_free_information> chain{problem_dense_data};
 
     //Call dynamic programming algorithm to fill the look up table.
-    binomial_checkpointing<Split_dense_Jacobian, Split_reversal_dense_information>
-      algorithm{chain, chain_length - 1, 0, available_checkpoints, nullptr};
+    binomial_checkpointing
+      algorithm{execution_costs, chain_length - 1, 0, available_checkpoints, 0};
 
     //Accumulate operation nodes.
     //operation_sequence_accumulation arguments: reference to lookup table, chain length, number of

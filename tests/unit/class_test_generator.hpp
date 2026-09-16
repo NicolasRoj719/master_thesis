@@ -203,8 +203,8 @@ bool test_Generator<Jacobian_info_T>::input_output_dimension_check(
     
     for(std::size_t index= 0; index < information.size() - 1; index++){
 
-        if(information[index].codomain_dimension() !=
-            information[index+1].domain_dimension()){
+        if(information[index].codomain_dim() !=
+            information[index+1].domain_dim()){
 
             return false;
         }
@@ -220,10 +220,10 @@ bool test_Generator<Jacobian_info_T>::is_generated_data_within_bounds(
 
     for(std::size_t index = 0; index < information.size(); index++){
 
-      if(information[index].domain_dimension() < dimension_lb ||
-          information[index].codomain_dimension() > dimension_ub ||
-          information[index].codomain_dimension() < dimension_lb ||
-          information[index].domain_dimension() > dimension_ub){
+      if(information[index].domain_dim() < dimension_lb ||
+          information[index].codomain_dim() > dimension_ub ||
+          information[index].codomain_dim() < dimension_lb ||
+          information[index].domain_dim() > dimension_ub){
 
         return false;
       }
@@ -239,22 +239,22 @@ bool test_Generator<Jacobian_info_T>::is_generated_data_within_bounds(
 
   for(std::size_t idx = 0; idx < information.size(); idx++){
 
-    if(information[idx].domain_dimension() < dimension_lb ||
-        information[idx].domain_dimension() > dimension_ub ||
-        information[idx].codomain_dimension() < dimension_lb ||
-        information[idx].codomain_dimension() > dimension_ub ||
-        information[idx].number_of_edges() < number_edges_lb ||
-        information[idx].number_of_edges() > number_edges_ub){
+    if(information[idx].domain_dim() < dimension_lb ||
+        information[idx].domain_dim() > dimension_ub ||
+        information[idx].codomain_dim() < dimension_lb ||
+        information[idx].codomain_dim() > dimension_ub ||
+        information[idx].number_edges() < number_edges_lb ||
+        information[idx].number_edges() > number_edges_ub){
       
       return false;
     }
 
     if constexpr(std::is_same_v<Jacobian_info_T, Matrix_free_sparse_information>){
 
-      if((information[idx].number_of_nonzeros() < 
-          std::min(information[idx].domain_dimension(),information[idx].codomain_dimension())) ||
-          (information[idx].number_of_nonzeros() > 
-           information[idx].domain_dimension() * information[idx].codomain_dimension())){
+      if((information[idx].number_nnz() < 
+          std::min(information[idx].domain_dim(),information[idx].codomain_dim())) ||
+          (information[idx].number_nnz() > 
+           information[idx].domain_dim() * information[idx].codomain_dim())){
         
         return false;
       }
@@ -278,8 +278,8 @@ bool test_Generator<Jacobian_info_T>::is_jacobian_information_equal(
 
     if constexpr(std::is_same_v<Jacobian_info_T, Jacobian_information>){
 
-      if(information_0[index].domain_dimension() != information_1[index].domain_dimension() ||
-          information_0[index].codomain_dimension() !=information_1[index].codomain_dimension()){
+      if(information_0[index].domain_dim() != information_1[index].domain_dim() ||
+          information_0[index].codomain_dim() !=information_1[index].codomain_dim()){
 
         return false;
       }
@@ -287,9 +287,9 @@ bool test_Generator<Jacobian_info_T>::is_jacobian_information_equal(
 
     else if constexpr(std::is_same_v<Jacobian_info_T, Matrix_free_information>){
 
-      if(information_0[index].domain_dimension() != information_1[index].domain_dimension() ||
-          information_0[index].codomain_dimension() !=information_1[index].codomain_dimension() ||
-          information_0[index].number_of_edges() != information_1[index].number_of_edges()){
+      if(information_0[index].domain_dim() != information_1[index].domain_dim() ||
+          information_0[index].codomain_dim() !=information_1[index].codomain_dim() ||
+          information_0[index].number_edges() != information_1[index].number_edges()){
 
         return false;
       }
@@ -297,10 +297,10 @@ bool test_Generator<Jacobian_info_T>::is_jacobian_information_equal(
 
     else{
 
-      if(information_0[index].domain_dimension() != information_1[index].domain_dimension() ||
-          information_0[index].codomain_dimension() !=information_1[index].codomain_dimension() ||
-          information_0[index].number_of_edges() != information_1[index].number_of_edges() ||
-          information_0[index].number_of_nonzeros() != information_1[index].number_of_nonzeros()){
+      if(information_0[index].domain_dim() != information_1[index].domain_dim() ||
+          information_0[index].codomain_dim() !=information_1[index].codomain_dim() ||
+          information_0[index].number_edges() != information_1[index].number_edges() ||
+          information_0[index].number_nnz() != information_1[index].number_nnz()){
 
         return false;
       }
@@ -351,7 +351,7 @@ bool test_Generator<Jacobian_info_T>::is_number_of_nnz_correct(
 
   for(std::size_t index = 0; index < sparse_data.size(); index++){
     
-    if(sparse_data[index].size() != jacobian_information[index].number_of_nonzeros()){
+    if(sparse_data[index].size() != jacobian_information[index].number_nnz()){
 
       return false;
     }
@@ -395,9 +395,9 @@ bool test_Generator<Jacobian_info_T>::is_sparse_data_within_bounds(
 
     for(std::size_t i_index = 0; i_index < sparse_data[o_index].size(); i_index++){
 
-      if((jacobian_information[o_index].codomain_dimension() <= 
+      if((jacobian_information[o_index].codomain_dim() <= 
             sparse_data[o_index][i_index].row()) ||
-          (jacobian_information[o_index].domain_dimension() <=
+          (jacobian_information[o_index].domain_dim() <=
             sparse_data[o_index][i_index].col())){
 
         return false;
@@ -416,7 +416,7 @@ bool test_Generator<Jacobian_info_T>::all_columns_rows_have_nnz(
   for(std::size_t o_index= 0; o_index < sparse_data.size(); o_index++){
 
     //Checks that every row has a non zero entry.
-    for(std::size_t row = 0; row < jacobian_information[o_index].codomain_dimension(); row++){
+    for(std::size_t row = 0; row < jacobian_information[o_index].codomain_dim(); row++){
 
       if(std::find_if(sparse_data[o_index].begin(), sparse_data[o_index].end(),
             [row](const NNZ& nnz){return nnz.row() == row;}) == sparse_data[o_index].end()){
@@ -426,7 +426,7 @@ bool test_Generator<Jacobian_info_T>::all_columns_rows_have_nnz(
     }
 
     //Checks that every column has a non zero entry 
-    for(std::size_t column = 0; column < jacobian_information[o_index].domain_dimension();
+    for(std::size_t column = 0; column < jacobian_information[o_index].domain_dim();
         column++){
 
       if(std::find_if(sparse_data[o_index].begin(), sparse_data[o_index].end(),

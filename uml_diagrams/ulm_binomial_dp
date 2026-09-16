@@ -1,0 +1,31 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class binomial_cell {}
+
+class binomial_table {}
+
+class reversal_chain {}
+
+class binomial_checkpointing {
+  - chain: reversal_chain
+  - table: binomial_table
+  --
+  + binomial_checkpointing(subprograms_execution_cost: const std::vector<std::size_t>&, last_index: std::size_t, first_index: std::size_t, checkpoints: std::size_t, subprogram_cost_to_append: const std::size_t = 0)
+  + binomial_checkpointing(subprograms_execution_cost: const std::vector<std::size_t>&, last_index: std::size_t, first_index: std::size_t)
+  + binomial_checkpointing(subprograms_execution_cost: const std::vector<std::size_t>&, table_: binomial_table, last_index: std::size_t, first_index: std::size_t)
+  + additional_cost(j: std::size_t, i: std::size_t): std::size_t
+  + advancing_cost(split_position: std::size_t, i: std::size_t): std::size_t
+  + get_cell(j: std::size_t, i: std::size_t, c: std::size_t): const binomial_cell& {const}
+  + additional_cost(j: std::size_t, split_position: std::size_t, i: std::size_t, available_checkpoints: std::size_t): std::size_t
+  + get_additional_cost(): std::size_t
+  + get_table(): const binomial_table&
+  + {static} read_subprograms_cost_from_file(path_to_file: const std::string&, list_length: std::size_t = 1): std::vector<std::size_t>
+  - fill_table(chain_length: std::size_t, number_checkpoints: std::size_t): void
+}
+
+binomial_table *-- "1..*" binomial_cell : contains
+binomial_checkpointing  *--  reversal_chain : uses
+binomial_checkpointing  *--  binomial_table : owns
+
+@enduml

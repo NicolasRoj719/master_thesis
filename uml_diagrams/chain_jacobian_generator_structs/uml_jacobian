@@ -1,0 +1,78 @@
+@startuml
+
+' Base Jacobian metadata wrapper
+class Jacobian {
+    + Jacobian(jacobian_metadata: Jacobian_information)
+    + Jacobian(domain_dimension: std::size_t, codomain_dimension: std::size_t)
+}
+
+' Dense matrix-free Jacobian representation
+class Dense_Jacobian {
+    + Dense_Jacobian(jacobian_metadata: Matrix_free_information)
+    + Dense_Jacobian(domain_dimension: std::size_t, codomain_dimension: std::size_t,
+    number_of_edges: std::size_t)
+}
+
+' Sparse Jacobian with CSR/CSC storage and graph coloring
+class Sparse_Jacobian {
+    # column_idx : std::vector<std::size_t>
+    # row_pointer : std::vector<std::size_t>
+    # row_idx : std::vector<std::size_t>
+    # column_pointer : std::vector<std::size_t>
+    # column_coloring : std::vector<std::vector<std::size_t>>
+    # row_coloring : std::vector<std::vector<std::size_t>>
+    # column_number_colors : std::size_t
+    # row_number_colors : std::size_t
+    # max_number_nnz_row : std::size_t
+    # max_number_nnz_column : std::size_t
+
+    + Sparse_Jacobian(sparse_jacobian: const Sparse_Jacobian&)
+    + Sparse_Jacobian(sparse_jacobian: Sparse_Jacobian&&)
+    + Sparse_Jacobian(jacobian_metadata: Matrix_free_sparse_information, sparse_data: std::vector<NNZ>&)
+    + Sparse_Jacobian(domain_dimension: std::size_t, codomain_dimension: std::size_t,
+    number_of_edges: std::size_t, number_of_nonzeros: std::size_t, sparse_data: std::vector<NNZ>&)
+    + Sparse_Jacobian(domain_dimension: std::size_t, codomain_dimension: std::size_t,
+    number_of_edges: std::size_t, number_of_nonzeros: std::size_t,
+    column_idx_array: std::vector<std::size_t>, row_pointer_array: std::vector<std::size_t>,
+    row_idx_array: std::vector<std::size_t>, column_pointer_array: std::vector<std::size_t>)
+
+    + {static} from_file(path_to_file: const std::string&) : Sparse_Jacobian
+    + column_idx_size() : std::size_t
+    + row_pointer_size() : std::size_t
+    + row_idx_size() : std::size_t
+    + column_pointer_size() : std::size_t
+    + get_column_idx_reference() : const std::vector<std::size_t>&
+    + get_row_pointer_reference() : const std::vector<std::size_t>&
+    + get_row_idx_reference() : const std::vector<std::size_t>&
+    + get_column_pointer_reference() : const std::vector<std::size_t>&
+    + get_column_coloring() : const std::vector<std::vector<std::size_t>>&
+    + get_row_coloring() : const std::vector<std::vector<std::size_t>>&
+    + get_column_number_colors() : std::size_t
+    + get_row_number_colors() : std::size_t
+    + get_max_number_nnz_row() : std::size_t
+    + get_max_number_nnz_column() : std::size_t
+
+    ' Friend operations & multiplication helpers
+    + <<friend>> operator*(lhs: const Sparse_Jacobian&, rhs: const Sparse_Jacobian&) : Sparse_Jacobian
+    + <<friend>> mul_CSR_CSC_2_CSR(lhs: const Sparse_Jacobian&, rhs: const Sparse_Jacobian&,
+    column_idx_array: std::vector<std::size_t>&, row_pointer_array: std::vector<std::size_t>&) : void
+    + <<friend>> mul_CSR_CSC_2_CSC(lhs: const Sparse_Jacobian&, rhs: const Sparse_Jacobian&,
+    row_idx_array: std::vector<std::size_t>&, column_pointer_array: std::vector<std::size_t>&) : void
+
+    - sparse_data_non_repeated_entries(...) : void
+    - build_CSR_CSC_format(sparse_data: const std::vector<NNZ>&) : void
+    - build_cig_from_compressed(...) : std::vector<std::vector<std::size_t>>
+    - color_graph(graph: const std::vector<std::vector<std::size_t>>&, max_color: std::size_t&) : std::vector<int>
+    - coloring_formatting(...) : void
+    - increasing_index_array(...) : void
+    - is_ptr_array_increasing(ptr_arr: const std::vector<std::size_t>&) : bool
+    - {static} sparse_file_to_sparse_data(...) : void
+    - from_sparse_data_initializer(sparse_data: std::vector<NNZ>&) : void
+}
+
+' Inheritance across packages
+Jacobian_information <|-- Jacobian
+Matrix_free_information <|-- Dense_Jacobian
+Matrix_free_sparse_information <|-- Sparse_Jacobian
+
+@enduml

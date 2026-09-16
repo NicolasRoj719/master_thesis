@@ -359,10 +359,10 @@ class Generator<Matrix_free_sparse_information>{
 
     //Loop over elemental jacobians
     for(std::size_t matrix_idx = 0; matrix_idx < jacobian_chain_length; matrix_idx++){
-      number_nonzeros = jacobian_information[matrix_idx].number_of_nonzeros();
+      number_nonzeros = jacobian_information[matrix_idx].number_nnz();
       sparse_data_per_matrix.reserve(number_nonzeros);
-      domain_dimension = jacobian_information[matrix_idx].domain_dimension();
-      codomain_dimension = jacobian_information[matrix_idx].codomain_dimension();
+      domain_dimension = jacobian_information[matrix_idx].domain_dim();
+      codomain_dimension = jacobian_information[matrix_idx].codomain_dim();
       
       min_domain_codomain = 
         (domain_dimension < codomain_dimension)? domain_dimension : codomain_dimension;

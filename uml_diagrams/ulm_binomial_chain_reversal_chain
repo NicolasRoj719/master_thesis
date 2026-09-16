@@ -1,0 +1,13 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class reversal_chain {
+  - view_subprograms_execution_cost: std::span<const std::size_t>
+  - subprogram_cost_append: std::size_t
+  --
+  + reversal_chain(subprograms_execution_cost: const std::vector<std::size_t>&, last_index: std::size_t, first_index: std::size_t, subprogram_cost_to_append: std::size_t = 0)
+  + operator[](index: std::size_t): std::size_t {const}
+  + size(): std::size_t {const}
+}
+
+@enduml

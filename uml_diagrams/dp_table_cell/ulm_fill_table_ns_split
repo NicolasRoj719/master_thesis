@@ -1,0 +1,16 @@
+top to bottom direction
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+' Namespaces
+
+    class "tool_box_split" as tool_box_split_ns << (N,#ADD1B2) Namespace >> {
+        + accumulate_subprograms_cost(subprograms_execution_cost : const std::vector<size_t>&, j : std::size_t, i : std::size_t) : std::size_t
+        + is_split_reversable(table : const Table_T&, j : std::size_t, i : std::size_t, memory_bound : std::size_t) : bool
+        + split_reversed_chain(table : const Table<Dense_Jacobian>&, j : std::size_t, i : std::size_t, memory_bound : std::size_t) : std::size_t
+        + split_reversed_chain(table : const Table<Sparse_Jacobian>&, j : std::size_t, i : std::size_t, memory_bound : std::size_t) : std::size_t
+    }
+
+' Post-processing dependencies
+tool_box_split_ns ..> Table_Dense : <<post-process>>
+tool_box_split_ns ..> Table_Sparse : <<post-process>>

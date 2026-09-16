@@ -20,27 +20,27 @@ int main(){
     else{test.set_test_binomial_cell(false);}
   }
 
-  //View_chain
+  //reversal_chain
   {
     //Creating a split_dense chain from data.
-    jacobian_chain<Split_dense_Jacobian, Split_reversal_dense_information>
-      chain{std::string(FIXTURE_DIR) + "/binomial_test_case/matrix_free_data",
-            std::string(FIXTURE_DIR) + "/binomial_test_case/functions_cost"};
+    std::vector<std::size_t> subprograms_cost=
+      binomial_checkpointing::read_subprograms_cost_from_file(std::string(FIXTURE_DIR) + 
+          "/binomial_test_case/functions_cost", 5);
+
 
     bool test_view_3_1;
     {
       std::size_t j = 3, i = 1;
-      View_chain<Split_dense_Jacobian, Split_reversal_dense_information>
-        view_subchain_j_i{chain, i, j - i + 1};
+      reversal_chain view_subchain_j_i{subprograms_cost, j, i};
 
       if(view_subchain_j_i.size() != j - i + 1){
         test_view_3_1 = false;
       }
       else{
 
-        if(view_subchain_j_i[0].function_cost() != 222 ||
-            view_subchain_j_i[1].function_cost() != 333 ||
-            view_subchain_j_i[2].function_cost() != 444){
+        if(view_subchain_j_i[0] != 222 ||
+            view_subchain_j_i[1] != 333 ||
+            view_subchain_j_i[2] != 444){
           
           test_view_3_1 = false;
         }
@@ -51,17 +51,16 @@ int main(){
     bool test_view_4_2;
     {
       std::size_t j = 4, i = 2;
-      View_chain<Split_dense_Jacobian, Split_reversal_dense_information>
-        view_subchain_j_i{chain, i, j - i + 1};
+      reversal_chain view_subchain_j_i{subprograms_cost, j, i};
 
       if(view_subchain_j_i.size() != j - i + 1){
         test_view_4_2 = false;
       }
       else{
 
-        if(view_subchain_j_i[0].function_cost() != 333 ||
-            view_subchain_j_i[1].function_cost() != 444 ||
-            view_subchain_j_i[2].function_cost() !=  555){
+        if(view_subchain_j_i[0] != 333 ||
+            view_subchain_j_i[1] != 444 ||
+            view_subchain_j_i[2] !=  555){
           
           test_view_4_2 = false;
         }
@@ -73,17 +72,16 @@ int main(){
     bool test_view_2_0;
     {
       std::size_t j = 2, i = 0;
-      View_chain<Split_dense_Jacobian, Split_reversal_dense_information>
-        view_subchain_j_i{chain, i, j - i + 1};
+      reversal_chain view_subchain_j_i{subprograms_cost, j, i};
 
       if(view_subchain_j_i.size() != j - i + 1){
         test_view_2_0 = false;
       }
       else{
 
-        if(view_subchain_j_i[0].function_cost() != 111 ||
-            view_subchain_j_i[1].function_cost() != 222 ||
-            view_subchain_j_i[2].function_cost() !=  333){
+        if(view_subchain_j_i[0] != 111 ||
+            view_subchain_j_i[1] != 222 ||
+            view_subchain_j_i[2] !=  333){
           
           test_view_2_0 = false;
         }
@@ -94,18 +92,17 @@ int main(){
     bool test_view_with_ptr;
     {
       std::size_t j = 2, i = 0;
-      View_chain<Split_dense_Jacobian, Split_reversal_dense_information>
-        view_subchain_j_i{chain, i, j - i + 1, &chain[j+1]};
+      reversal_chain view_subchain_j_i{subprograms_cost, j, i, subprograms_cost[j+1]};
 
       if(view_subchain_j_i.size() != j - i + 2){
         test_view_with_ptr = false;
       }
       else{
 
-        if(view_subchain_j_i[0].function_cost() != 111 ||
-            view_subchain_j_i[1].function_cost() != 222 ||
-            view_subchain_j_i[2].function_cost() !=  333 ||
-            view_subchain_j_i[3].function_cost() != 444){
+        if(view_subchain_j_i[0] != 111 ||
+            view_subchain_j_i[1] != 222 ||
+            view_subchain_j_i[2] !=  333 ||
+            view_subchain_j_i[3] != 444){
           
           test_view_with_ptr = false;
         }
@@ -182,13 +179,12 @@ int main(){
   //Testing additional_cost and advancing_cost
   {
     //Initializing the jacobian chain
-    jacobian_chain<Split_dense_Jacobian, Split_reversal_dense_information>
-      chain{std::string(FIXTURE_DIR) + "/binomial_test_case/matrix_free_data",
-            std::string(FIXTURE_DIR) + "/binomial_test_case/functions_cost"};
+    std::vector<std::size_t> subprograms_cost = 
+      binomial_checkpointing::read_subprograms_cost_from_file(std::string(FIXTURE_DIR) +
+          "/binomial_test_case/functions_cost", 5);
 
     //Problem instance (4, 0, 0)
-    binomial_checkpointing<Split_dense_Jacobian, Split_reversal_dense_information>
-      binomial_algorithm{chain, 4, 0};
+    binomial_checkpointing binomial_algorithm{subprograms_cost, 4, 0};
 
     if(binomial_algorithm.advancing_cost(1, 0) != 111 + 222||
         binomial_algorithm.advancing_cost(3, 2) != 333 + 444||
@@ -258,14 +254,14 @@ int main(){
     //                  + table.get_cell(2,2,0)
     //                = (111 + 222) + 111 + 0 = 444
 
-    jacobian_chain<Split_dense_Jacobian, Split_reversal_dense_information>
-      chain{std::string(FIXTURE_DIR) + "/binomial_test_case/matrix_free_data",
-            std::string(FIXTURE_DIR) + "/binomial_test_case/functions_cost"};
-
+    //Initializing the jacobian chain
+    std::vector<std::size_t> subprograms_cost = 
+      binomial_checkpointing::read_subprograms_cost_from_file(std::string(FIXTURE_DIR) + 
+          "/binomial_test_case/functions_cost");
+    
     //Transfering data ownership to table inside algorithm
     //Probelm instance (2,0,1)
-    binomial_checkpointing<Split_dense_Jacobian, Split_reversal_dense_information>
-      algorithm{chain, std::move(table), 2, 0};
+    binomial_checkpointing algorithm{subprograms_cost, std::move(table), 2, 0};
 
     if(algorithm.additional_cost(1, 0, 0, 1) != 111 ||
         algorithm.additional_cost(2, 1, 1, 1) != 222 ||
@@ -280,9 +276,9 @@ int main(){
   //Test full binomial checkpoiting algorithm
   {
     //Initializing the jacobian chain
-    jacobian_chain<Split_dense_Jacobian, Split_reversal_dense_information>
-      chain{std::string(FIXTURE_DIR) + "/binomial_test_case/matrix_free_data",
-            std::string(FIXTURE_DIR) + "/binomial_test_case/functions_cost"};
+    std::vector<std::size_t> subprograms_cost = 
+      binomial_checkpointing::read_subprograms_cost_from_file(std::string(FIXTURE_DIR) 
+          + "/binomial_test_case/functions_cost");
 
     bool test_algorithm_2_0_1 = false;
     bool test_algorithm_4_2_1 = false;
@@ -330,8 +326,7 @@ int main(){
       //table.emplace_back(333, 1, 0)
       
       //Run the optimization algorithm with the constructor.
-      binomial_checkpointing<Split_dense_Jacobian, Split_reversal_dense_information>
-        binomial_algorithm{chain, 2, 0, 1};
+      binomial_checkpointing binomial_algorithm{subprograms_cost, 2, 0, 1};
 
       if(test.check_cell(binomial_algorithm.get_cell(0, 0, 0), 0, 0) &&
           test.check_cell(binomial_algorithm.get_cell(1, 1, 0), 0, 0) &&
@@ -390,8 +385,7 @@ int main(){
       //emplace_back(777, 1, 0)
       //Run the optimization algorithm with the constructor.
 
-      binomial_checkpointing<Split_dense_Jacobian, Split_reversal_dense_information>
-        binomial_algorithm{chain, 4, 2, 1};
+      binomial_checkpointing binomial_algorithm{subprograms_cost, 4, 2, 1};
 
       if(test.check_cell(binomial_algorithm.get_cell(0, 0, 0), 0, 0) &&
           test.check_cell(binomial_algorithm.get_cell(1, 1, 0), 0, 0) &&
@@ -479,8 +473,7 @@ int main(){
       //emplace_back(777, 1, 1)
       
       //Run the optimization algorithm with the constructor.
-      binomial_checkpointing<Split_dense_Jacobian, Split_reversal_dense_information>
-        binomial_algorithm{chain, 3, 0, 1};
+      binomial_checkpointing binomial_algorithm{subprograms_cost, 3, 0, 1};
 
       if(test.check_cell(binomial_algorithm.get_cell(0, 0, 0), 0, 0) &&
           test.check_cell(binomial_algorithm.get_cell(1, 1, 0), 0, 0) &&

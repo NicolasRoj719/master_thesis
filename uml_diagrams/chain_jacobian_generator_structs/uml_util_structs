@@ -1,0 +1,48 @@
+@startuml
+
+class Jacobian_information {
+    # domain_dimension_ : std::size_t
+    # codomain_dimension_ : std::size_t
+    + Jacobian_information(domain_dimension: std::size_t, codomain_dimension: std::size_t)
+    + domain_dim() : std::size_t {const}
+    + codomain_dim() : std::size_t {const}
+}
+
+class Matrix_free_information {
+    # number_of_edges_ : std::size_t
+    + Matrix_free_information(domain_dimension: std::size_t, codomain_dimension: std::size_t,
+    number_of_edges: std::size_t)
+    + number_edges() : std::size_t {const}
+}
+
+class Matrix_free_sparse_information {
+    # number_of_nonzeros_ : std::size_t
+    + Matrix_free_sparse_information(domain_dimension: std::size_t, codomain_dimension: std::size_t,
+    num_of_edges: std::size_t, num_nonzeros: std::size_t)
+    + number_nnz() : std::size_t {const}
+}
+
+' Inheritance hierarchy: Base <|-- Derived
+Jacobian_information <|-- Matrix_free_information
+Matrix_free_information <|-- Matrix_free_sparse_information
+
+class NNZ {
+    # row_ : std::size_t
+    # col_ : std::size_t
+    + NNZ(row: std::size_t, col: std::size_t)
+    + row() : std::size_t {const}
+    + col() : std::size_t {const}
+    + operator<(rhs: NNZ const&) : bool {const}
+    + operator==(rhs: NNZ const&) : bool {const}
+}
+
+struct Generator_data {
+    + jacobian_information : std::vector<Matrix_free_sparse_information>
+    + sparse_data : std::vector<std::vector<NNZ>>
+}
+
+' Structural compositions
+Generator_data *-- "0..*" Matrix_free_sparse_information : contains
+Generator_data *-- "0..*" NNZ : contains
+
+@enduml

@@ -117,6 +117,25 @@ class fill_table<Jacobian, Jacobian_information>{
 
       return table.get_cell(j,i);
    }
+
+   /**
+    * @brief Access the last cell in the DP table.
+    *
+    * @pre fill method must be executed first before calling this method.
+    * @return Const reference to 'cell<Jacobian>' object.
+    */
+   const cell<Jacobian>& back(){
+      return table.back();
+   }
+
+   /**
+    * @brief Get reference to table.
+    *
+    * @return Const reference to 'Table<Jacobian>'
+    */
+   const Table<Jacobian>& get_table(){
+      return table;
+   }
  
  private:
    /// Internal DP lookup table.
@@ -467,7 +486,7 @@ class fill_table<Dense_Jacobian, Matrix_free_information>{
    }
 
    /**
-    * @brief Claculates standard dense matrix multiplication cost of two preaccumulates Jacobians
+    * @brief Calculates standard dense matrix multiplication cost of two preaccumulates Jacobians
     * (j, k+1) and (k, i).
     *
     * @note Forwards execution to tool_box_dense::multiplication_cost using internal 'table'.
@@ -511,6 +530,25 @@ class fill_table<Dense_Jacobian, Matrix_free_information>{
    const cell<Dense_Jacobian>& get_cell(std::size_t j, std::size_t i){
 
       return table.get_cell(j,i);
+   }
+
+   /**
+    * @brief Access the last cell in the DP table.
+    *
+    * @pre fill method must be executed first before calling this method.
+    * @return Const reference to 'cell<Dense_Jacobian>' object.
+    */
+   const cell<Dense_Jacobian>& back(){
+      return table.back();
+   }
+
+   /**
+    * @brief Get reference to table.
+    *
+    * @return Const reference to 'Table<Dense_Jacobian>'
+    */
+   const Table<Dense_Jacobian>& get_table(){
+      return table;
    }
 
  private:
@@ -629,480 +667,6 @@ void fill_table<Dense_Jacobian, Matrix_free_information>::fill(
                split_position = split_position_j_k_i;
                operation = operation_j_k_i;
             }
-         }
-         table.emplace_back(minimum_cost, split_position, operation);
-      }
-   }
-}
-
-/**
- * @namespace tool_box_split
- * @brief Helper functions providing tools to facilitate the embeeding of binomial checkpointig into
- * the Jacobian chain product bracketing dynamic programming formulation.
- *
- * @node Shared across 'fill_table<Split_dense_Jacobian, Split_reversal_dense_information>' and
- *  'fill_table<Split_sparse_Jacobian, Split_reversal_sparse_information>'.
- *
- */
-namespace tool_box_split{
-
-   /**
-    * @brief Sums the total execution cost across a subchain (j,i) (inclusive). 
-    *
-    * @tparam Split_T Split elemental Jacobian type.
-    * @param table Reference to the dynamic programming (DP) lookup table.
-    * @pre Cells with non-owning pointers are already initialized.
-    * @param j Upper index bound of the subchain (inclusive).
-    * @param i Lower index bound of the subchain (inclusive).
-    * @return std::size_t Accumulated function execution cost.
-    */
-   template<class Split_T>
-   std::size_t accumulate_function_cost(const Table<Split_T>& table, std::size_t j, std::size_t i){
-
-      std::size_t sum_function_cost = 0;
-      for(std::size_t idx = i; idx < j + 1; idx++){
-
-         sum_function_cost += table.get_cell(idx).function_cost();
-      }
-
-      return sum_function_cost;
-   }
-
-   /**
-    * @brief Determines wether a subchain (j,i) can be accumulated in reverse mode via split reversal.
-    *
-    * @details Checks if every single subprogram in the range [i, j] satisfies the memory constraint
-    * individually.
-    * If any subprogram's computational graph edge count exceeds memory_bound, reverse-mode accumulation 
-    * is impossible.
-    *
-    * @tparam Split_T Split elemental Jacobian type.
-    * @param table Reference to the dynammic programming (DP) lookup table.
-    * @pre Cells with non-owning pointers are already initialized.
-    * @param j Upper index bound of the subchain (inclusive). 
-    * @param i Lower index bound of the subchain (inclusive).
-    * @param memory_bound Maximum allowable number of edges in the computational graph stored simultaneously. 
-    * @return true If the subchain is split-reversible.
-    * @return false Otherwise.
-    */
-   template<class Split_T>
-   bool is_split_reversable(const Table<Split_T>& table, std::size_t j, std::size_t i,
-                              std::size_t memory_bound){
-
-      for(std::size_t idx = i; idx < j + 1; idx++){
-
-         if(memory_bound < table.get_cell(idx).number_edges()){
-
-            return false;
-         }
-      }
-
-      return true;
-   }
-
-   /**
-    * @brief Finds the minimal split index k_tilde such that the subchain (k, k_tilde + 1) fits 
-    * within memory.
-    *
-    * @pre is_split_reversable must evaluate to true for the target subchain before calling this function.
-    * 
-    * @tparam Split_T Split elemental Jacobian type.
-    * @param table Reference to the dynamic programming (DP) lookup table.
-    * @param i Lower index bound of the subchain (inclusive).
-    * @param accumulated_edges_j_i Total accumulated edges across the subchain.
-    * @param memory_bound Maximum allowable edge capacity.
-    * @return std::size_t Te resulting split index k_tilde.
-    */
-   template<class Split_T>
-   std::size_t split_reversed_chain(const Table<Split_T>& table, std::size_t i,
-                                    std::size_t accumulated_edges_j_i, std::size_t memory_bound){
-
-      std::size_t counter = 0;
-      while(memory_bound < accumulated_edges_j_i){
-
-         accumulated_edges_j_i -= table.get_cell(i + counter).number_edges();
-         counter ++;
-      }
-
-      counter--;
-
-      return i + counter;
-   }
-}
-
-
-/**
- * @brief Explicit specialization of 'fill_table' for 'Split_dense_Jacobian' and 
- * 'Split_reversal_dense_information'.
- *
- * @details Embeds Binomial Checkpointing into the Dense Jacobian Chain Product Bracketing DP
- * formulation to handle memory-constrained reverse-mode automatic differentiation.
- *
- * @details THIS CLASS IS EXPERIMENTAL. EMBEEDING BINOMIAL CHECKPOINTING INTO THE OPTIMAL 
- * BRACKETING FORMULATION HAD NO BENEFITIAL EFFECT ON THE OUTCOME OF THE ALGORITHM. THEREFORE 
- * ITS USED IS DISCOURGE. THE METHODS CONTAINED INSIDE ARE NEVER THE LESS USEFUL, WHICH JUSTIFIES 
- * THE EXISTANCE OF THIS TEMPLATE SPECIALIZATION.
- */
-template<>
-class fill_table<Split_dense_Jacobian, Split_reversal_dense_information>{
- public:
-   /**
-    * @brief Constructs the dynamic programming table-filler engine 
-    *
-    * @note The dynamic programming table population call 'fill()' is currently commented out in this 
-    * constructor, as the embedded binomial checkpointing model does not fit correctly into the initial 
-    * formulation.
-    *
-    * @param chain Target Split Jacobian chain containing split reversal metadata (dense reversal 
-    * metadata plus subprograms execution costs). 
-    * @param memory_bound Maximum allowable number of edges in the computational graph stored simultaneously. 
-    * @param number_checkpoints_ Total number of available checkpoints for the optimization algorithms. 
-    */
-   fill_table(const jacobian_chain<Split_dense_Jacobian, Split_reversal_dense_information>& chain_,
-                  std::size_t memory_bound_, std::size_t number_checkpoints_):
-      table(chain_.size()), chain(chain_), memory_bound(memory_bound_),
-      number_checkpoints(number_checkpoints_){
-
-      /* fill(); */
-   }
-
-   /**
-    * @brief Sums total computational graph edges across a subchain [j_or_k, k_plus_1_or_i]
-    *
-    * @note Forwards the execution to tool_box_dense::accumulate_edges using the internal 'table'.
-    *
-    * @param j_or_k Upper index bound.
-    * @param k_plus_1_or_i Lower index bound.
-    * @return Accumulated sum of edges across subchain range.
-    *
-    */
-   std::size_t accumulate_edges(std::size_t j_or_k, std::size_t k_plus_1_or_i) const{
-
-      return tool_box_dense::accumulate_edges(table, j_or_k, k_plus_1_or_i);
-   }
-
-   /**
-    * @brief Computes forward-mode (tangent) AD preaccumulation cost for a single elemental Jacobian.
-    * @see tool_box_dense::tangent_cost.
-    */
-   static std::size_t tangent_cost(const Split_dense_Jacobian* elemental_jacobian_ptr){
-
-      return tool_box_dense::tangent_cost(elemental_jacobian_ptr);
-   }
-
-   /**
-    * @brief Computes reverse-mode (adjoint) AD preaccumulation cost for a single elemental Jacobian.
-    * @see tool_box_dense::adjoint_cost.
-    */
-   static std::size_t adjoint_cost(const Split_dense_Jacobian* elemental_jacobian_ptr){
-
-      return tool_box_dense::adjoint_cost(elemental_jacobian_ptr);
-   }
-
-   /**
-    * @brief Calculates tangent-mode accumulation cost for subproblem instance (j,i) split at k.
-    *
-    * @note Forwards execution to tool_box_dense::tangent_cost using internal 'table'.
-    * @param j Upper index bound (inclusive).
-    * @param k Split index.
-    * @param i Lower index bound (inclusive).
-    * @return Accumulated forward-mode cost for subproblem (j, i).
-    */
-   std::size_t tangent_cost(std::size_t j, std::size_t k, std::size_t i){
-
-      return tool_box_dense::tangent_cost(table, j, k, i);
-   }
-
-   /**
-    * @brief Sums the total execution cost across a subchain (j, i) (inclusive).
-    *
-    * @note Forwards execution to tool_box_split::accumulate_function_cost using internal 'table'.
-    *
-    * @param j Upper index bound (inclusive).
-    * @param i Lower index bound (inclusive).
-    * @return std::size_t Accumulated function execution cost.
-    */
-   std::size_t accumulate_function_cost(std::size_t j, std::size_t i){
-
-      return tool_box_split::accumulate_function_cost(table, j, i);
-   }
-
-   /**
-    * @brief Checks if the subchain (j, i) is split reversable. 
-    *
-    * @note Forwards execution to tool_box_split::is_split_reversable  using internal 'table' and 
-    * 'memory_bound'.
-    *
-    * @param j Upper index bound (inclusive).
-    * @param i Lower index bound (inclusive).
-    */
-   bool is_split_reversable(std::size_t j, std::size_t i){
-      
-      return tool_box_split::is_split_reversable(table, j, i, memory_bound);
-   }
-
-   /**
-    * @brief Finds the minimal split index k_tilde such that the subchain (k, k_tilde + 1) fits 
-    * within memory.
-    * 
-    * @note Forwards execution to tool_box_split::split_reversed_chain using the internal 'table' and
-    * 'memory_bound'.
-    *
-    * @param i Lower index bound.
-    * @param accumulated_edges_j_i Overall subchain (j, i) total number of edges.
-    * @return std::size_t Split index.
-    */
-   std::size_t split_reversed_chain(std::size_t i, std::size_t accumulated_edges_j_i){
-      
-      return tool_box_split::split_reversed_chain(table, i, accumulated_edges_j_i, memory_bound);
-   }
-
-
-   /**
-    * @brief Constructs a temporary 'Split_dense_Jacobian' metadata object for the subchain (j, i). 
-    *
-    * @param j End index of new split Jacobian object.
-    * @param i Start index of new split Jacobian object.
-    * @return Split_dense_Jacobian Container for structural metadata and total subchain execution cost. 
-    */
-   Split_dense_Jacobian joint_jacobian(std::size_t j, std::size_t i){
-
-      return Split_dense_Jacobian{table.get_cell(i).domain_dim(),
-                                    table.get_cell(j).codomain_dim(),
-                                    accumulate_edges(j,i),
-                                    accumulate_function_cost(j,i)};
-   }
-
-   /**
-    * @brief Computes an unconstrained lower-bound estimate for the adjoint accumulation cost.
-    *
-    * @param j Upper index bound of the subchain (inclusive).
-    * @param k Split index within range [i, j-1]
-    * @param i Lower index bound of the subchain (inclusive).
-    * @return std::size_t Total adjoint accumulation cost without memory constraint.
-    */
-   std::size_t pre_adjoint_cost(std::size_t j, std::size_t k, std::size_t i){
-      //Access a cell with pointer
-      if(j == k+1){
-         
-         return table.get_cell(j).accumulated_cost() +
-                  table.get_cell(j).codomain_dim() * accumulate_edges(k,i); 
-      }
-      //Access a normal cell
-      else{
-
-         return table.get_cell(j, k+1).accumulated_cost() +
-                  table.get_cell(j).codomain_dim() * accumulate_edges(k,i);
-      }
-   }
-
-   /**
-    * @brief Improved adjoint accumulation cost model, using binomial checkpointg if necessary.
-    *
-    * @details First determines if the subchain (k,i) can be accumulated standardly without exceeding 
-    * memory_bound (joint reversal). If memory is exceeded, it checks wether the subchain is split-
-    * reversible. If split reversal is feasible, it calculates the minimal split index k_tilde, 
-    * constructs the intermediate split Jacobian metadata for (k, k_tilde + 1) and executes the 
-    * binomial checkpoiting algorithm on the chain made of the intermediate split Jacobian (k, k_tilde + 1)
-    * and subchain (k, i) to determine additional re-execution costs.
-    *
-    * @param j Upper index bound of the overall subchain (inclusive).
-    * @param j Split index in the range [i, j-1]
-    * @param i Lower index bound of the overall subchain (inclusive).
-    * @param[out] is_adjoint_split_optimal Set to true if split reversal mode is feasible and selected 
-    * for this subproblem.
-    * @return std::optional<std::size_t> Total reverse-mode accumulation cost if feasible, 
-    * std::nullopt if memory bound renders split reversal impossible.
-    */
-   std::optional<std::size_t> adjoint_cost(std::size_t j, std::size_t k, std::size_t i,
-                                             bool& is_adjoint_split_optimal){
-
-      std::size_t number_edges_k_i = accumulate_edges(k,i);
-
-      if(number_edges_k_i <= memory_bound){
-
-         //Access a cell_with_pointer
-         if(j == k+1){
-
-            return table.get_cell(j).accumulated_cost() +
-                     table.get_cell(j).codomain_dim() * number_edges_k_i;
-         }
-         //Access a normal cell
-         else{
-            return table.get_cell(j, k+1).accumulated_cost() +
-                     table.get_cell(j).codomain_dim() * number_edges_k_i;
-         }
-      }
-      //subchain k,i is not joint reversable
-      {
-         if(is_split_reversable(k,i)){
-
-            is_adjoint_split_optimal = true;
-            
-            std::size_t k_tilde = split_reversed_chain(i, number_edges_k_i);
-
-            //Create split_dense_jacobian (k,k_tilde + 1)
-            Split_dense_Jacobian split_dense_k_k_tilde_plus_one = joint_jacobian(k, k_tilde + 1);
-
-            binomial_checkpointing 
-               binomial_algortihm{chain, k_tilde, i, number_checkpoints - 1,
-                                    &split_dense_k_k_tilde_plus_one};
-
-            //Adjoint cost calculation
-            //Access a cell with pointer
-            if(j == k+1){
-
-               return table.get_cell(j).accumulated_cost() +
-                        table.get_cell(j).codomain_dim() * number_edges_k_i +
-                        binomial_algortihm.get_additional_cost();
-            }
-            //Access a normal cell
-            else{
-
-               return table.get_cell(j, k+1).accumulated_cost() +
-                        table.get_cell(j).codomain_dim() * number_edges_k_i +
-                        binomial_algortihm.get_additional_cost();
-            }
-         }
-         //Not split reversable
-         else{return {};}
-      }
-   }
-
-   /**
-    * @brief Calculates standard dense matrix-matrix multiplication cost of two preaccumulated 
-    * Jacobians (j, k+1) and (k, i).
-    *
-    * @note Forwards execution to tool_box_dense::multiplication_cost using internal 'table'.
-    *
-    * @param j Upper index bound (inclusive).
-    * @param k Split index.
-    * @param i Lower index bound (inclusive).
-    * @return Total dense matrix-matrix multiplication cost.
-    */
-   std::size_t multiplication_cost(std::size_t j, std::size_t k, std::size_t i){
-
-      return tool_box_dense::multiplication_cost(table, j, k, i);
-   }
-
- private:
-   /// Dynamic programming table structure storing subproblems optimal results.
-   Table<Split_dense_Jacobian> table;
-   /// Reference to target chain on which the dynamic algorithm will run. 
-   const jacobian_chain<Split_dense_Jacobian, Split_reversal_dense_information>& chain;
-   /// Edge limit constraint for adjoint evaluations.
-   std::size_t memory_bound;
-   /// Number of available checkpoints during the whole optimization process.
-   std::size_t number_checkpoints;
-
-   /**
-    * @brief Populates the dynamic programming table with optimal subchain accumulation strategies.
-    *
-    * @details This method is a reference implementation of the ideas illustrated along the class 
-    * specialization; however on embedding binomial checkpoiting in the Dense Jacobian Chain Product 
-    * Bracketing formulation the "new" formulation favored split reversal cost estimation without 
-    * calling the binomial checkpointig algorithm. This means that the obtained cost minimum was 
-    * lacking execution additional costs incurred during split reversal.
-    */
-   void fill();
-};
-
-void fill_table<Split_dense_Jacobian, Split_reversal_dense_information>::fill(){
-
-   table.clear();
-
-   //Initializing cells with pointer.
-   for(std::size_t elemental_idx = 0; elemental_idx < chain.size(); elemental_idx++){
-
-      if(chain[elemental_idx].domain_dim() <= chain[elemental_idx].codomain_dim()){
-
-         table.emplace_back(&chain[elemental_idx], tangent_cost(&chain[elemental_idx]),
-               Operation::TANGENT);
-      }
-
-      else{
-         if(chain[elemental_idx].number_edges() <= memory_bound){
-            
-            table.emplace_back(&chain[elemental_idx], adjoint_cost(&chain[elemental_idx]),
-                  Operation::ADJOINT);
-         }
-         //Memory bound is exceeded then the elemental jacobian is accumulated using
-         // tangent mode.
-         else{
-
-            table.emplace_back(&chain[elemental_idx], tangent_cost(&chain[elemental_idx]),
-                  Operation::TANGENT);
-         }
-      }
-   }
-
-   std::size_t minimum_cost, minimum_cost_j_k_i, split_position;
-   std::size_t split_position_j_k_i;
-   std::size_t i_index, k_index, tangent_cost_j_k_i;
-   std::optional<std::size_t> adjoint_cost_j_k_i;
-   bool is_adjoint_split_optimal = false;
-   Operation operation, operation_j_k_i;
-
-   for(std::size_t j_index = 1; j_index < chain.size(); j_index++){
-
-      for(std::size_t aux_var_i = 1; aux_var_i < j_index + 1; aux_var_i++){
-
-         i_index = j_index - aux_var_i;
-         minimum_cost = std::numeric_limits<std::size_t>::max();
-
-         //k_index split position
-         //Problem instance (j_index, i_index)
-         for(std::size_t aux_var_k = 1; aux_var_k <= j_index - i_index; aux_var_k++){
-            //Decreasing order. From j_index - 1 to i_index
-            k_index = j_index - aux_var_k;
-
-            minimum_cost_j_k_i = multiplication_cost(j_index, k_index, i_index);
-            split_position_j_k_i = k_index;
-            operation_j_k_i = Operation::MULTIPLICATION;
-
-            //Minimum over the different accumulation methods
-            tangent_cost_j_k_i = tangent_cost(j_index, k_index, i_index);
-            if(tangent_cost_j_k_i < minimum_cost_j_k_i){
-
-               minimum_cost_j_k_i = tangent_cost_j_k_i;
-               operation_j_k_i = Operation::TANGENT;
-            }
-
-            //Assuming no memory bound: is adjoint mode potentially the optimal
-            //accumulation method for the subproblem j,i?
-            if(pre_adjoint_cost(j_index, k_index, i_index) < minimum_cost_j_k_i){
-
-               adjoint_cost_j_k_i = adjoint_cost(j_index, k_index, i_index,
-                                                   is_adjoint_split_optimal);
-
-               if(adjoint_cost_j_k_i){
-                  
-                  if(*adjoint_cost_j_k_i < minimum_cost_j_k_i){
-
-                     minimum_cost_j_k_i = *adjoint_cost_j_k_i;
-                     if(is_adjoint_split_optimal){
-                        
-                        operation_j_k_i = Operation::ADJOINT_SPLIT;
-                     }
-                     else{
-                        
-                        operation_j_k_i = Operation::ADJOINT;
-                     }
-                  }
-               }
-
-               is_adjoint_split_optimal = false;
-            }
-
-            //Compare the minimum cost over all accumulation methods
-            //for split position k_index with the current minimum for
-            // the problem instance (j_index, i_index)
-            if(minimum_cost_j_k_i < minimum_cost){
-               
-               minimum_cost = minimum_cost_j_k_i;
-               split_position = split_position_j_k_i;
-               operation = operation_j_k_i;
-            }  
          }
          table.emplace_back(minimum_cost, split_position, operation);
       }
@@ -1493,6 +1057,26 @@ class fill_table<Sparse_Jacobian, Matrix_free_sparse_information>{
       return table.get_cell(j,i);
    }
 
+   /**
+    * @brief Access the last cell in the DP table.
+    *
+    * @pre fill method must be executed first before calling this method.
+    * @return Const reference to 'cell<Sparse_Jacobian>' object.
+    */
+   const cell<Sparse_Jacobian>& back(){
+      return table.back();
+   }
+
+   /**
+    * @brief Get reference to table.
+    *
+    * @return Const reference to 'Table<Sparse_Jacobian>'
+    */
+   const Table<Sparse_Jacobian>& get_table(){
+      return table;
+   }
+
+
  private:
    /// Dynamic programming table structure storing subproblems optimal results.
    Table<Sparse_Jacobian> table;
@@ -1623,6 +1207,127 @@ void fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::fill(
                               split_position, operation);
 
       }
+   }
+}
+
+/**
+ * @namespace tool_box_split
+ * @brief Helper functions providing tools to facilitate the post processing of a optimally 
+ * accumulated adjoint subchain using Break points.
+ *
+ */
+namespace tool_box_split{
+
+   /**
+    * @brief Sums the total execution cost across a subchain (j,i) (inclusive). 
+    *
+    * @param subprograms_execution_cost subprograms cost array in fmas.
+    * @param j Upper index bound of the subchain (inclusive).
+    * @param i Lower index bound of the subchain (inclusive).
+    * @return std::size_t Accumulated function execution cost.
+    */
+   std::size_t accumulate_subprograms_cost(const std::vector<size_t>& subprograms_execution_cost,
+                                          std::size_t j, std::size_t i){
+
+      std::size_t sum_function_cost = 0;
+      for(std::size_t idx = i; idx < j + 1; idx++){
+
+         sum_function_cost += subprograms_execution_cost[idx];
+      }
+
+      return sum_function_cost;
+   }
+
+   /**
+    * @brief Determines wether a subchain (j,i) can be accumulated in reverse mode via split reversal.
+    *
+    * @details Checks if every single subprogram in the range [i, j] satisfies the memory constraint
+    * individually.
+    * If any subprogram's computational graph edge count exceeds memory_bound, reverse-mode accumulation 
+    * is impossible.
+    *
+    * @tparam Table_T Table type, either Table<Dense_Jacobian> or Table<Sparse_Jacobian>.
+    * @param table Reference to the dynammic programming (DP) lookup table.
+    * @pre Cells with non-owning pointers are already initialized.
+    * @param j Upper index bound of the subchain (inclusive). 
+    * @param i Lower index bound of the subchain (inclusive).
+    * @param memory_bound Maximum allowable number of edges in the computational graph stored simultaneously. 
+    * @return true If the subchain is split-reversible.
+    * @return false Otherwise.
+    */
+   template<class Table_T>
+   bool is_split_reversable(const Table_T& table, std::size_t j, std::size_t i,
+                              std::size_t memory_bound){
+
+      for(std::size_t idx = i; idx < j + 1; idx++){
+
+         if(memory_bound < table.get_cell(idx).number_edges()){
+
+            return false;
+         }
+      }
+
+      return true;
+   }
+
+   /**
+    * @brief Finds the minimal split index k_tilde such that the subchain (k, k_tilde + 1) fits 
+    * in memory.
+    *
+    * @pre is_split_reversable must evaluate to true for the target subchain before calling this function.
+    * 
+    * @param table Reference to Dense_Jacobian dynamic programming (DP) lookup table.
+    * @param i Lower index bound of the subchain (inclusive).
+    * @param accumulated_edges_j_i Total accumulated edges across the subchain.
+    * @param memory_bound Maximum allowable edge capacity.
+    * @return std::size_t The resulting split index k_tilde.
+    */
+   std::size_t split_reversed_chain(const Table<Dense_Jacobian>& table, std::size_t j,
+                                       std::size_t i, std::size_t memory_bound){
+
+      std::size_t accumulated_edges_j_i = tool_box_dense::accumulate_edges(table, j, i);  
+
+      std::size_t counter = 0;
+
+      while(memory_bound < accumulated_edges_j_i){
+
+         accumulated_edges_j_i -= table.get_cell(i + counter).number_edges();
+         counter ++;
+      }
+
+      counter--;
+
+      return i + counter;
+   }
+
+   /**
+    * @brief Finds the minimal split index k_tilde such that the subchain (k, k_tilde + 1) fits 
+    * in memory.
+    *
+    * @pre is_split_reversable must evaluate to true for the target subchain before calling this function.
+    * 
+    * @param table Reference to Sparse_Jacobian dynamic programming (DP) lookup table.
+    * @param i Lower index bound of the subchain (inclusive).
+    * @param accumulated_edges_j_i Total accumulated edges across the subchain.
+    * @param memory_bound Maximum allowable edge capacity.
+    * @return std::size_t The resulting split index k_tilde.
+    */
+   std::size_t split_reversed_chain(const Table<Sparse_Jacobian>& table, std::size_t j,
+                                       std::size_t i, std::size_t memory_bound){
+
+      std::size_t accumulated_edges_j_i = tool_box_sparse::accumulate_edges(table, j, i);  
+
+      std::size_t counter = 0;
+
+      while(memory_bound < accumulated_edges_j_i){
+
+         accumulated_edges_j_i -= table.get_cell(i + counter).number_edges();
+         counter ++;
+      }
+
+      counter--;
+
+      return i + counter;
    }
 }
 

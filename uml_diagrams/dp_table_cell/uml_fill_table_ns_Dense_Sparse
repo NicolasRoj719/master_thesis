@@ -1,0 +1,29 @@
+top to bottom direction
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+' Namespaces
+
+    class "tool_box_dense" as tool_box_dense_ns << (N,#ADD1B2) Namespace >> {
+        + tangent_cost(elemental_jacobian_ptr : const Jacobian_T*) : std::size_t
+        + adjoint_cost(elemental_jacobian_ptr : const Jacobian_T*) : std::size_t
+        + accumulate_edges(table : const Table<Jacobian_T>&, j_or_k : std::size_t, k_plus_1_or_i : std::size_t) : std::size_t
+        + tangent_cost(table : const Table<Jacobian_T>&, j : std::size_t, k : std::size_t, i : std::size_t) : std::size_t
+        + multiplication_cost(table : const Table<Jacobian_T>&, j : std::size_t, k : std::size_t, i : std::size_t) : std::size_t
+    }
+
+
+    class "tool_box_sparse" as tool_box_sparse_ns << (N,#ADD1B2) Namespace >> {
+        + tangent_cost(elemental_jacobian_ptr : const Jacobian_T*) : std::size_t
+        + adjoint_cost(elemental_jacobian_ptr : const Jacobian_T*) : std::size_t
+        + accumulate_edges(table : const Table<Jacobian_T>&, j_or_k : std::size_t, k_plus_1_or_i : std::size_t) : std::size_t
+        + tangent_cost(table : const Table<Jacobian_T>&, j : std::size_t, k : std::size_t, i : std::size_t, j_i_column_number_colors : std::size_t) : std::size_t
+        + multiplication_cost(table : const Table<Jacobian_T>&, j : std::size_t, k : std::size_t, i : std::size_t, number_nnz : std::size_t) : std::size_t
+        + propagate_sparsity_pattern(table : const Table<Jacobian_T>&, j : std::size_t, i : std::size_t) : const Jacobian_T
+    }
+
+
+
+' Namespace Wrapper Dependencies
+fill_table_Dense ..> tool_box_dense_ns : <<wraps>>
+fill_table_Sparse ..> tool_box_sparse_ns : <<wraps>>

@@ -1,0 +1,32 @@
+@startuml
+top to bottom direction
+skinparam classAttributeIconSize 0
+
+
+' Generic primary template
+class "fill_table<Jacobian_T, Jacobian_info_T>" as fill_table_generic <template> {
+}
+
+' Specialization 1: Jacobian
+class "fill_table<Jacobian, Jacobian_information>" as fill_table_Jacobian {
+    - table : Table<Jacobian>
+    + fill_table(chain : const jacobian_chain<Jacobian, Jacobian_information>&)
+    + fill_table(table_ : Table<Jacobian>)
+    + multiplication_cost(j : std::size_t, k : std::size_t, i : std::size_t) : std::size_t
+    + get_cell(index : std::size_t) : const cell_with_pointer<Jacobian>&
+    + get_cell(j : std::size_t, i : std::size_t) : const cell<Jacobian>&
+    - fill(chain : const jacobian_chain<Jacobian, Jacobian_information>&) : void
+}
+
+
+' External Dependencies
+class "Table<Jacobian>" as Table_Jacobian
+
+
+' Template Specialization Links
+fill_table_Jacobian -up-|> fill_table_generic : <<specialize>>
+
+' Composition/Ownership
+fill_table_Jacobian *-- Table_Jacobian
+
+@enduml

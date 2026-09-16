@@ -93,13 +93,13 @@ class test_jacobian_information{
  
  protected:
   const Matrix_free_sparse_information object;
-  bool constructor_test(std::size_t domain_dim, std::size_t codomain_dim,
+  bool constructor_test(std::size_t domain_dim_, std::size_t codomain_dim_,
       std::size_t num_of_edges, std::size_t num_nonzeros){
 
-    if(object.domain_dimension() != domain_dim){return false;}
-    if(object.codomain_dimension() != codomain_dim){return false;}
-    if(object.number_of_edges() != num_of_edges){return false;}
-    if(object.number_of_nonzeros() != num_nonzeros){return false;}
+    if(object.domain_dim() != domain_dim_){return false;}
+    if(object.codomain_dim() != codomain_dim_){return false;}
+    if(object.number_edges() != num_of_edges){return false;}
+    if(object.number_nnz() != num_nonzeros){return false;}
     return true;
   }
   bool was_constructor_test_successful;
@@ -137,12 +137,12 @@ class test_split_reversal_dense_information{
  protected:
   bool test_constructor;
   bool constructor_test(Split_reversal_dense_information split_reversal_information,
-      std::size_t domain_dim, std::size_t codomain_dim, std::size_t number_edges,
+      std::size_t domain_dim_, std::size_t codomain_dim_, std::size_t number_edges_,
       std::size_t function_cost_estimate){
 
-    if(split_reversal_information.domain_dimension() != domain_dim ||
-        split_reversal_information.codomain_dimension() != codomain_dim ||
-        split_reversal_information.number_of_edges() != number_edges ||
+    if(split_reversal_information.domain_dim() != domain_dim_ ||
+        split_reversal_information.codomain_dim() != codomain_dim_ ||
+        split_reversal_information.number_edges() != number_edges_ ||
         split_reversal_information.function_cost() != function_cost_estimate){
   
       return false;
@@ -185,13 +185,13 @@ class test_split_reversal_sparse_information{
  protected:
   bool test_constructor;
   bool constructor_test(Split_reversal_sparse_information split_reversal_information,
-      std::size_t domain_dim, std::size_t codomain_dim, std::size_t number_edges,
+      std::size_t domain_dim_, std::size_t codomain_dim_, std::size_t number_edges_,
       std::size_t number_nonzeros, std::size_t function_cost_estimate){
 
-    if(split_reversal_information.domain_dimension() != domain_dim ||
-        split_reversal_information.codomain_dimension() != codomain_dim ||
-        split_reversal_information.number_of_edges() != number_edges ||
-        split_reversal_information.number_of_nonzeros() != number_nonzeros ||
+    if(split_reversal_information.domain_dim() != domain_dim_ ||
+        split_reversal_information.codomain_dim() != codomain_dim_ ||
+        split_reversal_information.number_edges() != number_edges_ ||
+        split_reversal_information.number_nnz() != number_nonzeros ||
         split_reversal_information.function_cost() != function_cost_estimate){
 
       return false;

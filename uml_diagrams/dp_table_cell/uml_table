@@ -1,0 +1,39 @@
+@startuml
+top to bottom direction
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+class "Table_base<Jacobian_T>" as Table_base <template> {
+    # cells : std::vector<cell<Jacobian_T>>
+    # cells_with_pointer : std::vector<cell_with_pointer<Jacobian_T>>
+    + Table_base(chain_size : std::size_t)
+    + get_cell(j_index : std::size_t, i_index : std::size_t) : const cell<Jacobian_T>&
+    + get_cell(j_index : std::size_t) : const cell_with_pointer<Jacobian_T>&
+    + clear() : void
+}
+
+class "Table<Jacobian_T>" as Table <template> {
+    + emplace_back(accumulated_cost : std::size_t, split_position : std::size_t) : void
+    + emplace_back(accumulated_cost : std::size_t, split_position : std::size_t, operation : Operation) : void
+    + emplace_back(jacobian : Jacobian_T&&, accumulated_cost : std::size_t, split_position : std::size_t, operation : Operation) : void
+    + emplace_back(jacobian_ptr : const Jacobian_T*) : void
+    + emplace_back(jacobian_ptr : const Jacobian_T*, accumulated_cost : std::size_t, operation : Operation) : void
+}
+
+class "cell<Jacobian_T>" as Cell <template> {}
+
+class "cell_with_pointer<Jacobian_T>" as CellWithPointer <template> {}
+
+enum Operation {}
+
+' Inheritance
+Table -up-|> Table_base : public
+
+' Aggregations / Compositions
+Table_base *-- "0..*" Cell : contains
+Table_base *-- "0..*" CellWithPointer : contains
+
+' Dependency on Operation for factory methods
+Table ..> Operation : uses
+
+@enduml

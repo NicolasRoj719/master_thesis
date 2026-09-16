@@ -18,7 +18,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include "./chain.hpp"
+#include "chain.hpp"
 
 /**
  * @brief Represents a single dynamic programming table entry for binomial checkpointing.
@@ -159,16 +159,14 @@ class binomial_table{
 };
 
 /**
- * @brief Lightweight, non-owning subrange view of a Jacobian chain.
+ * @brief class wrapping the subvector containing function_cost[first_index] to 
+ * function_cost[last_index] and eventually append_function_cost if is not set to zero.
  *
- * @tparam Split_type Class defining individial operations, implementing 'function_cost()'.
- * @tparam Split_information_type Metadata describing structure/dimensions of the Jacobians.
  */
-template<class Split_type, class Split_information_type>
-class View_chain{
+class reversal_chain{
  public:
    /**
-    * @brief Constructs a subrange view over a specified section of a Jacobian chain.
+    * @brief constructs a subvector  
     *
     * @param chain_ Base Jacobian chain to reference. 
     * @param first_index Starting index of the view.
@@ -177,37 +175,37 @@ class View_chain{
     * this view.
     * @throws std::invalid_argument If the requested view of range falls outside the bounds of 'chain_'. 
     */
-   View_chain(const jacobian_chain<Split_type, Split_information_type>& chain_,
-                std::size_t first_index, std::size_t number_elements,
-                const Split_type* ptr = nullptr){
-    
-     if(chain_.size() + 1 < first_index + number_elements){
+  reversal_chain(const std::vector<std::size_t>& subprograms_execution_cost,
+                std::size_t last_index, std::size_t first_index,
+                std::size_t subprogram_cost_to_append= 0):
+    subprogram_cost_append(subprogram_cost_to_append){
 
-       throw std::invalid_argument("The subrange specified is not contained within "
-                                      "the chain given as an argument");
+     if(subprograms_execution_cost.size() <= last_index){
+       
+       throw std::invalid_argument("Last index should be less than the size of functions_cost.");
      }
 
-     subrange = std::span<const Split_type>(chain_).subspan(first_index, number_elements);
-     split_ptr = ptr;
+     view_subprograms_execution_cost = std::span<const std::size_t>(
+         subprograms_execution_cost.data() + first_index, last_index - first_index + 1);
    }
 
    /**
-    * @brief Accesses elementsin the view by index. 
+    * @brief Accesses elementsi in the reversal_chain by index. 
     *
     * @param index Zero-based element index within the view range. 
-    * @return Const reference to the target 'Split_type'.
+    * @return std::size_t function_cost.
     * @throws std::out_of_range If 'index' is out of bounds.
     */
-   const Split_type& operator[](std::size_t index) const{
-      if(index < subrange.size()){
-        return subrange[index];
+   std::size_t operator[](std::size_t index) const{
+      if(index < view_subprograms_execution_cost.size()){
+        return view_subprograms_execution_cost[index];
       }
 
-      if(index == subrange.size() && split_ptr != nullptr){
-        return *split_ptr;
+      if(index == view_subprograms_execution_cost.size() && subprogram_cost_append != 0){
+        return subprogram_cost_append;
       }
 
-      throw std::out_of_range("Index out of bounds in View_chain");
+      throw std::out_of_range("Index out of bounds in reversal_chain");
    }
 
    /**
@@ -216,21 +214,21 @@ class View_chain{
     */
    std::size_t size() const{
     
-     if(split_ptr == nullptr){
+     if(subprogram_cost_append == 0){
       
-       return subrange.size();
+       return view_subprograms_execution_cost.size();
      }
 
      else{
-       return subrange.size() + 1;
+       return view_subprograms_execution_cost.size() + 1;
      }
    }
 
  private:
-  /// Non-owning view of the subrange elements. 
-  std::span<const Split_type> subrange;
-  /// Pointer to an externally appended element (or 'nullptr'). 
-  const Split_type* split_ptr;
+  /// Non-owning view of the a subvector of the functions_cost vector.
+  std::span<const std::size_t> view_subprograms_execution_cost;
+  /// Last function cost in reversal_chain if set to a non zero.
+  std::size_t subprogram_cost_append;
 };
 
 /**
@@ -240,10 +238,7 @@ class View_chain{
  * Evaluates minimum re-execution overheads for split-reversal accumulation across Jacobian chain 
  * sequences.
  *
- * @tparam Split_type Element type implementing 'std::size_t function_cost() const'. 
- * @tparam Split_information_type Jacobian structural metadata.  
  */
-template<class Split_type, class Split_information_type>
 class binomial_checkpointing{
  public:
   /**
@@ -259,10 +254,11 @@ class binomial_checkpointing{
    * @param checkpoints Available checkpoint capacity allocated to solve the problem instance.
    * @param split_pointer Optional pointer to an extra 'Split_type' element appended to element $j$. 
    */
-  binomial_checkpointing(const jacobian_chain<Split_type, Split_information_type> chain_,
-                          std::size_t j, std::size_t i, std::size_t checkpoints,
-                          const Split_type* split_pointer = nullptr):
-    chain(chain_, i, j - i + 1, split_pointer), table(chain.size(), checkpoints){
+  binomial_checkpointing(const std::vector<std::size_t>& subprograms_execution_cost,
+                          std::size_t last_index, std::size_t first_index, std::size_t checkpoints,
+                          const std::size_t subprogram_cost_to_append= 0):
+    chain{subprograms_execution_cost, last_index, first_index, subprogram_cost_to_append},
+    table{chain.size(), checkpoints}{
 
       fill_table(chain.size(), checkpoints);
   }
@@ -275,9 +271,9 @@ class binomial_checkpointing{
    * @param j Upper bound index of the subchain (inclusive).
    * @param i Lower bound index of the subchain (inclusive).
    */
-  binomial_checkpointing(const jacobian_chain<Split_type, Split_information_type> chain_,
-                          std::size_t j, std::size_t i):
-    chain(chain_, i, j - i + 1), table(){}
+  binomial_checkpointing(const std::vector<std::size_t>& subprograms_execution_cost,
+                          std::size_t last_index, std::size_t first_index):
+    chain{subprograms_execution_cost, last_index, first_index}, table{}{}
 
   //Constructor designed to test additional_cost
   /**
@@ -288,9 +284,9 @@ class binomial_checkpointing{
    * @param j Upper bound index of the subchain (inclusive).
    * @param i Lower bound index of the subchain (inclusive).
    */
-  binomial_checkpointing(const jacobian_chain<Split_type, Split_information_type>& chain_,
-                          binomial_table table_, std::size_t j, std::size_t i):
-    chain(chain_, i, j - i + 1), table(std::move(table_)){}
+  binomial_checkpointing(const std::vector<std::size_t>& subprograms_execution_cost,
+                          binomial_table table_, std::size_t last_index, std::size_t first_index):
+    chain{subprograms_execution_cost, last_index, first_index}, table{std::move(table_)}{}
 
   /**
    * @brief Computes additional re-execution cost for subchain (j, i) assuming zero available checkpoints
@@ -306,7 +302,7 @@ class binomial_checkpointing{
 
     for(std::size_t idx = 1; idx < (j-i+1); idx++){
 
-      cost += idx * chain[j - idx].function_cost();  
+      cost += idx * chain[j - idx];  
     }
 
     return cost;
@@ -325,7 +321,7 @@ class binomial_checkpointing{
     
     for(std::size_t idx = i; idx < split_position + 1; idx++){
       
-      cost += chain[idx].function_cost();
+      cost += chain[idx];
     }
 
     return cost;
@@ -384,9 +380,30 @@ class binomial_checkpointing{
     return table;
   }
 
+  static std::vector<std::size_t> read_subprograms_cost_from_file(
+          const std::string& path_to_file, std::size_t list_length = 1){
+    
+    std::ifstream file(path_to_file);
+
+    if(!file.is_open()){
+      throw std::runtime_error("Could not open file located at: " + path_to_file);
+    }
+
+    std::vector<std::size_t> subprograms_execution_cost;
+    subprograms_execution_cost.reserve(list_length);
+    std::size_t execution_cost;
+
+    while(file >> execution_cost){
+
+      subprograms_execution_cost.push_back(execution_cost);
+    }
+
+    return subprograms_execution_cost;
+  }
+
  private:
   /// Lightweight view over target subchain range. 
-  View_chain<Split_type, Split_information_type> chain;
+  reversal_chain chain;
 
   /// Dynamic programming solution storage table. 
   binomial_table table;
@@ -401,9 +418,7 @@ class binomial_checkpointing{
   void fill_table(std::size_t chain_length, std::size_t number_checkpoints);
 };
 
-template<class Split_type, class Split_information_type>
-void binomial_checkpointing<Split_type, Split_information_type>::fill_table(
-    std::size_t chain_length, std::size_t number_checkpoints){
+void binomial_checkpointing::fill_table(std::size_t chain_length, std::size_t number_checkpoints){
 
   std::size_t k_min_j_k_i;
   std::size_t cost_min_j_k_i;

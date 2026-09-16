@@ -1,0 +1,80 @@
+@startuml
+top to bottom direction
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+' Generic primary template
+class "fill_table<Jacobian_T, Jacobian_info_T>" as fill_table_generic <template> {}
+
+
+' Specialization 2: Dense_Jacobian
+class "fill_table<Dense_Jacobian, Matrix_free_information>" as fill_table_Dense {
+    - table : Table<Dense_Jacobian>
+    - memory_bound : std::optional<std::size_t>
+    + fill_table(chain : const jacobian_chain<Dense_Jacobian, Matrix_free_information>&)
+    + fill_table(chain : const jacobian_chain<Dense_Jacobian, Matrix_free_information>&, memory_bound_ : std::size_t)
+    + fill_table(table_ : Table<Dense_Jacobian>)
+    + accumulate_edges(j_or_k : std::size_t, k_plus_1_or_i : std::size_t) : std::size_t
+    + {static} adjoint_cost(elemental_jacobian_ptr : const Dense_Jacobian*) : std::size_t
+    + tangent_cost(j : std::size_t, k : std::size_t, i : std::size_t) : std::size_t
+    + adjoint_cost(j : std::size_t, k : std::size_t, i : std::size_t) : std::optional<std::size_t>
+    + multiplication_cost(j : std::size_t, k : std::size_t, i : std::size_t) : std::size_t
+    + get_memory_bound() : std::optional<std::size_t>
+    + get_cell(index : std::size_t) : const cell_with_pointer<Dense_Jacobian>&
+    + get_cell(j : std::size_t, i : std::size_t) : const cell<Dense_Jacobian>&
+    - fill(chain : const jacobian_chain<Dense_Jacobian, Matrix_free_information>&) : void
+}
+
+' Specialization 3: Sparse_Jacobian
+class "fill_table<Sparse_Jacobian, Matrix_free_sparse_information>" as fill_table_Sparse {
+    - table : Table<Sparse_Jacobian>
+    - memory_bound : std::optional<std::size_t>
+    + fill_table(chain : const jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>&)
+    + fill_table(chain : const jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>&, memory_bound_ : std::size_t)
+    + fill_table(table_ : Table<Sparse_Jacobian>)
+    + accumulate_edges(j_or_k : std::size_t, k_plus_1_or_i : std::size_t) : std::size_t
+    + {static} tangent_cost(elemental_jacobian_ptr : const Sparse_Jacobian*) : std::size_t
+    + {static} adjoint_cost(elemental_jacobian_ptr : const Sparse_Jacobian*) : std::size_t
+    + tangent_cost(j : std::size_t, k : std::size_t, i : std::size_t, j_i_column_number_colors : std::size_t) : std::size_t
+    + adjoint_cost(j : std::size_t, k : std::size_t, i : std::size_t, j_i_row_number_colors : std::size_t) : std::optional<std::size_t>
+    + multiplication_cost(j : std::size_t, k : std::size_t, i : std::size_t, number_nnz : std::size_t) : std::size_t
+    + propagate_sparsity_pattern(j : std::size_t, i : std::size_t) : const Sparse_Jacobian
+    + get_cell(index : std::size_t) : const cell_with_pointer<Sparse_Jacobian>&
+    + get_cell(j : std::size_t, i : std::size_t) : const cell<Sparse_Jacobian>&
+    - fill(chain : const jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>&) : void
+}
+
+' Namespaces
+package tool_box_dense <<Rectangle>> {
+    class "tool_box_dense" as tool_box_dense_ns << (N,#ADD1B2) Namespace >> {}
+}
+
+package tool_box_sparse <<Rectangle>> {
+    class "tool_box_sparse" as tool_box_sparse_ns << (N,#ADD1B2) Namespace >> {}
+}
+
+package tool_box_split <<Rectangle>> {
+    class "tool_box_split" as tool_box_split_ns << (N,#ADD1B2) Namespace >> {}
+}
+
+' External Dependencies
+class "Table<Dense_Jacobian>" as Table_Dense
+class "Table<Sparse_Jacobian>" as Table_Sparse
+
+' Template Specialization Links
+fill_table_Dense -up-|> fill_table_generic : <<specialize>>
+fill_table_Sparse -up-|> fill_table_generic : <<specialize>>
+
+' Composition/Ownership
+fill_table_Dense *-- Table_Dense
+fill_table_Sparse *-- Table_Sparse
+
+' Namespace Wrapper Dependencies
+fill_table_Dense ..> tool_box_dense_ns : <<wraps>>
+fill_table_Sparse ..> tool_box_sparse_ns : <<wraps>>
+
+' Post-processing dependencies
+tool_box_split_ns ..> Table_Dense : <<post-process>>
+tool_box_split_ns ..> Table_Sparse : <<post-process>>
+
+@enduml

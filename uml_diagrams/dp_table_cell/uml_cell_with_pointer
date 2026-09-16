@@ -1,0 +1,57 @@
+@startuml
+
+enum Operation {}
+
+class "cell_with_pointer<Jacobian_type>" as cell_ptr_generic <template> {}
+
+class "cell_with_pointer<Jacobian>" as cell_ptr_Jacobian {
+    - jacobian_ptr : const Jacobian*
+    + cell_with_pointer(jac_ptr : const Jacobian*)
+    + domain_dim() : std::size_t
+    + codomain_dim() : std::size_t
+    + get_pointer() : const Jacobian*
+}
+
+class "cell_with_pointer<Dense_Jacobian>" as cell_ptr_Dense {
+    - jacobian_ptr : const Dense_Jacobian*
+    - cost : std::size_t
+    - operation_ : Operation
+    + cell_with_pointer(jac_ptr : const Dense_Jacobian*, cost_ : std::size_t, op : Operation)
+    + domain_dim() : std::size_t
+    + codomain_dim() : std::size_t
+    + number_edges() : std::size_t
+    + accumulated_cost() : std::size_t
+    + operation() : Operation
+    + get_pointer() : const Dense_Jacobian*
+}
+
+class "cell_with_pointer<Sparse_Jacobian>" as cell_ptr_Sparse {
+    - jacobian_ptr : const Sparse_Jacobian*
+    - cost : std::size_t
+    - operation_ : Operation
+    + cell_with_pointer(jac_ptr : const Sparse_Jacobian*, cost_ : std::size_t, op : Operation)
+    + domain_dim() : std::size_t
+    + codomain_dim() : std::size_t
+    + number_edges() : std::size_t
+    + number_nnz() : std::size_t
+    + column_number_colors() : std::size_t
+    + row_number_colors() : std::size_t
+    + max_number_nnz_row() : std::size_t
+    + max_number_nnz_column() : std::size_t
+    + accumulated_cost() : std::size_t
+    + operation() : Operation
+    + get_jacobian() : const Sparse_Jacobian&
+    + get_pointer() : const Sparse_Jacobian*
+}
+
+cell_ptr_Jacobian -up-|> cell_ptr_generic : <<specialize>>
+cell_ptr_Dense -up-|> cell_ptr_generic : <<specialize>>
+cell_ptr_Sparse -up-|> cell_ptr_generic : <<specialize>>
+
+cell_ptr_Jacobian o-- Jacobian : non-owning
+cell_ptr_Dense o-- Dense_Jacobian : non-owning
+cell_ptr_Dense o-- Operation
+cell_ptr_Sparse o-- Sparse_Jacobian : non-owning
+cell_ptr_Sparse o-- Operation
+
+@enduml

@@ -1,0 +1,71 @@
+@startuml
+
+' Base Primary Template
+class "jacobian_chain<Jacobian_type, Basic_information_type>" as jacobian_chain_Primary <<template>> {
+    # chain : std::vector<Jacobian_type>
+
+    + jacobian_chain(basic_information: std::vector<Basic_information_type>)
+    + jacobian_chain(file_name: const std::string&)
+    + operator[](index: std::size_t) : const Jacobian_type&
+    + at(index: std::size_t) : const Jacobian_type&
+    + copy(index: std::size_t) : Jacobian_type
+    + get(index: std::size_t) : Jacobian_type&
+    + size() : std::size_t
+    # basic_information_dimension_check(basic_information: const std::vector<Basic_information_type>&) : bool
+    # chain_initializer(basic_information: std::vector<Basic_information_type>&) : void
+    # file_to_chain(file_path: const std::string&) : void
+}
+
+' Intended Type Binding 1: Jacobian Base / Metadata
+class "jacobian_chain<Jacobian, Jacobian_information>" as jacobian_chain <<implicit>>{}
+
+' Intended Type Binding 2: Dense Matrix-Free
+class "jacobian_chain<Dense_Jacobian, Matrix_free_information>" as jacobian_chain_Dense <<implicit>> {}
+
+' Explicit Specialization 3: Sparse Matrix-Free 
+class "jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>" as jacobian_chain_Sparse {
+    # chain : std::vector<Sparse_Jacobian>
+
+    + jacobian_chain(data: Generator_data)
+    + jacobian_chain(file_path: const std::string&)
+    + operator[](index: std::size_t) : const Sparse_Jacobian&
+    + at(index: std::size_t) : const Sparse_Jacobian&
+    + copy(index: std::size_t) : Sparse_Jacobian
+    + get(index: std::size_t) : Sparse_Jacobian&
+    + size() : std::size_t
+    
+    # basic_information_dimension_check(
+    basic_information: const std::vector<Matrix_free_sparse_information>&) : bool
+    
+    # coherency_basic_information_sparse_data(
+    basic_information: const std::vector<Matrix_free_sparse_information>&,
+    sparse_data: const std::vector<std::vector<NNZ>>&) : void
+    
+    # initialize_chain(basic_information: std::vector<Matrix_free_sparse_information>&,
+                        sparse_data: std::vector<std::vector<NNZ>>&) : void
+    
+    # file_to_sparse_data(file_name: const std::string&, 
+                            basic_information: std::vector<Matrix_free_sparse_information>&,
+                            sparse_data: std::vector<std::vector<NNZ>>&) : void
+}
+
+' Template Binding Relationship
+jacobian_chain_Primary <|.. jacobian_chain <<bind>>: <Jacobian, Jacobian_information>
+jacobian_chain_Primary <|.. jacobian_chain_Dense <<bind>>: <Dense_Jacobian, Matrix_free_information>
+jacobian_chain_Primary <|.. jacobian_chain_Sparse <<bind>>: <Sparse_Jacobian, Matrix_free_sparse_information>
+
+' Storage Ownership
+jacobian_chain *-- "1..*" Jacobian : owns
+jacobian_chain_Dense *-- "1..*" Dense_Jacobian : owns
+jacobian_chain_Sparse *-- "1..*" Sparse_Jacobian : owns
+
+' Operational dependencies
+jacobian_chain ..> "1..*" Jacobian_information : takes input
+jacobian_chain_Dense ..> "1..*" Matrix_free_information : takes input
+jacobian_chain_Sparse ..> Generator_data : takes input
+
+' Structural compositions
+Generator_data *-- "1..*" Matrix_free_sparse_information : contains
+Generator_data *-- "1..*" NNZ : contains
+
+@enduml

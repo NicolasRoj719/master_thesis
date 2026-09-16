@@ -23,7 +23,7 @@
 /**
  * @brief Base class for basic Jacobian metadata.
  */
-class Jacobian{
+class Jacobian: public Jacobian_information{
  public:
    /**
     * @brief Construct Jacobian object from metadata.
@@ -31,7 +31,7 @@ class Jacobian{
     * @param jacobian_obj Metadata structure containing domain and codomain dimensions.
     */
   Jacobian(Jacobian_information jacobian_obj):
-    jacobian_basic_data(std::move(jacobian_obj)){}
+    Jacobian_information{std::move(jacobian_obj)}{}
 
   /**
    * @brief Construct Jacobian object from explicit dimensions.
@@ -40,24 +40,13 @@ class Jacobian{
    * @param codomain_dimension Codomain (output) space dimension.
    */
   Jacobian(std::size_t domain_dimension, std::size_t codomain_dimension):
-    jacobian_basic_data(domain_dimension, codomain_dimension){}
-
-  std::size_t domain_dim() const {
-    return jacobian_basic_data.domain_dimension();
-  }
-  std::size_t codomain_dim() const {
-    return jacobian_basic_data.codomain_dimension();
-  }
-
- protected:
-  /// Basic Jacobian dimensions metadata.
-  Jacobian_information jacobian_basic_data;
+    Jacobian_information{domain_dimension, codomain_dimension}{}
 };
 
 /**
  * @brief Dense Jacobian representation.
  */
-class Dense_Jacobian{
+class Dense_Jacobian: public Matrix_free_information{
  public:
   /**
    * @brief Construct Dense_Jacobian object from metadata.
@@ -65,7 +54,7 @@ class Dense_Jacobian{
    * @param jacobian_obj Matrix-free metadata object.
    */
   Dense_Jacobian(Matrix_free_information jacobian_obj):
-    jacobian_basic_data(std::move(jacobian_obj)){}
+    Matrix_free_information{std::move(jacobian_obj)}{}
 
   /**
    * @brief Construct Dense_Jacobian from explicit parameters.
@@ -76,70 +65,13 @@ class Dense_Jacobian{
    */
   Dense_Jacobian(std::size_t domain_dimension, std::size_t codomain_dimension,
       std::size_t number_of_edges):
-    jacobian_basic_data(domain_dimension, codomain_dimension, number_of_edges){}
-
-  std::size_t domain_dim() const {
-    return jacobian_basic_data.domain_dimension();
-  }
-  std::size_t codomain_dim() const {
-    return jacobian_basic_data.codomain_dimension();
-  }
-  std::size_t number_edges() const {
-    return jacobian_basic_data.number_of_edges();
-  }
-
- private:
-  /// Matrix-free metadata. 
-  Matrix_free_information jacobian_basic_data;
-};
-
-/**
- * @brief Dense Jacobian extended with computational execution cost estimates.
- */
-class Split_dense_Jacobian: public Dense_Jacobian{
- public:
-  /**
-   * @brief Construct from metadata and subprogram cost.
-   *
-   * @param jacobian_data Matrix-free metadata structure.
-   * @param function_cost Subprogram execution cost estimate (in fused multiply-add operations).
-   */
-  Split_dense_Jacobian(Matrix_free_information jacobian_data, std::size_t function_cost):
-    Dense_Jacobian(std::move(jacobian_data)), function_cost_(function_cost){}
-
-  /**
-   * @brief Construct from an existing Dense_Jacobian and cost estimate.
-   *
-   * @param jacobian Base Dense_Jacobian instance.
-   * @param function_cost Subprogram execution cost estimate.
-   */
-  Split_dense_Jacobian(Dense_Jacobian jacobian, std::size_t function_cost):
-    Dense_Jacobian(std::move(jacobian)), function_cost_(function_cost){}
-
-  /**
-   * @brief Construct from explicit dimension, edge counts, and execution cost.
-   *
-   * @param domain_dimension Domain space dimension.
-   * @param codomain_dimension Codomain space dimension.
-   * @param number_of_edges Number of edges in the computation graph representation. 
-   * @param function_cost Subprogram execution cost estimate.
-   */
-  Split_dense_Jacobian(std::size_t domain_dimension, std::size_t codomain_dimension,
-      std::size_t number_of_edges, std::size_t function_cost):
-    Dense_Jacobian(domain_dimension, codomain_dimension, number_of_edges),
-    function_cost_(function_cost){}
-
-  std::size_t function_cost() const {return function_cost_;}
-
- protected:
-  /// Subprogram execution cost estimate in terms of fused multiply-add operations.
-  std::size_t function_cost_;
+    Matrix_free_information{domain_dimension, codomain_dimension, number_of_edges}{}
 };
 
 /**
  * @brief Sparse Jacobian matrix supporting CSR and CSC formats alongside graph coloring. 
  */
-class Sparse_Jacobian{
+class Sparse_Jacobian: public Matrix_free_sparse_information{
  public:
 
   Sparse_Jacobian(Sparse_Jacobian&& sparse_jacobian) = default;
@@ -155,7 +87,7 @@ class Sparse_Jacobian{
    */
   Sparse_Jacobian(Matrix_free_sparse_information jacobian_obj,
       std::vector<NNZ>& sparse_data):
-    jacobian_basic_data(std::move(jacobian_obj)){
+    Matrix_free_sparse_information(std::move(jacobian_obj)){
 
       if(number_nnz() != sparse_data.size()){
         throw std::invalid_argument("Number of non zero entries and "
@@ -179,7 +111,7 @@ class Sparse_Jacobian{
   Sparse_Jacobian(std::size_t domain_dimension, std::size_t codomain_dimension,
       std::size_t number_edges, std::size_t number_nnz_,
       std::vector<NNZ>& sparse_data):
-    jacobian_basic_data{domain_dimension, codomain_dimension, number_edges, number_nnz_}{
+    Matrix_free_sparse_information{domain_dimension, codomain_dimension, number_edges, number_nnz_}{
 
       if(number_nnz() != sparse_data.size()){
         throw std::invalid_argument("Number of non zero entries and "
@@ -209,7 +141,7 @@ class Sparse_Jacobian{
       std::size_t number_of_edges, std::size_t number_nonzeros,
       std::vector<std::size_t> col_idx, std::vector<std::size_t> row_ptr,
       std::vector<std::size_t> row_idx_, std::vector<std::size_t> col_ptr):
-    jacobian_basic_data{domain_dimension, codomain_dimension, number_of_edges, number_nonzeros},
+    Matrix_free_sparse_information{domain_dimension, codomain_dimension, number_of_edges, number_nonzeros},
     column_idx(std::move(col_idx)), row_pointer(std::move(row_ptr)),
     row_idx(std::move(row_idx_)), column_pointer(std::move(col_ptr)){
 
@@ -254,19 +186,6 @@ class Sparse_Jacobian{
 
   
   // Dimension and Accessor Methods
-  std::size_t domain_dim() const {
-    return jacobian_basic_data.domain_dimension();
-  }
-  std::size_t codomain_dim() const {
-    return jacobian_basic_data.codomain_dimension();
-  }
-  std::size_t number_edges() const {
-    return jacobian_basic_data.number_of_edges();
-  }
-  std::size_t number_nnz() const {
-    return jacobian_basic_data.number_of_nonzeros();
-  }
-
   std::size_t column_idx_size() const{
     return column_idx.size();
   }
@@ -375,9 +294,6 @@ class Sparse_Jacobian{
       std::vector<size_t>& row_idx, std::vector<std::size_t>& col_ptr);
 
  private:
-  /// Matrix-free metadata.
-  Matrix_free_sparse_information jacobian_basic_data;
-
   /// Sorts non-zero entries and removes duplicate coordinates.
   void sparse_data_non_repeated_entries(
       std::vector<NNZ>& sparse_data) const{
@@ -788,76 +704,5 @@ Sparse_Jacobian operator*(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs
       lhs.number_edges() + rhs.number_edges(), num_nnz,
       std::move(col_idx), std::move(row_ptr),
       std::move(row_idx), std::move(col_ptr));
-}
-
-/**
- * @brief Sparse Jacobian extended with execution cost estimate.
- */
-class Split_sparse_Jacobian: public Sparse_Jacobian{
- public:
-   /**
-    * @brief Construct from base Sparse_Jacobian and execution cost.
-    *
-    * @param jacobian Base Sparse_Jacobian instance.
-    * @param function_cost Subprogram execution cost estimate.
-    */
-   Split_sparse_Jacobian(Sparse_Jacobian jacobian, std::size_t function_cost):
-     Sparse_Jacobian(std::move(jacobian)), function_cost_(function_cost){}
-
-   /**
-    * @brief Construct from sparse metadata, sparsity pattern and execution cost.
-    *
-    * @param jacobian_data Matrix-free sparse metadata.
-    * @param sparse_data Sparsity pattern entries.
-    * @param function_cost Subprogram execution cost estimate.
-    */
-   Split_sparse_Jacobian(Matrix_free_sparse_information jacobian_data,
-       std::vector<NNZ>& sparse_data, std::size_t function_cost):
-     Sparse_Jacobian(std::move(jacobian_data), sparse_data), function_cost_(function_cost){}
-
-   /**
-    * @brief Construct from split metadata and sparsity pattern.
-    *
-    * @param split_information Split metadata object.
-    * @param sparse_data Sparsity pattern entries.
-    */
-   Split_sparse_Jacobian(Split_reversal_sparse_information split_information,
-       std::vector<NNZ>& sparse_data):
-     Sparse_Jacobian(static_cast<const Matrix_free_sparse_information&>(split_information),
-         sparse_data), function_cost_(split_information.function_cost()){}
-
-   /**
-    * @brief Move constructor.
-    *
-    * @param jacobian Split_sparse_Jacobian object to move from.
-    */
-   Split_sparse_Jacobian(Split_sparse_Jacobian&& jacobian) noexcept:
-     Sparse_Jacobian(std::move(jacobian)), function_cost_(jacobian.function_cost()){}
-
-
-  /**
-   * @brief Computes the structural matrix product and combines exection costs.
-   *
-   * @param lhs Left hand-side operand.
-   * @param rhs Right hand-side operand.
-   *
-   * @return Product instance with accumulated subprogram cost.
-   */
-   friend Split_sparse_Jacobian operator*(
-       const Split_sparse_Jacobian& lhs, const Split_sparse_Jacobian& rhs);
-
-   std::size_t function_cost() const {return function_cost_;}
-
- protected:
-  /// Subprogram execution cost estimate in terms of fused multiply-add operations.
-  std::size_t function_cost_;
-}; 
-
-
-Split_sparse_Jacobian operator*(const Split_sparse_Jacobian& lhs,const Split_sparse_Jacobian& rhs){
-
-  return Split_sparse_Jacobian(
-      static_cast<const Sparse_Jacobian&>(lhs) * static_cast<const Sparse_Jacobian&>(rhs),
-      lhs.function_cost() + rhs.function_cost());
 }
 #endif //JACOBIAN_HPP

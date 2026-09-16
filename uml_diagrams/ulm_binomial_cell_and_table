@@ -1,0 +1,31 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class binomial_cell {
+  - additional_cost_: std::size_t
+  - available_checkpoints_: std::size_t
+  - split_position_: std::optional<std::size_t>
+  --
+  + binomial_cell(additional_cost: std::size_t, number_available_checkpoints: std::size_t, split_position: std::optional<std::size_t> = std::nullopt)
+  + additional_cost(): std::size_t {const}
+  + number_checkpoints(): std::size_t {const}
+  + split_position(): std::optional<std::size_t> {const}
+}
+
+class binomial_table {
+  - cells_per_floor: std::size_t
+  - table: std::vector<binomial_cell>
+  --
+  + binomial_table(chain_length: std::size_t, number_checkpoints: std::size_t)
+  + binomial_table()
+  + get_cell(j: std::size_t, i: std::size_t, c: std::size_t): const binomial_cell& {const}
+  + emplace_back(additional_cost: std::size_t, available_checkpoints: std::size_t, split_position: std::size_t): void
+  + emplace_back(additional_cost: std::size_t, available_checkpoints: std::size_t): void
+  + size(): std::size_t {const}
+}
+
+binomial_table  *-- "1..*" binomial_cell : contains
+
+binomial_checkpointing  *--  binomial_table : owns
+
+@enduml

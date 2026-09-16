@@ -1,0 +1,60 @@
+@startuml
+' Force top-to-bottom layout flow
+top to bottom direction
+skinparam classAttributeIconSize 0
+
+' Enforce clean straight lines
+skinparam linetype ortho
+
+class "cell<Jacobian_type>" as cell_generic <template> {}
+
+class "cell<Jacobian>" as cell_Jacobian {
+    # cost : std::size_t
+    # k : std::size_t
+    + cell(cost_ : std::size_t, split_pos : std::size_t)
+    + split_position() : std::size_t
+    + accumulated_cost() : std::size_t
+}
+
+class "cell<Dense_Jacobian>" as cell_Dense {
+    # operation_ : Operation
+    + cell(cost_ : std::size_t, split_pos : std::size_t, op : Operation)
+    + operation() : Operation
+}
+
+class "cell<Sparse_Jacobian>" as cell_Sparse {
+    - sparse_jacobian : Sparse_Jacobian
+    + cell(sparse_jacobian_ : const Sparse_Jacobian&, cost_ : std::size_t, split_pos : std::size_t, op : Operation)
+    + cell(sparse_jacobian_ : Sparse_Jacobian&&, cost_ : std::size_t, split_pos : std::size_t, op : Operation)
+    + domain_dim() : std::size_t
+    + codomain_dim() : std::size_t
+    + number_edges() : std::size_t
+    + number_nnz() : std::size_t
+    + column_number_colors() : std::size_t
+    + row_number_colors() : std::size_t
+    + max_number_nnz_row() : std::size_t
+    + max_number_nnz_column() : std::size_t
+}
+
+enum Operation {
+    MULTIPLICATION = 0
+    TANGENT
+    ADJOINT
+    ADJOINT_SPLIT
+}
+
+class Sparse_Jacobian {}
+
+' Directional Inheritance (child -up-|> parent)
+cell_Jacobian -up-|> cell_generic : <<specialize>>
+cell_Dense -up-|> cell_generic : <<specialize>>
+cell_Sparse -up-|> cell_generic : <<specialize>>
+
+cell_Dense -up-|> cell_Jacobian : public
+cell_Sparse -up-|> cell_Dense : public
+
+' Align helper entities horizontally next to specializations
+cell_Dense -left-> Operation
+cell_Sparse *-right-> Sparse_Jacobian
+
+@enduml

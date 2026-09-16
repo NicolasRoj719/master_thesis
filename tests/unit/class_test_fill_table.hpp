@@ -31,8 +31,8 @@ class test_fill_table{
    test_cost_tangent_adjoint_cell = arg;
   }
 
-  void set_test_function_cost_accumulation(bool arg){
-    test_function_cost_accumulation = arg;
+  void set_test_subprograms_cost_accumulation(bool arg){
+    test_subprograms_cost_accumulation = arg;
   }
 
   void set_test_split_reversed_chain(bool arg){
@@ -103,8 +103,8 @@ class test_fill_table{
     }
     else{std::cout<<"failed.\n";}
 
-    std::cout << "test_function_cost_accumulation: ";
-    if(test_function_cost_accumulation){
+    std::cout << "test_subprograms_cost_accumulation: ";
+    if(test_subprograms_cost_accumulation){
       std::cout<<"successful.\n";
     }
     else{std::cout<<"failed.\n";}
@@ -137,7 +137,10 @@ class test_fill_table{
         test_cost_tangent_adjoint_cell &&
         test_multiplication &&
         test_accumulate_number_edges &&
-        test_cases){
+        test_cases &&
+        test_subprograms_cost_accumulation &&
+        test_split_reversed_chain &&
+        test_is_split_reversable){
       
       were_all_test_successful_ = true;
     }
@@ -199,7 +202,7 @@ class test_fill_table{
   bool test_cases;
 
   //Mixed formulation.
-  bool test_function_cost_accumulation;
+  bool test_subprograms_cost_accumulation;
 
   bool test_split_reversed_chain;
 

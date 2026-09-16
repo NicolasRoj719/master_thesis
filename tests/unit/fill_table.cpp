@@ -4,6 +4,7 @@
 #include "class_test_fill_table.hpp"
 #include "chain.hpp"
 #include "fill_table.hpp"
+#include "binomial_checkpointing.hpp"
 
 int main(){
 
@@ -529,11 +530,14 @@ int main(){
 
   //Mixed formulation
   {
-    jacobian_chain<Split_dense_Jacobian, Split_reversal_dense_information>
-      chain{std::string(FIXTURE_DIR) + "/chain_test_cases/case_1_matrix_free",
-            std::string(FIXTURE_DIR) + "/chain_test_cases/case_1_functions_cost"};
+    jacobian_chain<Dense_Jacobian, Matrix_free_information>
+      chain{std::string(FIXTURE_DIR) + "/chain_test_cases/case_1_matrix_free"};
 
-    Table<Split_dense_Jacobian> table{chain.size()};
+    std::vector<std::size_t> subprograms_cost = 
+      binomial_checkpointing::read_subprograms_cost_from_file(std::string(FIXTURE_DIR)
+          + "/chain_test_cases/case_1_functions_cost", 3);
+
+    Table<Dense_Jacobian> table{chain.size()};
 
     //Emplace back cells with pointers
     //table(0)
@@ -549,17 +553,17 @@ int main(){
                         chain[2].domain_dim() * chain[2].number_edges(),
                         Operation::TANGENT);
 
-    //test accumulate_function_cost
-    if(tool_box_split::accumulate_function_cost(table, 0, 0) != 222 ||
-        tool_box_split::accumulate_function_cost(table, 1, 1) != 111 ||
-        tool_box_split::accumulate_function_cost(table, 2, 2) != 99 ||
-        tool_box_split::accumulate_function_cost(table, 1, 0) != 222 + 111 ||
-        tool_box_split::accumulate_function_cost(table, 2, 1) != 111 + 99 ||
-        tool_box_split::accumulate_function_cost(table, 2, 0) != 222 + 111 + 99){
+    //test accumulate_subprograms_cost
+    if(tool_box_split::accumulate_subprograms_cost(subprograms_cost, 0, 0) != 222 ||
+        tool_box_split::accumulate_subprograms_cost(subprograms_cost, 1, 1) != 111 ||
+        tool_box_split::accumulate_subprograms_cost(subprograms_cost, 2, 2) != 99 ||
+        tool_box_split::accumulate_subprograms_cost(subprograms_cost, 1, 0) != 222 + 111 ||
+        tool_box_split::accumulate_subprograms_cost(subprograms_cost, 2, 1) != 111 + 99 ||
+        tool_box_split::accumulate_subprograms_cost(subprograms_cost, 2, 0) != 222 + 111 + 99){
 
-      test.set_test_function_cost_accumulation(false);
+      test.set_test_subprograms_cost_accumulation(false);
     }
-    else{test.set_test_function_cost_accumulation(true);}
+    else{test.set_test_subprograms_cost_accumulation(true);}
 
     //test is_split_reversable
     if(tool_box_split::is_split_reversable(table, 2, 0, 200) != true ||
@@ -581,17 +585,23 @@ int main(){
     else{test.set_test_is_split_reversable(true);}   
 
     //test split_reversed_chain
-    if(tool_box_split::split_reversed_chain(table, 0, 80 + 150 + 100, 80 + 150 + 100 -1) != 0 ||
-        tool_box_split::split_reversed_chain(table, 0, 80 + 150 + 100, 80 + 150) != 0 ||
-        tool_box_split::split_reversed_chain(table, 0, 80 + 150 + 100, 80 + 150 -1) != 1 ||
-        tool_box_split::split_reversed_chain(table, 0, 80 + 150 + 100, 80 + 1) != 1 ||
-        tool_box_split::split_reversed_chain(table, 1, 80 + 150, 80 + 150 - 1) != 1 ||
-        tool_box_split::split_reversed_chain(table, 1, 80 + 150, 80) != 1){
+    if(tool_box_split::split_reversed_chain(table, 2, 0, 80 + 150 + 100 -1) != 0 ||
+        tool_box_split::split_reversed_chain(table, 2, 0, 80 + 150) != 0 ||
+        tool_box_split::split_reversed_chain(table, 2, 0, 80 + 150 -1) != 1 ||
+        tool_box_split::split_reversed_chain(table, 2, 0, 80 + 1) != 1 ||
+        tool_box_split::split_reversed_chain(table, 2, 1, 80 + 150 - 1) != 1 ||
+        tool_box_split::split_reversed_chain(table, 2, 1, 80) != 1){
       
       test.set_test_split_reversed_chain(false);
     }
     else{test.set_test_split_reversed_chain(true);}
 
+    /* if(tool_box_split::split_reversed_chain(table, 0, 80 + 150 + 100, 80 + 150 + 100 -1) != 0 || */
+    /*     tool_box_split::split_reversed_chain(table, 0, 80 + 150 + 100, 80 + 150) != 0 || */
+    /*     tool_box_split::split_reversed_chain(table, 0, 80 + 150 + 100, 80 + 150 -1) != 1 || */
+    /*     tool_box_split::split_reversed_chain(table, 0, 80 + 150 + 100, 80 + 1) != 1 || */
+    /*     tool_box_split::split_reversed_chain(table, 1, 80 + 150, 80 + 150 - 1) != 1 || */
+    /*     tool_box_split::split_reversed_chain(table, 1, 80 + 150, 80) != 1){ */
   }
 
   //Checking if all tests were successful.

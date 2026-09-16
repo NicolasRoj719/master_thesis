@@ -1,0 +1,73 @@
+@startuml
+
+' Unspecialized Primary Template
+class "Generator<Matrix_information_type>" as Generator_Primary <<template>> {}
+
+' Specialization 1: Jacobian / Baseline
+class "Generator<Jacobian_information>" as Generator_Jacobian {
+    # jacobian_chain_length : std::size_t
+    # dimension_lower_bound : std::size_t
+    # dimension_upper_bound : std::size_t
+    # is_deterministic : bool
+    # seed : std::size_t
+    + Generator(chain_length: std::size_t, dimension_lower_bound: std::size_t,
+    dimension_upper_bound: std::size_t, is_deterministic: bool, seed: std::size_t)
+    + generate_jacobian_information() : std::vector<Jacobian_information>
+}
+
+' Specialization 2: Matrix-Free_Dense
+class "Generator<Matrix_free_information>" as Generator_Matrix_free{
+    # jacobian_chain_length : std::size_t
+    # dimension_lower_bound : std::size_t
+    # dimension_upper_bound : std::size_t
+    # number_of_edges_lower_bound : std::size_t
+    # number_of_edges_upper_bound : std::size_t
+    # is_deterministic : bool
+    # seed : std::size_t
+
+    + Generator(chain_length: std::size_t, dimension_lower_bound: std::size_t,
+    dimension_upper_bound: std::size_t, number_edges_lower_bound: std::size_t,
+    number_edges_upper_bound: std::size_t, is_deterministic: bool, seed: std::size_t)
+
+    + generate_jacobian_information() : std::vector<Matrix_free_information>
+}
+
+' Specialization 3: Sparse Matrix-Free_Sparse
+class "Generator<Matrix_free_sparse_information>" as Generator_Matrix_free_sparse{
+    # jacobian_chain_length : std::size_t
+    # dimension_lower_bound : std::size_t
+    # dimension_upper_bound : std::size_t
+    # number_of_edges_lower_bound : std::size_t
+    # number_of_edges_upper_bound : std::size_t
+    # density_lower_bound : double
+    # density_upper_bound : double
+    # is_deterministic : bool
+    # seed : std::size_t
+
+    + Generator(chain_length: std::size_t, dimension_lower_bound: std::size_t,
+    dimension_upper_bound: std::size_t, number_edges_lower_bound: std::size_t,
+    number_edges_upper_bound: std::size_t, density_lower_bound: double, density_upper_bound: double,
+    is_deterministic: bool, seed: std::size_t)
+
+    + generate_jacobian_information() : std::vector<Matrix_free_sparse_information>
+
+    + generate_sparsity_patterns(jacobian_information: const std::vector<Matrix_free_sparse_information>&): 
+    std::vector<std::vector<NNZ>>
+
+    + generate_data() : Generator_data
+    # set_number_of_zeros_upper_and_lower_bound(...) : void
+    # generate_data_square_submatrix(...) : void
+}
+
+' Relationships to primary template (Specialization realization)
+Generator_Primary <|.. Generator_Jacobian <<binds>>: <Jacobian_information>
+Generator_Primary <|.. Generator_Matrix_free <<binds>>: <Matrix_free_information>
+Generator_Primary <|.. Generator_Matrix_free_sparse <<binds>>: <Matrix_free_sparse_information>
+
+
+' Generator dependencies
+Generator_Jacobian ..> "1..*" Jacobian_information : creates
+Generator_Matrix_free ..> "1..*" Matrix_free_information : creates
+Generator_Matrix_free_sparse ..> "1..*" Generator_data : creates
+
+@enduml

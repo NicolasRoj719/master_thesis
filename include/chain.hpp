@@ -88,8 +88,8 @@ class jacobian_chain{
     for(std::size_t jacobian_idx = 0; jacobian_idx < basic_information.size() - 1;
           jacobian_idx++){
 
-     if(basic_information[jacobian_idx+1].domain_dimension() !=
-           basic_information[jacobian_idx].codomain_dimension()){
+     if(basic_information[jacobian_idx+1].domain_dim() !=
+           basic_information[jacobian_idx].codomain_dim()){
         return false;
      } 
     }
@@ -188,117 +188,6 @@ void jacobian_chain<Jacobian_type, Basic_information_type>::file_to_chain(const 
   file.close();
 }
 
-/**
- * @brief Specialization of jacobian_chain for Split_dense_Jacobian matrices.
- * Incorporates execution cost estimates.
- */
-template<>
-class jacobian_chain<Split_dense_Jacobian, Split_reversal_dense_information>{
-/**
- * @brief Build Split Dense Jacobian chain from Matrix-free information and execution cost array. 
- *
- * @param basic_information Array with Matrix-free metadata.
- * @param functions_cost Array of cost estimates. Cleared upon construction.
- */
- public:
-  jacobian_chain(std::vector<Matrix_free_information> basic_information,
-      std::vector<std::size_t>& functions_cost){
-
-    chain.reserve(basic_information.size());
-
-    for(std::size_t idx = 0; idx < basic_information.size(); idx++){
-
-     chain.emplace_back(std::move(basic_information[idx]), functions_cost[idx]); 
-    }
-
-    functions_cost.clear();
-    functions_cost.shrink_to_fit();
-  }
-
-  /**
-   * @brief Constructs Dense Split Jacobian chain from Dense Jacobian metadata and execution cost estimates.
-   *
-   * @param file_name Path to file with Dense Jacobian metadata.
-   * @param functions_cost_file Path to file containing execution cost estimates.
-   * @throws std::runtime_error If either file cannot be opened or parsed.
-   */
-  jacobian_chain(const std::string& file_name, const std::string& functions_cost_file){
-
-    jacobian_chain<Dense_Jacobian, Matrix_free_information> 
-      dense_chain{file_name};
-
-    std::vector<size_t> functions_cost;
-    functions_cost.reserve(dense_chain.size());
-    file_to_functions_cost(functions_cost_file, functions_cost);
-    
-    for(std::size_t idx = 0; idx < dense_chain.size(); idx++){
-
-     chain.emplace_back(std::move(dense_chain.get(idx)), functions_cost[idx]); 
-    }
-
-    functions_cost.clear();
-    functions_cost.shrink_to_fit();
-  }
-  
-  /**
-   * @brief Reads execution cost values from a designated input file into a vector.
-   * 
-   * @param[in] file_path Input file path containg execution costs estimate.
-   * @param[out] Array target whileere costs estimate will be appended.
-   * @throws std::runtime_error If file fails to open.
-   */
-  static void file_to_functions_cost(const std::string& file_path,
-                              std::vector<std::size_t>& functions_cost);
-
-  ///Access element at index without bounds checking.
-  const Split_dense_Jacobian& operator[](std::size_t index) const{
-    return chain[index];
-  }
-
-  /// Access element at index with bounds checking.
-  const Split_dense_Jacobian& at(std::size_t index) const{
-    return chain.at(index);
-  }
-
-  ///Gets the total number of Split dense Jacobians in the chain.
-  std::size_t size() const{
-    return chain.size();
-  }
-
-  //Allows creating a span view of the jacobian_chain
-  /// Access direct raw pointer to underlying contiguous memory array.
-  const Split_dense_Jacobian* data() const{
-
-    return chain.data();
-  }
-
-  /// Returns const iterator to the start of the chain.
-  auto begin() const {return chain.begin();}
-  /// Returns const iterator to the end of the chain.
-  auto end() const {return chain.end();}
-
- protected:
-  /// Storage sequence for Split_dense_Jacobian objects..
-  std::vector<Split_dense_Jacobian> chain;
-};
-
-void jacobian_chain<Split_dense_Jacobian,
-  Split_reversal_dense_information>::file_to_functions_cost(const std::string& file_path,
-      std::vector<std::size_t>& functions_cost){
-
-  std::ifstream file;
-  file.open(file_path);
-  if(!file.is_open()){
-    throw std::runtime_error("There was a problem opening the file: " + 
-        file_path);
-  }
-
-  std::size_t function_cost;
-  while(file >> function_cost){
-
-    functions_cost.push_back(function_cost);
-  }
-}
 
 /**
  * @brief Specialization of jacobian_chain for Sparse_Jacobian objects.
@@ -371,8 +260,8 @@ class jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>{
 
     for(std::size_t jacobian_idx = 0; jacobian_idx < basic_information.size() - 1; jacobian_idx++){
 
-     if(basic_information[jacobian_idx+1].domain_dimension() !=
-         basic_information[jacobian_idx].codomain_dimension()){
+     if(basic_information[jacobian_idx+1].domain_dim() !=
+         basic_information[jacobian_idx].codomain_dim()){
 
       return false;
      }
@@ -408,7 +297,7 @@ class jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>{
 
     for(std::size_t jacobian_idx =0; jacobian_idx < basic_information.size(); jacobian_idx++){
 
-      if(sparse_data[jacobian_idx].size() != basic_information[jacobian_idx].number_of_nonzeros()){
+      if(sparse_data[jacobian_idx].size() != basic_information[jacobian_idx].number_nnz()){
         throw std::runtime_error("Error encountered during chain initialization.\n"
             "Inconsistency in the number of nonzero entries reported by the basic \n"
             "information array and the number of nonzero entries stored in sparse_data.");
@@ -503,110 +392,5 @@ class jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>{
       }
     }
   }
-};
-
-/**
- * @brief Specialization of jacobian_chain for Split_sparse_Jacobian matrices.
- * Extends sparse Jacobian chain logic with execution cost integration.
- */
-template<>
-class jacobian_chain<Split_sparse_Jacobian, Split_reversal_sparse_information>{
- public:
-  /**
-   * @brief Constructs Split Sparse Jacobian chain from generator data and execution costs.
-   *
-   * @param data Generator data structure holding sparse metadata and sparsity patterns.
-   * @param[in,out] functions_cost Array containing execution cost estimates per Jacobian. Cleared upon
-   * construction.
-   * @throws std::invalid_argument If metadata size does not match cost array size.
-   */
-  jacobian_chain(Generator_data data, std::vector<size_t>& functions_cost){
-
-    if(data.jacobian_information.size() != functions_cost.size()){
-      
-      throw std::invalid_argument("Vector size mismatch encountered while building "
-          "the chain.");
-    }
-
-    for(std::size_t idx = 0; idx<functions_cost.size(); idx++){
-      chain.emplace_back(std::move(data.jacobian_information[idx]),
-                          data.sparse_data[idx], functions_cost[idx]);
-      data.sparse_data[idx].clear();
-      data.sparse_data[idx].shrink_to_fit();
-    }
-
-    functions_cost.clear();
-    functions_cost.shrink_to_fit();
-  }
-
-  /**
-   * @brief Constructs Split Sparse Jacobian chain from sparse metadata file and execution cost file. 
-   *
-   * @param file_name Path to file containing sprase metadata and non-zero patterns.
-   * @param functions_cost_file Path to file containing exectution costs.
-   * @throws std::runtime_error If either file fails to open or contains invalid input format.
-   */
-  jacobian_chain(const std::string& file_name, const std::string& functions_cost_file){
-    
-    jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>
-      sparse_chain{file_name};
-
-    std::vector<size_t> functions_cost;
-    functions_cost.reserve(sparse_chain.size());
-    file_to_functions_cost(functions_cost_file, functions_cost);
-
-    for(std::size_t idx = 0; idx < sparse_chain.size(); idx++){
-      
-      chain.emplace_back(std::move(sparse_chain.get(idx)), functions_cost[idx]);
-    }
-
-    functions_cost.clear();
-    functions_cost.shrink_to_fit();
-  }
-
-  /**
-   * @brief Delegation helper reading cost values from file into target vector.
-   *
-   * @param[in] file_path Path to file containing execution cost values.
-   * @param[out] functions_cost Array target where parsed execution costs will be placed.
-   * @throws std::runtime_error If file opening fails.
-   */
-  static void file_to_functions_cost(const std::string& file_path, 
-                                      std::vector<std::size_t>& functions_cost){
-
-    return jacobian_chain<Split_dense_Jacobian, Split_reversal_dense_information>::
-            file_to_functions_cost(file_path, functions_cost);
-  }
-
-  ///Access element at index without bounds checking.
-  const Split_sparse_Jacobian& operator[](std::size_t index) const{
-    return chain[index];
-  }
-
-  /// Access element at index with bounds checking.
-  const Split_sparse_Jacobian& at(std::size_t index) const{
-    return chain.at(index);
-  }
-
-  ///Gets the total number of Split sparse Jacobians in the chain.
-  std::size_t size() const{
-    return chain.size();
-  }
-
-  //Allows creating a span view of the jacobian_chain
-  /// Access direct raw pointer to underlying contiguous memory array.
-  const Split_sparse_Jacobian* data() const{
-
-    return chain.data();
-  }
-
-  /// Returns const iterator to the start of the chain.
-  auto begin() const {return chain.begin();}
-  /// Returns const iterator to the end of the chain.
-  auto end() const {return chain.end();}
-
- protected:
-  ///Split sparse Jacobian chain.
-  std::vector<Split_sparse_Jacobian> chain;
 };
 #endif

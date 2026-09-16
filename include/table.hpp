@@ -78,6 +78,17 @@ class Table_base{
     cells_with_pointer.clear();
   }
 
+  /**
+   * @brief Access the last cell in the DP table.
+   *
+   * @return Const reference to 'cell<Jacobian_T>' object.
+   *
+   */
+  const cell<Jacobian_T>& back() const{
+    
+    return cells.back();
+  }
+
  protected:
   /**
    * @brief Vector storing optimal subchain DP computational results ('cell<Jacobian_T>'),

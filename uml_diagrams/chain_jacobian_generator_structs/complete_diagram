@@ -1,0 +1,277 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+package "util_structs.hpp" {
+
+    class Jacobian_information {
+        # domain_dimension_ : std::size_t
+        # codomain_dimension_ : std::size_t
+        + Jacobian_information(domain_dimension: std::size_t, codomain_dimension: std::size_t)
+        + domain_dim() : std::size_t {const}
+        + codomain_dim() : std::size_t {const}
+    }
+
+    class Matrix_free_information {
+        # number_of_edges_ : std::size_t
+        + Matrix_free_information(domain_dimension: std::size_t, codomain_dimension: std::size_t,
+        number_of_edges: std::size_t)
+        + number_edges() : std::size_t {const}
+    }
+
+    class Matrix_free_sparse_information {
+        # number_of_nonzeros_ : std::size_t
+        + Matrix_free_sparse_information(domain_dimension: std::size_t, codomain_dimension: std::size_t,
+        num_of_edges: std::size_t, num_nonzeros: std::size_t)
+        + number_nnz() : std::size_t {const}
+    }
+
+    ' Inheritance hierarchy: Base <|-- Derived
+    Jacobian_information <|-- Matrix_free_information
+    Matrix_free_information <|-- Matrix_free_sparse_information
+
+    class NNZ {
+        # row_ : std::size_t
+        # col_ : std::size_t
+        + NNZ(row: std::size_t, col: std::size_t)
+        + row() : std::size_t {const}
+        + col() : std::size_t {const}
+        + operator<(rhs: NNZ const&) : bool {const}
+        + operator==(rhs: NNZ const&) : bool {const}
+    }
+
+    struct Generator_data {
+        + jacobian_information : std::vector<Matrix_free_sparse_information>
+        + sparse_data : std::vector<std::vector<NNZ>>
+    }
+
+    ' Structural compositions
+    Generator_data *-- "0..*" Matrix_free_sparse_information : contains
+    Generator_data *-- "0..*" NNZ : contains
+}
+
+package "generator.hpp" {
+
+    ' Unspecialized Primary Template
+    class "Generator<Matrix_information_type>" as Generator_Primary <<template>> {}
+
+    ' Specialization 1: Jacobian / Baseline
+    class "Generator<Jacobian_information>" as Generator_Jacobian {
+        # jacobian_chain_length : std::size_t
+        # dimension_lower_bound : std::size_t
+        # dimension_upper_bound : std::size_t
+        # is_deterministic : bool
+        # seed : std::size_t
+        + Generator(chain_length: std::size_t, dimension_lower_bound: std::size_t,
+        dimension_upper_bound: std::size_t, is_deterministic: bool, seed: std::size_t)
+        + generate_jacobian_information() : std::vector<Jacobian_information>
+    }
+
+    ' Specialization 2: Matrix-Free_Dense
+    class "Generator<Matrix_free_information>" as Generator_Matrix_free{
+        # jacobian_chain_length : std::size_t
+        # dimension_lower_bound : std::size_t
+        # dimension_upper_bound : std::size_t
+        # number_of_edges_lower_bound : std::size_t
+        # number_of_edges_upper_bound : std::size_t
+        # is_deterministic : bool
+        # seed : std::size_t
+
+        + Generator(chain_length: std::size_t, dimension_lower_bound: std::size_t,
+        dimension_upper_bound: std::size_t, number_edges_lower_bound: std::size_t,
+        number_edges_upper_bound: std::size_t, is_deterministic: bool, seed: std::size_t)
+
+        + generate_jacobian_information() : std::vector<Matrix_free_information>
+    }
+
+    ' Specialization 3: Sparse Matrix-Free_Sparse
+    class "Generator<Matrix_free_sparse_information>" as Generator_Matrix_free_sparse{
+        # jacobian_chain_length : std::size_t
+        # dimension_lower_bound : std::size_t
+        # dimension_upper_bound : std::size_t
+        # number_of_edges_lower_bound : std::size_t
+        # number_of_edges_upper_bound : std::size_t
+        # density_lower_bound : double
+        # density_upper_bound : double
+        # is_deterministic : bool
+        # seed : std::size_t
+
+        + Generator(chain_length: std::size_t, dimension_lower_bound: std::size_t,
+        dimension_upper_bound: std::size_t, number_edges_lower_bound: std::size_t,
+        number_edges_upper_bound: std::size_t, density_lower_bound: double, density_upper_bound: double,
+        is_deterministic: bool, seed: std::size_t)
+
+        + generate_jacobian_information() : std::vector<Matrix_free_sparse_information>
+
+        + generate_sparsity_patterns(jacobian_information: const std::vector<Matrix_free_sparse_information>&): 
+        std::vector<std::vector<NNZ>>
+
+        + generate_data() : Generator_data
+        # set_number_of_zeros_upper_and_lower_bound(...) : void
+        # generate_data_square_submatrix(...) : void
+    }
+
+    ' Relationships to primary template (Specialization realization)
+    Generator_Primary <|.. Generator_Jacobian <<binds>>: <Jacobian_information>
+    Generator_Primary <|.. Generator_Matrix_free <<binds>>: <Matrix_free_information>
+    Generator_Primary <|.. Generator_Matrix_free_sparse <<binds>>: <Matrix_free_sparse_information>
+}
+
+package "jacobian.hpp" {
+
+    ' Base Jacobian metadata wrapper
+    class Jacobian {
+        + Jacobian(jacobian_metadata: Jacobian_information)
+        + Jacobian(domain_dimension: std::size_t, codomain_dimension: std::size_t)
+    }
+
+    ' Dense matrix-free Jacobian representation
+    class Dense_Jacobian {
+        + Dense_Jacobian(jacobian_metadata: Matrix_free_information)
+        + Dense_Jacobian(domain_dimension: std::size_t, codomain_dimension: std::size_t,
+        number_of_edges: std::size_t)
+    }
+
+    ' Sparse Jacobian with CSR/CSC storage and graph coloring
+    class Sparse_Jacobian {
+        # column_idx : std::vector<std::size_t>
+        # row_pointer : std::vector<std::size_t>
+        # row_idx : std::vector<std::size_t>
+        # column_pointer : std::vector<std::size_t>
+        # column_coloring : std::vector<std::vector<std::size_t>>
+        # row_coloring : std::vector<std::vector<std::size_t>>
+        # column_number_colors : std::size_t
+        # row_number_colors : std::size_t
+        # max_number_nnz_row : std::size_t
+        # max_number_nnz_column : std::size_t
+
+        + Sparse_Jacobian(sparse_jacobian: const Sparse_Jacobian&)
+        + Sparse_Jacobian(sparse_jacobian: Sparse_Jacobian&&)
+        + Sparse_Jacobian(jacobian_metadata: Matrix_free_sparse_information, sparse_data: std::vector<NNZ>&)
+        + Sparse_Jacobian(domain_dimension: std::size_t, codomain_dimension: std::size_t,
+        number_of_edges: std::size_t, number_of_nonzeros: std::size_t, sparse_data: std::vector<NNZ>&)
+        + Sparse_Jacobian(domain_dimension: std::size_t, codomain_dimension: std::size_t,
+        number_of_edges: std::size_t, number_of_nonzeros: std::size_t,
+        column_idx_array: std::vector<std::size_t>, row_pointer_array: std::vector<std::size_t>,
+        row_idx_array: std::vector<std::size_t>, column_pointer_array: std::vector<std::size_t>)
+
+        + {static} from_file(path_to_file: const std::string&) : Sparse_Jacobian
+        + column_idx_size() : std::size_t
+        + row_pointer_size() : std::size_t
+        + row_idx_size() : std::size_t
+        + column_pointer_size() : std::size_t
+        + get_column_idx_reference() : const std::vector<std::size_t>&
+        + get_row_pointer_reference() : const std::vector<std::size_t>&
+        + get_row_idx_reference() : const std::vector<std::size_t>&
+        + get_column_pointer_reference() : const std::vector<std::size_t>&
+        + get_column_coloring() : const std::vector<std::vector<std::size_t>>&
+        + get_row_coloring() : const std::vector<std::vector<std::size_t>>&
+        + get_column_number_colors() : std::size_t
+        + get_row_number_colors() : std::size_t
+        + get_max_number_nnz_row() : std::size_t
+        + get_max_number_nnz_column() : std::size_t
+
+        ' Friend operations & multiplication helpers
+        + <<friend>> operator*(lhs: const Sparse_Jacobian&, rhs: const Sparse_Jacobian&) : Sparse_Jacobian
+        + <<friend>> mul_CSR_CSC_2_CSR(lhs: const Sparse_Jacobian&, rhs: const Sparse_Jacobian&,
+        column_idx_array: std::vector<std::size_t>&, row_pointer_array: std::vector<std::size_t>&) : void
+        + <<friend>> mul_CSR_CSC_2_CSC(lhs: const Sparse_Jacobian&, rhs: const Sparse_Jacobian&,
+        row_idx_array: std::vector<std::size_t>&, column_pointer_array: std::vector<std::size_t>&) : void
+
+        - sparse_data_non_repeated_entries(...) : void
+        - build_CSR_CSC_format(sparse_data: const std::vector<NNZ>&) : void
+        - build_cig_from_compressed(...) : std::vector<std::vector<std::size_t>>
+        - color_graph(graph: const std::vector<std::vector<std::size_t>>&, max_color: std::size_t&) : std::vector<int>
+        - coloring_formatting(...) : void
+        - increasing_index_array(...) : void
+        - is_ptr_array_increasing(ptr_arr: const std::vector<std::size_t>&) : bool
+        - {static} sparse_file_to_sparse_data(...) : void
+        - from_sparse_data_initializer(sparse_data: std::vector<NNZ>&) : void
+    }
+
+}
+
+
+
+package "chain.hpp" {
+
+    ' Base Primary Template
+    class "jacobian_chain<Jacobian_type, Basic_information_type>" as jacobian_chain_Primary <<template>> {
+        # chain : std::vector<Jacobian_type>
+
+        + jacobian_chain(basic_information: std::vector<Basic_information_type>)
+        + jacobian_chain(file_name: const std::string&)
+        + operator[](index: std::size_t) : const Jacobian_type&
+        + at(index: std::size_t) : const Jacobian_type&
+        + copy(index: std::size_t) : Jacobian_type
+        + get(index: std::size_t) : Jacobian_type&
+        + size() : std::size_t
+        # basic_information_dimension_check(basic_information: const std::vector<Basic_information_type>&) : bool
+        # chain_initializer(basic_information: std::vector<Basic_information_type>&) : void
+        # file_to_chain(file_path: const std::string&) : void
+    }
+
+    ' Intended Type Binding 1: Jacobian Base / Metadata
+    class "jacobian_chain<Jacobian, Jacobian_information>" as jacobian_chain <<implicit>>{}
+
+    ' Intended Type Binding 2: Dense Matrix-Free
+    class "jacobian_chain<Dense_Jacobian, Matrix_free_information>" as jacobian_chain_Dense <<implicit>> {}
+
+    ' Explicit Specialization 3: Sparse Matrix-Free 
+    class "jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>" as jacobian_chain_Sparse {
+        # chain : std::vector<Sparse_Jacobian>
+
+        + jacobian_chain(data: Generator_data)
+        + jacobian_chain(file_path: const std::string&)
+        + operator[](index: std::size_t) : const Sparse_Jacobian&
+        + at(index: std::size_t) : const Sparse_Jacobian&
+        + copy(index: std::size_t) : Sparse_Jacobian
+        + get(index: std::size_t) : Sparse_Jacobian&
+        + size() : std::size_t
+        
+        # basic_information_dimension_check(
+        basic_information: const std::vector<Matrix_free_sparse_information>&) : bool
+        
+        # coherency_basic_information_sparse_data(
+        basic_information: const std::vector<Matrix_free_sparse_information>&,
+        sparse_data: const std::vector<std::vector<NNZ>>&) : void
+        
+        # initialize_chain(basic_information: std::vector<Matrix_free_sparse_information>&,
+                            sparse_data: std::vector<std::vector<NNZ>>&) : void
+        
+        # file_to_sparse_data(file_name: const std::string&, 
+                                basic_information: std::vector<Matrix_free_sparse_information>&,
+                                sparse_data: std::vector<std::vector<NNZ>>&) : void
+    }
+
+    ' Template Binding Relationship
+    jacobian_chain_Primary <|.. jacobian_chain <<binds>>: <Jacobian, Jacobian_information>
+    jacobian_chain_Primary <|.. jacobian_chain_Dense <<binds>>: <Dense_Jacobian, Matrix_free_information>
+    jacobian_chain_Primary <|.. jacobian_chain_Sparse <<binds>>: <Sparse_Jacobian, Matrix_free_sparse_information>
+}
+
+' ==============================================================================
+' Cross-Package Relationships
+' ==============================================================================
+
+' Generator dependencies
+Generator_Jacobian ..> Jacobian_information : creates
+Generator_Matrix_free ..> Matrix_free_information : creates
+Generator_Matrix_free_sparse ..> Matrix_free_sparse_information : creates
+Generator_Matrix_free_sparse ..> NNZ : creates
+Generator_Matrix_free_sparse ..> Generator_data : creates
+
+' Inheritance across packages
+Jacobian_information <|-- Jacobian
+Matrix_free_information <|-- Dense_Jacobian
+Matrix_free_sparse_information <|-- Sparse_Jacobian
+
+' Operational dependencies
+Sparse_Jacobian ..> NNZ : processes
+
+' Storage Ownership
+jacobian_chain *-- "1..*" Jacobian
+jacobian_chain_Dense *-- "1..*" Dense_Jacobian
+jacobian_chain_Sparse *-- "1..*" Sparse_Jacobian
+jacobian_chain_Sparse ..> Generator_data : consumes
+
+@enduml

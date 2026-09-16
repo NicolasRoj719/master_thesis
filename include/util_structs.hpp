@@ -75,8 +75,8 @@ class Jacobian_information{
   Jacobian_information(std::size_t domain_dim, std::size_t codomain_dim):
     domain_dimension_(domain_dim), codomain_dimension_(codomain_dim){}
 
-  std::size_t domain_dimension() const {return domain_dimension_;}
-  std::size_t codomain_dimension() const {return codomain_dimension_;}
+  std::size_t domain_dim() const {return domain_dimension_;}
+  std::size_t codomain_dim() const {return codomain_dimension_;}
  protected:
   std::size_t domain_dimension_;
   std::size_t codomain_dimension_;
@@ -103,35 +103,10 @@ class Matrix_free_information: public Jacobian_information{
       std::size_t num_of_edges):
     Jacobian_information(domain_dim, codomain_dim), number_of_edges_(num_of_edges){}
 
-  std::size_t number_of_edges() const {return number_of_edges_;}
+  std::size_t number_edges() const {return number_of_edges_;}
 
  protected:
   std::size_t number_of_edges_;
-};
-
-/**
- * @brief Metadata for dense Jacobians including estimate for the function
- * evalutaion cost in terms of fused multiply add (fma) operations.
- *
- * With the function evaluation cost estimate Binomial Checkpoiting algorithm
- * may be used to obtain the additional cost incurred in accumulating the Jacobian
- * via split reverse mode of Algorithmic Differentiation (AD).
- */
-class Split_reversal_dense_information: public Matrix_free_information{
- public:
-   /**
-    * @brief Constructs split reversal metadata from base matrix-free info.
-    * @param jacobian_information Base matrix-free properties.
-    * @param function_cost Evaluation cost estimateof the primal subprogram.
-    */
-   Split_reversal_dense_information(Matrix_free_information jacobian_information,
-       std::size_t function_cost):
-     Matrix_free_information(std::move(jacobian_information)), function_cost_(function_cost){}
-
-   std::size_t function_cost() const {return function_cost_;}
-
- protected:
-   std::size_t function_cost_;
 };
 
 /**
@@ -179,33 +154,10 @@ class Matrix_free_sparse_information: public Matrix_free_information{
       }
     }
 
-  std::size_t number_of_nonzeros() const {return number_of_nonzeros_;}
+  std::size_t number_nnz() const {return number_of_nonzeros_;}
 
  protected:
   std::size_t number_of_nonzeros_;
-};
-
-
-/**
- * @brief Metadata for Matrix_free_sparse_information with cost estimate of
- * subprogram evaluation in terms of fused multiply add (fma).
- */
-class Split_reversal_sparse_information: public Matrix_free_sparse_information{
- public:
-  /**
-   * @brief Construcs sparse split reversal metadata.
-   * @param Matrix_free_sparse_information Base sparse matrix-free properties.
-   * @param function_cost Evaluation cost of the primal subprogram.
-   */
-  Split_reversal_sparse_information(Matrix_free_sparse_information jacobian_information,
-      std::size_t function_cost):
-    Matrix_free_sparse_information(std::move(jacobian_information)),
-    function_cost_(function_cost){}
-
-  std::size_t function_cost() const {return function_cost_;}
-
- protected:
-  std::size_t function_cost_;
 };
 
 /**
