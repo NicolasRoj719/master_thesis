@@ -29,23 +29,23 @@
  * @tparam Jacobian_info_T Metadata/information type corresponding to 'Jacobian_T'.
  */
 template<class Jacobian_T, class Jacobian_info_T>
-class fill_table{};
+class Fill_table{};
 
 /**
- * @brief Explicit specialization of 'fill_table' for 'Jacobian' and 'Jacobian_information' types.
+ * @brief Explicit specialization of 'Fill_table' for 'Jacobian' and 'Jacobian_information' types.
  *
  * Computes optimal bracketing sequence to minimize total computation cost in terms of Fused 
  * Multiply-Add (fma) operations, restricted to dense matrix-matrix multiplications.
  */
 template<>
-class fill_table<Jacobian, Jacobian_information>{
+class Fill_table<Jacobian, Jacobian_information>{
  public:
    /**
     * @brief Constructs table-filler engine and executes the dynamic programming algorithm.
     *
     * @param chain Target Jacobian chain containing sequence metadata.
     */
-   fill_table(const Jacobian_chain<Jacobian, Jacobian_information>& chain):
+   Fill_table(const Jacobian_chain<Jacobian, Jacobian_information>& chain):
       table(chain.size()){
 
       fill(chain);
@@ -56,7 +56,7 @@ class fill_table<Jacobian, Jacobian_information>{
     *
     * @param table_ External Table instance moved into internal storage.
     */
-   fill_table(Table<Jacobian> table_): table(std::move(table_)){}
+   Fill_table(Table<Jacobian> table_): table(std::move(table_)){}
 
    /**
     * @brief Calculates dense matrix multiplication cost for subchain \f$(j, k+1)$ and \f$(k, i)$.
@@ -158,7 +158,7 @@ class fill_table<Jacobian, Jacobian_information>{
 };
 
 
-void fill_table<Jacobian, Jacobian_information>::fill(
+void Fill_table<Jacobian, Jacobian_information>::fill(
       const Jacobian_chain<Jacobian, Jacobian_information>& chain){
 
    //Filling cells with pointers
@@ -342,14 +342,14 @@ namespace tool_box_dense{
  * count of the subprograms is required to run the optimizer.
  */
 template<>
-class fill_table<Dense_Jacobian, Matrix_free_information>{
+class Fill_table<Dense_Jacobian, Matrix_free_information>{
  public:
    /**
     * @brief Constructs and fills dynamic programming (DP) table without memory bound.
     *
     * @param chain Sequence of elemental Jacobians to optimize.
     */
-   fill_table(const Jacobian_chain<Dense_Jacobian, Matrix_free_information>& chain):
+   Fill_table(const Jacobian_chain<Dense_Jacobian, Matrix_free_information>& chain):
       table(chain.size()){
 
       fill(chain);
@@ -361,7 +361,7 @@ class fill_table<Dense_Jacobian, Matrix_free_information>{
     * @param chain Sequence of elemental Jacobians to optimize.
     * @memory_bound_ Maximum allowed edge storage limit for executing Adjoint mode accumulation.
     */
-   fill_table(const Jacobian_chain<Dense_Jacobian, Matrix_free_information>& chain,
+   Fill_table(const Jacobian_chain<Dense_Jacobian, Matrix_free_information>& chain,
                std::size_t memory_bound_):
       table(chain.size()), memory_bound(memory_bound_){
 
@@ -376,7 +376,7 @@ class fill_table<Dense_Jacobian, Matrix_free_information>{
     *
     * @param table_ Instance of Table<Dense_Jacobian> to be moved into internal storage.
     */
-   fill_table(Table<Dense_Jacobian> table_):
+   Fill_table(Table<Dense_Jacobian> table_):
       table(std::move(table_)){}
    
    /**
@@ -576,7 +576,7 @@ class fill_table<Dense_Jacobian, Matrix_free_information>{
    void fill(const Jacobian_chain<Dense_Jacobian, Matrix_free_information>& chain);
 };
 
-void fill_table<Dense_Jacobian, Matrix_free_information>::fill(
+void Fill_table<Dense_Jacobian, Matrix_free_information>::fill(
       const Jacobian_chain<Dense_Jacobian, Matrix_free_information>& chain){
 
    table.clear();
@@ -683,8 +683,8 @@ void fill_table<Dense_Jacobian, Matrix_free_information>::fill(
  * graphs are build, which are later used run greedy coloring algorithms to obtain row and column
  * chromatic number estimates.
  *
- * @note Shared across 'fill_table<Sparse_Jacobian, Matrix_free_sparse_information>' and 
- * 'fill_table<Split_sparse_Jacobian, Split_reversal_sparse_information>'.
+ * @note Shared across 'Fill_table<Sparse_Jacobian, Matrix_free_sparse_information>' and 
+ * 'Fill_table<Split_sparse_Jacobian, Split_reversal_sparse_information>'.
  */
 namespace tool_box_sparse{
 
@@ -860,14 +860,14 @@ namespace tool_box_sparse{
  * using matrix sparsity to minimize cumulative accumulation operations.
  */
 template<>
-class fill_table<Sparse_Jacobian, Matrix_free_sparse_information>{
+class Fill_table<Sparse_Jacobian, Matrix_free_sparse_information>{
  public:
    /**
     * @brief Constructs and solves DP table without memory limits.
     *
     * @param chain Sequence of sparse Jacobians to optimize.
     */
-   fill_table(const Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain):
+   Fill_table(const Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain):
       table(chain.size()){
       
       fill(chain);
@@ -879,7 +879,7 @@ class fill_table<Sparse_Jacobian, Matrix_free_sparse_information>{
     * @param chain Sequence of sparse Jacobians to optimize.
     * @param memory_bound_ Maximum allowed graph edges active during reversal-mode (adjoint). 
     */
-   fill_table(const Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain,
+   Fill_table(const Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain,
                   std::size_t memory_bound_):
       table(chain.size()), memory_bound(memory_bound_){
 
@@ -891,7 +891,7 @@ class fill_table<Sparse_Jacobian, Matrix_free_sparse_information>{
     *
     * @param table_ Storage table instance moved into class ownership. 
     */
-   fill_table(Table<Sparse_Jacobian> table_):
+   Fill_table(Table<Sparse_Jacobian> table_):
       table(std::move(table_)){}
    
    /**
@@ -1103,7 +1103,7 @@ class fill_table<Sparse_Jacobian, Matrix_free_sparse_information>{
    void fill(const Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain);
 };
 
-void fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::fill(
+void Fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::fill(
       const Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain){
 
    table.clear();

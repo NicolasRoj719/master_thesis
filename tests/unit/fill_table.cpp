@@ -41,11 +41,11 @@ int main(){
     bool test_tangent_sparse;
     bool test_tangent;
 
-    if(fill_table<Dense_Jacobian, Matrix_free_information>::tangent_cost(&chain_dense[0]) !=
+    if(Fill_table<Dense_Jacobian, Matrix_free_information>::tangent_cost(&chain_dense[0]) !=
         100 * 4 ||
-        fill_table<Dense_Jacobian, Matrix_free_information>::tangent_cost(&chain_dense[1]) !=
+        Fill_table<Dense_Jacobian, Matrix_free_information>::tangent_cost(&chain_dense[1]) !=
         150 * 2 ||
-        fill_table<Dense_Jacobian, Matrix_free_information>::tangent_cost(&chain_dense[2]) !=
+        Fill_table<Dense_Jacobian, Matrix_free_information>::tangent_cost(&chain_dense[2]) !=
         80 * 3){
 
       test_tangent_dense = false;
@@ -53,11 +53,11 @@ int main(){
 
     else{test_tangent_dense = true;}
 
-    if(fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::tangent_cost(&chain_sparse[0])!=
+    if(Fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::tangent_cost(&chain_sparse[0])!=
         100 * 2 ||
-        fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::tangent_cost(&chain_sparse[1])!=
+        Fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::tangent_cost(&chain_sparse[1])!=
         150 * 1 ||
-        fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::tangent_cost(&chain_sparse[2])!=
+        Fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::tangent_cost(&chain_sparse[2])!=
         80 * 1){
 
       test_tangent_sparse = false;
@@ -75,11 +75,11 @@ int main(){
     bool test_adjoint_sparse;
     bool test_adjoint;
 
-    if(fill_table<Dense_Jacobian, Matrix_free_information>::adjoint_cost(&chain_dense[0]) !=
+    if(Fill_table<Dense_Jacobian, Matrix_free_information>::adjoint_cost(&chain_dense[0]) !=
         100 * 2 ||
-        fill_table<Dense_Jacobian, Matrix_free_information>::adjoint_cost(&chain_dense[1]) !=
+        Fill_table<Dense_Jacobian, Matrix_free_information>::adjoint_cost(&chain_dense[1]) !=
         150 * 3 ||
-        fill_table<Dense_Jacobian, Matrix_free_information>::adjoint_cost(&chain_dense[2]) !=
+        Fill_table<Dense_Jacobian, Matrix_free_information>::adjoint_cost(&chain_dense[2]) !=
         80 * 4){
 
       test_adjoint_dense = false;
@@ -88,11 +88,11 @@ int main(){
 
     else{test_adjoint_dense = true;}
 
-    if(fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::adjoint_cost(&chain_sparse[0])!= 
+    if(Fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::adjoint_cost(&chain_sparse[0])!= 
         100 * 1 ||
-        fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::adjoint_cost(&chain_sparse[1])!=
+        Fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::adjoint_cost(&chain_sparse[1])!=
         150 * 2 ||
-        fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::adjoint_cost(&chain_sparse[2])!=
+        Fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::adjoint_cost(&chain_sparse[2])!=
         80 * 2){
 
       test_adjoint_sparse = false;
@@ -138,8 +138,8 @@ int main(){
       table_dense.emplace_back(&chain_dense[2], cost_2, op_2);
 
       //Tranfering data from table_dense to table object contained
-      //within the fill_table class.
-      fill_table<Dense_Jacobian, Matrix_free_information>
+      //within the Fill_table class.
+      Fill_table<Dense_Jacobian, Matrix_free_information>
         fill_table_methods_dense{std::move(table_dense)};
 
       if(
@@ -190,8 +190,8 @@ int main(){
           chain_sparse[0], cost_2_0, split_pos_2_0, op_2_0);
 
       //Tranfering data from table_dense to table object contained
-      //within the fill_table class.
-      fill_table<Sparse_Jacobian, Matrix_free_sparse_information>
+      //within the Fill_table class.
+      Fill_table<Sparse_Jacobian, Matrix_free_sparse_information>
         fill_table_methods_sparse{std::move(table_sparse)};
 
       if(
@@ -243,8 +243,8 @@ int main(){
       table_jacobian.emplace_back(cost_1_0, split_pos_1_0);
       table_jacobian.emplace_back(cost_2_1, split_pos_2_1);
 
-      //Transferring dat ownershio to fill_table class.
-      fill_table<Jacobian, Jacobian_information>
+      //Transferring dat ownership to Fill_table class.
+      Fill_table<Jacobian, Jacobian_information>
           fill_table{std::move(table_jacobian)};
 
       //Testing multiplication_cost
@@ -288,7 +288,7 @@ int main(){
       table_dense.emplace_back(cost_1_0, split_pos_1_0, op_1_0);
       table_dense.emplace_back(cost_2_1, split_pos_2_1, op_2_1);
 
-      fill_table<Dense_Jacobian, Matrix_free_information>
+      Fill_table<Dense_Jacobian, Matrix_free_information>
           fill_table{std::move(table_dense)};
 
       if(
@@ -338,7 +338,7 @@ int main(){
       table_sparse.emplace_back(chain_sparse[2] * chain_sparse[1],
           cost_2_1, split_pos_2_1, op_2_1);
 
-      fill_table<Sparse_Jacobian, Matrix_free_sparse_information>
+      Fill_table<Sparse_Jacobian, Matrix_free_sparse_information>
         fill_table{std::move(table_sparse)};
 
       if(
@@ -405,7 +405,7 @@ int main(){
       table_dense.emplace_back(cost_1_0, split_pos_1_0, op_1_0);
       table_dense.emplace_back(cost_2_1, split_pos_2_1, op_2_1);
 
-      fill_table<Dense_Jacobian, Matrix_free_information>
+      Fill_table<Dense_Jacobian, Matrix_free_information>
         fill_table{std::move(table_dense)};
 
       //Test tangent dense.
@@ -472,7 +472,7 @@ int main(){
       table_sparse.emplace_back(chain_sparse[2] * chain_sparse[1], cost_2_1,
                                 split_pos_2_1, op_2_1);
 
-      fill_table<Sparse_Jacobian, Matrix_free_sparse_information>
+      Fill_table<Sparse_Jacobian, Matrix_free_sparse_information>
         fill_table{std::move(table_sparse)};
 
       //Test tangent sparse

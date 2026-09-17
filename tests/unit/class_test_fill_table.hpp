@@ -257,7 +257,7 @@ bool test_fill_table::run_test_case_1_jacobian(){
   }
 
   //Create and fill dynamic programming table
-  fill_table<Jacobian, Jacobian_information> fill_table{chain};
+  Fill_table<Jacobian, Jacobian_information> fill_table{chain};
 
   //Compare costs and split position data.
   if(check_cell_information(fill_table.get_cell(1,0), cost_1_0, split_pos_1_0) && 
@@ -445,7 +445,7 @@ bool test_fill_table::run_test_case_dense(const std::string& path_to_chain_file,
     //Create and fill table.
     if(memory_limit == std::numeric_limits<std::size_t>::max()){
 
-      fill_table<Dense_Jacobian, Matrix_free_information> method_fill{chain};
+      Fill_table<Dense_Jacobian, Matrix_free_information> method_fill{chain};
 
       if(check_cell_information(method_fill.get_cell(0), cost_0, op_0) && 
           check_cell_information(method_fill.get_cell(1), cost_1, op_1) && 
@@ -460,7 +460,7 @@ bool test_fill_table::run_test_case_dense(const std::string& path_to_chain_file,
       return false;
     }
 
-    fill_table<Dense_Jacobian, Matrix_free_information> method_fill{chain, memory_limit};
+    Fill_table<Dense_Jacobian, Matrix_free_information> method_fill{chain, memory_limit};
 
     if(check_cell_information(method_fill.get_cell(0), cost_0, op_0) && 
         check_cell_information(method_fill.get_cell(1), cost_1, op_1) && 
@@ -684,7 +684,7 @@ bool test_fill_table::run_test_case_sparse(const std::string& path_to_chain_file
   {
     if(memory_limit == std::numeric_limits<std::size_t>::max()){
 
-      fill_table<Sparse_Jacobian, Matrix_free_sparse_information>
+      Fill_table<Sparse_Jacobian, Matrix_free_sparse_information>
         method_fill{chain};
 
       if(check_cell_information(method_fill.get_cell(0), cost_0, op_0) &&
@@ -702,7 +702,7 @@ bool test_fill_table::run_test_case_sparse(const std::string& path_to_chain_file
 
     else{
 
-      fill_table<Sparse_Jacobian, Matrix_free_sparse_information>
+      Fill_table<Sparse_Jacobian, Matrix_free_sparse_information>
         method_fill{chain, memory_limit};
 
       if(check_cell_information(method_fill.get_cell(0), cost_0, op_0) &&
