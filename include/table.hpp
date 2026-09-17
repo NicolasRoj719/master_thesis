@@ -53,7 +53,7 @@ class Table_base{
    * @param i_index Start index of the subchain (0-based).
    * @return Const reference to the corresponding 'cell<Jacobian_T>' object.
    */
-  const cell<Jacobian_T>& get_cell(std::size_t j_index, std::size_t i_index) const{
+  const Cell<Jacobian_T>& get_cell(std::size_t j_index, std::size_t i_index) const{
 
     return cells[((j_index - 1) * j_index) / 2 + (j_index - 1 - i_index)];
   }  
@@ -65,9 +65,9 @@ class Table_base{
    *  a single index j.
    *
    *  @param j_index Index of Jacobian_T matrix in the chain (0-based).
-   *  @return Const reference to the corresponding 'cell_with_pointer<Jacobian_T>' object.
+   *  @return Const reference to the corresponding 'Cell_with_pointer<Jacobian_T>' object.
    */
-  const cell_with_pointer<Jacobian_T>& get_cell(std::size_t j_index) const{
+  const Cell_with_pointer<Jacobian_T>& get_cell(std::size_t j_index) const{
 
     return cells_with_pointer[j_index];
   }
@@ -84,23 +84,23 @@ class Table_base{
    * @return Const reference to 'cell<Jacobian_T>' object.
    *
    */
-  const cell<Jacobian_T>& back() const{
+  const Cell<Jacobian_T>& back() const{
     
     return cells.back();
   }
 
  protected:
   /**
-   * @brief Vector storing optimal subchain DP computational results ('cell<Jacobian_T>'),
+   * @brief Vector storing optimal subchain DP computational results ('Cell<Jacobian_T>'),
    * for subchains of length greater than one.
    */
-  std::vector<cell<Jacobian_T>> cells;
+  std::vector<Cell<Jacobian_T>> cells;
 
   /**
    * @brief Vector storing optimal subchain DP computational results, with subchains of length one 
-   * and non-owning pointers (cell_with_pointer<Jacobian_T>) pointing to Jacobian_T matrices in the chain.
+   * and non-owning pointers (Cell_with_pointer<Jacobian_T>) pointing to Jacobian_T matrices in the chain.
    */
-  std::vector<cell_with_pointer<Jacobian_T>> cells_with_pointer;
+  std::vector<Cell_with_pointer<Jacobian_T>> cells_with_pointer;
 };
 
 /**
@@ -117,9 +117,9 @@ class Table: public Table_base<Jacobian_T>{
     */
    using Table_base<Jacobian_T>::Table_base;
 
-   //cell<Jacobian> emplace_back
+   //Cell<Jacobian> emplace_back
    /**
-    * @brief Initializes a cell with optimal cost and split_position.
+    * @brief Initializes a Cell with optimal cost and split_position.
     *
     * @note Intended primary for standard 'Jacobian' types.
     * @note Only possible operation is MULTIPLICATION.
@@ -152,12 +152,12 @@ class Table: public Table_base<Jacobian_T>{
       this -> cells.emplace_back(accumulated_cost, split_position, operation);
    }
 
-   //cell<Sparse_Jacobian> and cell<Split_sparse_Jacobian> emplace_back
+   //Cell<Sparse_Jacobian> and Cell<Split_sparse_Jacobian> emplace_back
    /**
-    * @brief Constructs cell by moving ownership of an internal sparse matrix and initializing dynamic 
+    * @brief Constructs Cell by moving ownership of an internal sparse matrix and initializing dynamic 
     * programming (DP) metrics in cells array.
     *
-    * @note Applicable for 'Sparse_Jacobian' and 'Split_sparse_Jacobian' cell types.
+    * @note Applicable for 'Sparse_Jacobian' and 'Split_sparse_Jacobian' Cell types.
     * @note Subproblem creation follows the rules indicated above.
     * @note The Sparse and Split sparse Jacobian objects are propagated through the table
     * by means of multiplication.
@@ -174,10 +174,10 @@ class Table: public Table_base<Jacobian_T>{
    }
 
    /**
-    * @brief Constructs cells_with_pointer containing non owning reference to Jacobian_T type in 
+    * @brief Constructs Cells_with_pointer containing non owning reference to Jacobian_T type in 
     * cells_with_pointer array.
     *
-    * @note Intended for 'Jacobian' cell with pointer type.
+    * @note Intended for 'Jacobian' Cell with pointer type.
     *
     * @param jacobian_ptr non owning pointer to Jacobian_T instance in the chain.
     */
@@ -186,10 +186,10 @@ class Table: public Table_base<Jacobian_T>{
       this -> cells_with_pointer.emplace_back(jacobian_ptr);
    }
 
-   //cells_with_pointer<Dense_Jacobian>, cells_with_pointer<Split_dense_Jacobian>,
-   //cells_with_pointer<Sparse_Jacobian> and cells_with_pointer<Split_sparse_Jacobian>
+   //Cells_with_pointer<Dense_Jacobian>, Cells_with_pointer<Split_dense_Jacobian>,
+   //Cells_with_pointer<Sparse_Jacobian> and Cells_with_pointer<Split_sparse_Jacobian>
    /**
-    * @brief Constructs cell_with_pointer in cells_with_pointer with information from 
+    * @brief Constructs Cell_with_pointer in cells_with_pointer with information from 
     * non owning pointer to Jacobian_T and dynamic programming (DP) metrics.
     *
     * @note Applicable for 'Dense_Jacobian', 'Split_dense_Jacobian', 'Sparse_Jacobian' and

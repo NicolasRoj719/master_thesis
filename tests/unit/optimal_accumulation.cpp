@@ -339,7 +339,7 @@ int main(){
   {
     const std::size_t chain_length = 5;
     const std::size_t available_checkpoints = 2;
-    binomial_table table{chain_length, available_checkpoints};
+    Binomial_table table{chain_length, available_checkpoints};
 
     std::vector<Matrix_free_information> problem_dense_data;
     problem_dense_data.reserve(chain_length);
@@ -362,10 +362,10 @@ int main(){
     execution_costs.emplace_back(500);
 
     //Build Split dense.
-    jacobian_chain<Dense_Jacobian, Matrix_free_information> chain{problem_dense_data};
+    Jacobian_chain<Dense_Jacobian, Matrix_free_information> chain{problem_dense_data};
 
     //Call dynamic programming algorithm to fill the look up table.
-    binomial_checkpointing 
+    Binomial_checkpointing 
       algorithm{execution_costs, chain_length - 1, 0, available_checkpoints, 0};
 
     //Accumulate operation nodes.
@@ -391,7 +391,7 @@ int main(){
   {
     const std::size_t chain_length = 5;
     const std::size_t available_checkpoints = 2;
-    binomial_table table{chain_length, available_checkpoints};
+    Binomial_table table{chain_length, available_checkpoints};
 
     std::vector<Matrix_free_information> problem_dense_data;
     problem_dense_data.reserve(chain_length);
@@ -414,10 +414,10 @@ int main(){
     execution_costs.emplace_back(100);
 
     //Build Split dense.
-    jacobian_chain<Dense_Jacobian, Matrix_free_information> chain{problem_dense_data};
+    Jacobian_chain<Dense_Jacobian, Matrix_free_information> chain{problem_dense_data};
 
     //Call dynamic programming algorithm to fill the look up table.
-    binomial_checkpointing 
+    Binomial_checkpointing 
       algorithm{execution_costs, chain_length - 1, 0, available_checkpoints, 0};
 
     //Accumulate operation nodes.
@@ -443,7 +443,7 @@ int main(){
   {
     const std::size_t chain_length = 6;
     const std::size_t available_checkpoints = 2;
-    binomial_table table{chain_length, available_checkpoints};
+    Binomial_table table{chain_length, available_checkpoints};
 
     std::vector<Matrix_free_information> problem_dense_data;
     problem_dense_data.reserve(chain_length);
@@ -468,10 +468,10 @@ int main(){
     execution_costs.emplace_back(600);
 
     //Build Split dense.
-    jacobian_chain<Dense_Jacobian, Matrix_free_information> chain{problem_dense_data};
+    Jacobian_chain<Dense_Jacobian, Matrix_free_information> chain{problem_dense_data};
 
     //Call dynamic programming algorithm to fill the look up table.
-    binomial_checkpointing
+    Binomial_checkpointing
       algorithm{execution_costs, chain_length - 1, 0, available_checkpoints, 0};
 
     //Accumulate operation nodes.

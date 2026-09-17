@@ -530,7 +530,7 @@ std::vector<Node_T> operation_sequence_accumulation(
  * @param[out] out_stream Optional pointer to an output stream for Graphviz format generation.
  */
 void recursive_subproblem_accumulation(std::size_t j_index, std::size_t i_index, std::size_t c_index,
-                                std::size_t& level, const binomial_table& table, 
+                                std::size_t& level, const Binomial_table& table, 
                                 std::vector<Node_binomial_checkpointing>& subproblem_sequence,
                                 std::ostream* out_stream = nullptr){
   
@@ -600,7 +600,7 @@ void recursive_subproblem_accumulation(std::size_t j_index, std::size_t i_index,
  * order of subchain size.
  */
 std::vector<Node_binomial_checkpointing> subproblem_sequence_accumulation(
-    const binomial_table& table, std::size_t chain_length, std::size_t available_checkpoints,
+    const Binomial_table& table, std::size_t chain_length, std::size_t available_checkpoints,
     std::ostream* out_stream = nullptr){
 
   std::size_t level = 0;

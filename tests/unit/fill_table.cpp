@@ -18,13 +18,13 @@ int main(){
   const std::string path_to_file_sparse =
     std::string(FIXTURE_DIR) + "/chain_test_cases/case_1_sparse";
 
-  jacobian_chain<Jacobian, Jacobian_information>
+  Jacobian_chain<Jacobian, Jacobian_information>
                 chain_jacobian{path_to_file_jacobian};
 
-  jacobian_chain<Dense_Jacobian, Matrix_free_information>
+  Jacobian_chain<Dense_Jacobian, Matrix_free_information>
                 chain_dense{path_to_file_dense};
 
-  jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>
+  Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>
                 chain_sparse{path_to_file_sparse};
 
 
@@ -530,11 +530,11 @@ int main(){
 
   //Mixed formulation
   {
-    jacobian_chain<Dense_Jacobian, Matrix_free_information>
+    Jacobian_chain<Dense_Jacobian, Matrix_free_information>
       chain{std::string(FIXTURE_DIR) + "/chain_test_cases/case_1_matrix_free"};
 
     std::vector<std::size_t> subprograms_cost = 
-      binomial_checkpointing::read_subprograms_cost_from_file(std::string(FIXTURE_DIR)
+      Binomial_checkpointing::read_subprograms_cost_from_file(std::string(FIXTURE_DIR)
           + "/chain_test_cases/case_1_functions_cost", 3);
 
     Table<Dense_Jacobian> table{chain.size()};

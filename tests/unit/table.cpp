@@ -21,7 +21,7 @@ int main(){
     const std::string path_to_file = 
       std::string(FIXTURE_DIR) + "/chain_test_cases/case_1_jacobian_information";
 
-    jacobian_chain<Jacobian, Jacobian_information> chain{path_to_file};
+    Jacobian_chain<Jacobian, Jacobian_information> chain{path_to_file};
 
     //Reserving memory for a Table with 3 pointer cells
     //and 3 cells
@@ -75,7 +75,7 @@ int main(){
     const std::string path_to_file = 
       std::string(FIXTURE_DIR) + "/chain_test_cases/case_1_matrix_free";
 
-    jacobian_chain<Dense_Jacobian, Matrix_free_information> chain{path_to_file};
+    Jacobian_chain<Dense_Jacobian, Matrix_free_information> chain{path_to_file};
 
     //Reserving memory for a Table with 3 pointer cells and 3 cells
     Table<Dense_Jacobian> table{static_cast<std::size_t>(3)};
@@ -140,7 +140,7 @@ int main(){
     const std::string path_to_file = 
       std::string(FIXTURE_DIR) + "/chain_test_cases/case_1_sparse";
 
-    jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information> chain{path_to_file};
+    Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information> chain{path_to_file};
 
     //Reserving memory for a Table with 3 pointer cells and 3 cells
     Table<Sparse_Jacobian> table{static_cast<std::size_t>(3)};

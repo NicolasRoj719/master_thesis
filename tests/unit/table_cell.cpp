@@ -10,16 +10,16 @@
 int main(){
   test_table_cell test;
 
-  //Testing Jacobian cell
+  //Testing Jacobian Cell
   {
     
     std::size_t cost_0 = 25, cost_1 = 30, cost_2 = 45;
     std::size_t split_pos_0 = 0, split_pos_1 = 1, split_pos_2 = 2;
 
     //Initialize cell objects
-    cell<Jacobian> cell_0{cost_0, split_pos_0};
-    cell<Jacobian> cell_1{cost_1, split_pos_1};
-    cell<Jacobian> cell_2{cost_2, split_pos_2};
+    Cell<Jacobian> cell_0{cost_0, split_pos_0};
+    Cell<Jacobian> cell_1{cost_1, split_pos_1};
+    Cell<Jacobian> cell_2{cost_2, split_pos_2};
 
     bool result_test_0 = test.check_cell_initialization(cell_0, cost_0, split_pos_0);
     bool result_test_1 = test.check_cell_initialization(cell_1, cost_1, split_pos_1);
@@ -36,7 +36,7 @@ int main(){
     }
   }
 
-  //Testing Dense_Jacobian cell
+  //Testing Dense_Jacobian Cell
   {
 
     std::size_t cost_0 = 25, cost_1 = 30, cost_2 = 45;
@@ -46,9 +46,9 @@ int main(){
     Operation operation_0 = Operation::TANGENT, operation_1 = Operation::ADJOINT;
     Operation operation_2 = Operation::MULTIPLICATION;
 
-    cell<Dense_Jacobian> cell_0{cost_0, split_pos_0, operation_0};
-    cell<Dense_Jacobian> cell_1{cost_1, split_pos_1, operation_1};
-    cell<Dense_Jacobian> cell_2{cost_2, split_pos_2, operation_2};
+    Cell<Dense_Jacobian> cell_0{cost_0, split_pos_0, operation_0};
+    Cell<Dense_Jacobian> cell_1{cost_1, split_pos_1, operation_1};
+    Cell<Dense_Jacobian> cell_2{cost_2, split_pos_2, operation_2};
 
     bool result_test_0 = test.check_cell_initialization(cell_0,
                         cost_0, split_pos_0, operation_0);
@@ -70,13 +70,13 @@ int main(){
     }
   }
 
-  //Testing Sparse Jacobian cell
+  //Testing Sparse Jacobian Cell
   {
     //Initialize a sparse jacobian chain
     const std::string path_to_file= 
       std::string(FIXTURE_DIR) + "/chain_test_cases/case_1_sparse";
 
-    jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>
+    Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>
         chain{path_to_file};
 
     std::size_t cost_0 = 85, cost_1 = 31, cost_2 = 67;
@@ -90,11 +90,11 @@ int main(){
     /* Sparse_Jacobian sparse_1 = chain.copy(1); */
     /* Sparse_Jacobian sparse_2 = chain.copy(2); */
 
-    cell<Sparse_Jacobian> cell_0{chain.copy(0), cost_0, split_pos_0, operation_0};
+    Cell<Sparse_Jacobian> cell_0{chain.copy(0), cost_0, split_pos_0, operation_0};
 
-    cell<Sparse_Jacobian> cell_1{chain.copy(1), cost_1, split_pos_1, operation_1};
+    Cell<Sparse_Jacobian> cell_1{chain.copy(1), cost_1, split_pos_1, operation_1};
 
-    cell<Sparse_Jacobian> cell_2{chain.copy(2), cost_2, split_pos_2, operation_2};
+    Cell<Sparse_Jacobian> cell_2{chain.copy(2), cost_2, split_pos_2, operation_2};
 
     bool result_test_0 = test.check_cell_initialization(cell_0, chain[0],
                           cost_0, split_pos_0, operation_0);
@@ -116,19 +116,19 @@ int main(){
     }
   }
 
-  //Testing cell_with_pointer Jacobian
+  //Testing Cell_with_pointer Jacobian
   {
     //Initializing a Jacobian chain
     std::string path_to_file =
       std::string(FIXTURE_DIR) + "/chain_test_cases/case_1_jacobian_information";
 
-    jacobian_chain<Jacobian, Jacobian_information> chain{path_to_file};
+    Jacobian_chain<Jacobian, Jacobian_information> chain{path_to_file};
 
-    cell_with_pointer<Jacobian> cell_0{&chain[0]};
+    Cell_with_pointer<Jacobian> cell_0{&chain[0]};
 
-    cell_with_pointer<Jacobian> cell_1{&chain[1]};
+    Cell_with_pointer<Jacobian> cell_1{&chain[1]};
 
-    cell_with_pointer<Jacobian> cell_2{&chain[2]};
+    Cell_with_pointer<Jacobian> cell_2{&chain[2]};
 
     bool result_test_0 = test.check_cell_initialization(cell_0, chain[0]);
 
@@ -147,24 +147,24 @@ int main(){
     }
   }
 
-  //Testing cell_with_pointer Dense_Jacobian 
+  //Testing Cell_with_pointer Dense_Jacobian 
   {
     //Initializing a Jacobian chain
     std::string path_to_file =
       std::string(FIXTURE_DIR) + "/chain_test_cases/case_1_matrix_free";
 
-    jacobian_chain<Dense_Jacobian, Matrix_free_information> chain{path_to_file};
+    Jacobian_chain<Dense_Jacobian, Matrix_free_information> chain{path_to_file};
 
     std::size_t cost_0 = 66, cost_1 = 11, cost_2 = 33;
 
     Operation operation_0 = Operation::MULTIPLICATION, operation_1 = Operation::TANGENT;
     Operation operation_2 = Operation::MULTIPLICATION;
 
-    cell_with_pointer<Dense_Jacobian> cell_0{&chain[0], cost_0, operation_0};
+    Cell_with_pointer<Dense_Jacobian> cell_0{&chain[0], cost_0, operation_0};
 
-    cell_with_pointer<Dense_Jacobian> cell_1{&chain[1], cost_1, operation_1};
+    Cell_with_pointer<Dense_Jacobian> cell_1{&chain[1], cost_1, operation_1};
 
-    cell_with_pointer<Dense_Jacobian> cell_2{&chain[2], cost_2, operation_2};
+    Cell_with_pointer<Dense_Jacobian> cell_2{&chain[2], cost_2, operation_2};
 
     bool result_test_0 = test.check_cell_initialization(cell_0, chain[0], cost_0, operation_0);
 
@@ -183,13 +183,13 @@ int main(){
     }
   }
 
-  //Testing cell with pointer Sparse Jacobian 
+  //Testing Cell with pointer Sparse Jacobian 
   {
     //Initialize a sparse jacobian chain
     const std::string path_to_file= 
       std::string(FIXTURE_DIR) + "/chain_test_cases/case_1_sparse";
 
-    jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>
+    Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>
         chain{path_to_file};
 
     std::size_t cost_0 = 115, cost_1 = 221, cost_2 = 337;
@@ -197,11 +197,11 @@ int main(){
     Operation operation_0 = Operation::ADJOINT, operation_1 = Operation::TANGENT;
     Operation operation_2 = Operation::MULTIPLICATION;
 
-    cell_with_pointer<Sparse_Jacobian> cell_0{&chain[0], cost_0, operation_0};
+    Cell_with_pointer<Sparse_Jacobian> cell_0{&chain[0], cost_0, operation_0};
 
-    cell_with_pointer<Sparse_Jacobian> cell_1{&chain[1], cost_1, operation_1};
+    Cell_with_pointer<Sparse_Jacobian> cell_1{&chain[1], cost_1, operation_1};
 
-    cell_with_pointer<Sparse_Jacobian> cell_2{&chain[2], cost_2, operation_2};
+    Cell_with_pointer<Sparse_Jacobian> cell_2{&chain[2], cost_2, operation_2};
 
     bool result_test_0 = test.check_cell_initialization(cell_0, chain[0],
                           cost_0, operation_0);

@@ -61,20 +61,20 @@ inline std::ostream& operator<<(std::ostream& os, Operation op){
  * @tparam Jacobian_type Jacobian matrix type.
  */
 template <class Jacobian_type>
-class cell{};
+class Cell{};
 
 /**
- * @brief Specialization of cell for base Jacobian object storing optimal data.
+ * @brief Specialization of Cell for base Jacobian object storing optimal data.
  */
 template <>
-class cell<Jacobian>{
+class Cell<Jacobian>{
  public:
   /**
-   * @brief Constructs cell from explicit dynamic progamming (DP) table results.
+   * @brief Constructs Cell from explicit dynamic progamming (DP) table results.
    * @param cost_ Optimal accumulated cost.
    * @param split_pos Optimal split position index.
    */
-  cell(std::size_t cost_, std::size_t split_pos):
+  Cell(std::size_t cost_, std::size_t split_pos):
     cost(cost_), k(split_pos){}
 
   /// Gets the optimal chain split position index.
@@ -90,19 +90,19 @@ class cell<Jacobian>{
 };
 
 /**
- * @brief Specialization of cell for Dense_Jacobian objects.
+ * @brief Specialization of Cell for Dense_Jacobian objects.
  */
 template <>
-class cell<Dense_Jacobian>: public cell<Jacobian>{
+class Cell<Dense_Jacobian>: public Cell<Jacobian>{
  public:
   /**
-   * @brief Constructs cell from explicit dynamic programming (DP) table with accumulation mode.
+   * @brief Constructs Cell from explicit dynamic programming (DP) table with accumulation mode.
    * @param cost_ Optimal accumulated execution cost.
    * @param split_pos Optimal split position index.
    * @param op Optimal accumulation method.
    */
-  cell(std::size_t cost_, std::size_t split_pos, Operation op):
-    cell<Jacobian>(cost_, split_pos), operation_(op){}
+  Cell(std::size_t cost_, std::size_t split_pos, Operation op):
+    Cell<Jacobian>(cost_, split_pos), operation_(op){}
 
   /// Gets the optimal accumulation operation mode.
   Operation operation() const {return operation_;}
@@ -114,14 +114,14 @@ class cell<Dense_Jacobian>: public cell<Jacobian>{
 
 
 /**
- * @brief Specialization of cell for Sparse_Jacobian objects owning an internal sparse Jacobian
+ * @brief Specialization of Cell for Sparse_Jacobian objects owning an internal sparse Jacobian
  * matrix instance.
  */
 template<>
-class cell<Sparse_Jacobian>: public cell<Dense_Jacobian>{
+class Cell<Sparse_Jacobian>: public Cell<Dense_Jacobian>{
  public:
   /**
-   * @brief Constructs cell by copying an existing Sparse_Jacobian instance. 
+   * @brief Constructs Cell by copying an existing Sparse_Jacobian instance. 
    * @Even though std::move is called on 'sparse_jacobian_', its const qualification causes 
    * overload resolution to invoke the copy constructor.
    * @param sparse_jacobian_ Reference to Sparse_Jacobian object to copy. 
@@ -129,21 +129,21 @@ class cell<Sparse_Jacobian>: public cell<Dense_Jacobian>{
    * @param split_pos Optimal split position index.
    * @param op Optimal accumulation method.
    */
-  cell(const Sparse_Jacobian& sparse_jacobian_, std::size_t cost_, std::size_t split_pos,
+  Cell(const Sparse_Jacobian& sparse_jacobian_, std::size_t cost_, std::size_t split_pos,
      Operation op):
-    cell<Dense_Jacobian>(cost_, split_pos, op), sparse_jacobian(std::move(sparse_jacobian_)){}
+    Cell<Dense_Jacobian>(cost_, split_pos, op), sparse_jacobian(std::move(sparse_jacobian_)){}
 
   /**
-   * @brief Constructs cell by moving resource ownership from an rvalue Sparse_Jacobian. 
+   * @brief Constructs Cell by moving resource ownership from an rvalue Sparse_Jacobian. 
    *
    *  @param sparse_jacobian_ Rvalue reference to Sparse_Jacobian instance.
    *  @param cost_ Optimal accumulated execution cost.
    *  @param split_pos Optimal split position index.
    *  @param op Optimal accumulation operation mode.
    */
-  cell(Sparse_Jacobian&& sparse_jacobian_, std::size_t cost_, std::size_t split_pos,
+  Cell(Sparse_Jacobian&& sparse_jacobian_, std::size_t cost_, std::size_t split_pos,
       Operation op):
-    cell<Dense_Jacobian>(cost_, split_pos, op), sparse_jacobian(std::move(sparse_jacobian_)){}
+    Cell<Dense_Jacobian>(cost_, split_pos, op), sparse_jacobian(std::move(sparse_jacobian_)){}
 
   //Wrappers
   /// Gets domain dimension of the underlying sparse Jacobian matrix.
@@ -204,25 +204,25 @@ class cell<Sparse_Jacobian>: public cell<Dense_Jacobian>{
 
 
 /**
- * @brief Base template for table cell wrappers maintaining pointer references to Jacobian matrices
+ * @brief Base template for table Cell wrappers maintaining pointer references to Jacobian matrices
  * in the chain.
  * 
  * @tparam Jacobian_type Jacobian matrix type referenced by non-owning pointer.
  */
 template <class Jacobian_type>
-class cell_with_pointer{};
+class Cell_with_pointer{};
 
 /**
- * @brief Specialization of cell_with_pointer referencing Jacobian object. 
+ * @brief Specialization of Cell_with_pointer referencing Jacobian object. 
  */
 template <>
-class cell_with_pointer<Jacobian>{
+class Cell_with_pointer<Jacobian>{
  public:
   /**
-   * @brief Constructs a cell wrapper holding a const pointer to a chain Jacobian.
+   * @brief Constructs a Cell wrapper holding a const pointer to a chain Jacobian.
    * @param jac_ptr Pointer referencing target Jacobian in chain.
    */
-  cell_with_pointer(const Jacobian* jac_ptr):
+  Cell_with_pointer(const Jacobian* jac_ptr):
     jacobian_ptr(jac_ptr){}
 
   //Wrappers
@@ -242,19 +242,19 @@ class cell_with_pointer<Jacobian>{
 };
 
 /**
- * @brief Specialization of cell_with_pointer referencing Dense_Jacobian objects. 
+ * @brief Specialization of Cell_with_pointer referencing Dense_Jacobian objects. 
  */
 template <>
-class cell_with_pointer<Dense_Jacobian>{
+class Cell_with_pointer<Dense_Jacobian>{
  public:
   /**
-   * @brief Constructs cell wrapper referencing Dense_Jacobian with dynamic programming (DP) metrics.
+   * @brief Constructs Cell wrapper referencing Dense_Jacobian with dynamic programming (DP) metrics.
    *
    * @param jac_ptr Pointer referencing target Dense_Jacobian in chain.
    * @param cost_ Optimal preaccumulation cost.
    * @param Optimal preaccumulation operation mode.
    */
-  cell_with_pointer(const Dense_Jacobian* jac_ptr, std::size_t cost_, Operation op):
+  Cell_with_pointer(const Dense_Jacobian* jac_ptr, std::size_t cost_, Operation op):
     jacobian_ptr(jac_ptr), cost(cost_), operation_(op){}
   
   //Wrappers
@@ -290,19 +290,19 @@ class cell_with_pointer<Dense_Jacobian>{
 
 
 /**
- * @brief Specialization of cell_with_pointer referencing Sparse_Jacobian objects.
+ * @brief Specialization of Cell_with_pointer referencing Sparse_Jacobian objects.
  */
 template <>
-class cell_with_pointer<Sparse_Jacobian>{
+class Cell_with_pointer<Sparse_Jacobian>{
  public:
   /**
-   * @brief Constructs a cell wrapper referencing Sparse_Jacobian with dynamic programming (DP) metrics.
+   * @brief Constructs a Cell wrapper referencing Sparse_Jacobian with dynamic programming (DP) metrics.
    *
    * @param jac_ptr Pointer referencing target Sparse_Jacobian in chain.
    * @param cost_ Optimal preaccumulation cost.
    * @param op Optimal preaccumulation method.
    */
-  cell_with_pointer(const Sparse_Jacobian* jac_ptr, std::size_t cost_, Operation op):
+  Cell_with_pointer(const Sparse_Jacobian* jac_ptr, std::size_t cost_, Operation op):
     jacobian_ptr(jac_ptr), cost(cost_), operation_(op){}
 
   //Wrappers

@@ -3,7 +3,7 @@
  * @brief Dynamic programming algorithm and lookup structures for optimal binomial checkpointing in
  * Algorithmic Differentiation.
  *
- * Provides classes and data structures (`binomial_cell`, `binomial_table`, `View_chain`, and 
+ * Provides classes and data structures (`Binomial_cell`, `Binomial_table`, `View_chain`, and 
  * `binomial_checkpointing`)
  * to evaluate and store optimal checkpoint placement sequences and re-execution costs across 
  * Jacobian chain subranges.
@@ -27,7 +27,7 @@
  *
  * @note An empty split position indicates a base-case subproblem. 
  */
-class binomial_cell{
+class Binomial_cell{
  public:
   /**
    * @brief Constructs a cell with cost, checkpoints constraints, and an optimal split position index. 
@@ -37,7 +37,7 @@ class binomial_cell{
    * @param split_position Index splitting subproblem (j, i, c) into (j, k+1, c-1) and (k, i, c).
    * Satisfies $j > k \ge i$. Defaults to 'std::nullopt'.
    */
-  binomial_cell(std::size_t additional_cost, std::size_t number_available_checkpoints,
+  Binomial_cell(std::size_t additional_cost, std::size_t number_available_checkpoints,
                   std::optional<std::size_t> split_position = std::nullopt):
     additional_cost_(additional_cost), available_checkpoints_(number_available_checkpoints),
     split_position_(split_position){}
@@ -69,7 +69,7 @@ class binomial_cell{
  * (2, 2, c) (2, 1, c) (2, 0, c)
  * ...
  */
-class binomial_table{
+class Binomial_table{
  public:
   /**
    * @brief Pre-allocates storage for dynamic programming cells based on chain length and checkpoint 
@@ -78,7 +78,7 @@ class binomial_table{
    * @param chain_length Total length of the Jacobian length. 
    * @param number_checkpoints Total available checkpoints. 
    */
-  binomial_table(std::size_t chain_length, std::size_t number_checkpoints){
+  Binomial_table(std::size_t chain_length, std::size_t number_checkpoints){
 
     cells_per_floor = (chain_length * (chain_length + 1)) / 2;
 
@@ -88,7 +88,7 @@ class binomial_table{
   /**
    * @brief Default constructor for unallocated tables (primarily used for unit testing).
    */
-  binomial_table(){}
+  Binomial_table(){}
 
   /**
    * brief Maps subproblem indices (j, i, c) to the linear storage array. 
@@ -96,9 +96,9 @@ class binomial_table{
    * @param j Upper bound index of the subproblem (inclusive).
    * @param i Lower bound index of the subproblem (inclusive).
    * @param c Available checkpoint count for the subproblem.
-   * @return Const reference to the target 'binomial_cell'.
+   * @return Const reference to the target 'Binomial_cell'.
    */
-  const binomial_cell& get_cell(std::size_t j, std::size_t i, std::size_t c) const noexcept{
+  const Binomial_cell& get_cell(std::size_t j, std::size_t i, std::size_t c) const noexcept{
 
     std::size_t accumulation = ((j + 1) * j) / 2;
     std::size_t position = j - i;
@@ -145,9 +145,9 @@ class binomial_table{
   /**
    * @brief Retrieves the final cell containing problem optimal solution. 
    *
-   * @return Const reference to last stored 'binomial_cell'.
+   * @return Const reference to last stored 'Binomial_cell'.
    */
-  const binomial_cell& back() const{
+  const Binomial_cell& back() const{
     return table.back();
   }
 
@@ -155,7 +155,7 @@ class binomial_table{
   /// Number of subproblem cells stored per checkpoint level. 
   std::size_t cells_per_floor;
   /// Flattened sequence of dynamic programming cells. 
-  std::vector<binomial_cell> table;
+  std::vector<Binomial_cell> table;
 };
 
 /**
@@ -163,7 +163,7 @@ class binomial_table{
  * function_cost[last_index] and eventually append_function_cost if is not set to zero.
  *
  */
-class reversal_chain{
+class Reversal_chain{
  public:
    /**
     * @brief constructs a subvector  
@@ -175,7 +175,7 @@ class reversal_chain{
     * this view.
     * @throws std::invalid_argument If the requested view of range falls outside the bounds of 'chain_'. 
     */
-  reversal_chain(const std::vector<std::size_t>& subprograms_execution_cost,
+  Reversal_chain(const std::vector<std::size_t>& subprograms_execution_cost,
                 std::size_t last_index, std::size_t first_index,
                 std::size_t subprogram_cost_to_append= 0):
     subprogram_cost_append(subprogram_cost_to_append){
@@ -190,7 +190,7 @@ class reversal_chain{
    }
 
    /**
-    * @brief Accesses elementsi in the reversal_chain by index. 
+    * @brief Accesses elementsi in the Reversal_chain by index. 
     *
     * @param index Zero-based element index within the view range. 
     * @return std::size_t function_cost.
@@ -205,7 +205,7 @@ class reversal_chain{
         return subprogram_cost_append;
       }
 
-      throw std::out_of_range("Index out of bounds in reversal_chain");
+      throw std::out_of_range("Index out of bounds in Reversal_chain");
    }
 
    /**
@@ -227,7 +227,7 @@ class reversal_chain{
  private:
   /// Non-owning view of the a subvector of the functions_cost vector.
   std::span<const std::size_t> view_subprograms_execution_cost;
-  /// Last function cost in reversal_chain if set to a non zero.
+  /// Last function cost in Reversal_chain if set to a non zero.
   std::size_t subprogram_cost_append;
 };
 
@@ -239,7 +239,7 @@ class reversal_chain{
  * sequences.
  *
  */
-class binomial_checkpointing{
+class Binomial_checkpointing{
  public:
   /**
    * @brief Solves the optimal checkpointing placement sequence and obtains minimum re-execution cost 
@@ -254,7 +254,7 @@ class binomial_checkpointing{
    * @param checkpoints Available checkpoint capacity allocated to solve the problem instance.
    * @param split_pointer Optional pointer to an extra 'Split_type' element appended to element $j$. 
    */
-  binomial_checkpointing(const std::vector<std::size_t>& subprograms_execution_cost,
+  Binomial_checkpointing(const std::vector<std::size_t>& subprograms_execution_cost,
                           std::size_t last_index, std::size_t first_index, std::size_t checkpoints,
                           const std::size_t subprogram_cost_to_append= 0):
     chain{subprograms_execution_cost, last_index, first_index, subprogram_cost_to_append},
@@ -271,7 +271,7 @@ class binomial_checkpointing{
    * @param j Upper bound index of the subchain (inclusive).
    * @param i Lower bound index of the subchain (inclusive).
    */
-  binomial_checkpointing(const std::vector<std::size_t>& subprograms_execution_cost,
+  Binomial_checkpointing(const std::vector<std::size_t>& subprograms_execution_cost,
                           std::size_t last_index, std::size_t first_index):
     chain{subprograms_execution_cost, last_index, first_index}, table{}{}
 
@@ -284,8 +284,8 @@ class binomial_checkpointing{
    * @param j Upper bound index of the subchain (inclusive).
    * @param i Lower bound index of the subchain (inclusive).
    */
-  binomial_checkpointing(const std::vector<std::size_t>& subprograms_execution_cost,
-                          binomial_table table_, std::size_t last_index, std::size_t first_index):
+  Binomial_checkpointing(const std::vector<std::size_t>& subprograms_execution_cost,
+                          Binomial_table table_, std::size_t last_index, std::size_t first_index):
     chain{subprograms_execution_cost, last_index, first_index}, table{std::move(table_)}{}
 
   /**
@@ -333,9 +333,9 @@ class binomial_checkpointing{
    * @param j Upper bound index of the subchain (inclusive).
    * @param i Lower bound index of the subchain (inclusive).
    * @param c Available checkpoint count.
-   * @return Const reference to target 'binomial_cell'.
+   * @return Const reference to target 'Binomial_cell'.
    */
-  const binomial_cell& get_cell(std::size_t j, std::size_t i, std::size_t c) const{
+  const Binomial_cell& get_cell(std::size_t j, std::size_t i, std::size_t c) const{
 
     return table.get_cell(j, i, c);
   }
@@ -376,7 +376,7 @@ class binomial_checkpointing{
    * @brief gets constant reference to dynamic programming lookup table.
    * @return constant reference to table.
    */
-  const binomial_table& get_table(){
+  const Binomial_table& get_table(){
     return table;
   }
 
@@ -403,10 +403,10 @@ class binomial_checkpointing{
 
  private:
   /// Lightweight view over target subchain range. 
-  reversal_chain chain;
+  Reversal_chain chain;
 
   /// Dynamic programming solution storage table. 
-  binomial_table table;
+  Binomial_table table;
 
   /**
    * @brief Runs the dynamic program to fill the subproblem solution table. 
@@ -418,7 +418,7 @@ class binomial_checkpointing{
   void fill_table(std::size_t chain_length, std::size_t number_checkpoints);
 };
 
-void binomial_checkpointing::fill_table(std::size_t chain_length, std::size_t number_checkpoints){
+void Binomial_checkpointing::fill_table(std::size_t chain_length, std::size_t number_checkpoints){
 
   std::size_t k_min_j_k_i;
   std::size_t cost_min_j_k_i;

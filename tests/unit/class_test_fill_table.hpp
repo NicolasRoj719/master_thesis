@@ -222,7 +222,7 @@ class test_fill_table{
 bool test_fill_table::run_test_case_1_jacobian(){
 
   //Create Jacobian chain from file
-  jacobian_chain<Jacobian, Jacobian_information> 
+  Jacobian_chain<Jacobian, Jacobian_information> 
     chain{std::string(FIXTURE_DIR) + "/chain_test_cases/case_1_jacobian_information"};
 
   std::size_t cost_1_0 = chain[1].codomain_dim() * chain[0].domain_dim() *
@@ -274,7 +274,7 @@ bool test_fill_table::run_test_case_dense(const std::string& path_to_chain_file,
     std::size_t memory_limit){
 
   //Create Dense chain from file
-  jacobian_chain<Dense_Jacobian, Matrix_free_information>
+  Jacobian_chain<Dense_Jacobian, Matrix_free_information>
     chain{path_to_chain_file};
 
 
@@ -480,7 +480,7 @@ bool test_fill_table::run_test_case_sparse(const std::string& path_to_chain_file
     std::size_t memory_limit){
 
   //Create Sparse chain from file
-  jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>
+  Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>
     chain{path_to_chain_file};
 
   std::size_t cost_0;

@@ -64,7 +64,7 @@ class test_binomial{
 
   bool binomial_cell_test(std::size_t additional_cost, std::size_t number_checkpoints)const{
 
-    binomial_cell cell{additional_cost, number_checkpoints};
+    Binomial_cell cell{additional_cost, number_checkpoints};
 
     if(cell.additional_cost() != additional_cost ||
         cell.number_checkpoints() != number_checkpoints){
@@ -78,7 +78,7 @@ class test_binomial{
   bool binomial_cell_test(std::size_t additional_cost, std::size_t number_checkpoints,
                             std::size_t split_position){
 
-    binomial_cell cell{additional_cost, number_checkpoints, split_position};
+    Binomial_cell cell{additional_cost, number_checkpoints, split_position};
 
     if(cell.additional_cost() != additional_cost ||
         cell.number_checkpoints() != number_checkpoints ||
@@ -90,7 +90,7 @@ class test_binomial{
     else{return true;}
   }
 
-  bool check_cell(const binomial_cell& cell, std::size_t additional_cost,
+  bool check_cell(const Binomial_cell& cell, std::size_t additional_cost,
                     std::size_t number_checkpoints) const{
 
     if(cell.additional_cost() != additional_cost ||
@@ -102,7 +102,7 @@ class test_binomial{
     return true;
   }
 
-  bool check_cell(const binomial_cell& cell, std::size_t additional_cost,
+  bool check_cell(const Binomial_cell& cell, std::size_t additional_cost,
                   std::size_t number_checkpoints, std::size_t split_position) const{
 
     if(cell.additional_cost() != additional_cost ||

@@ -45,7 +45,7 @@ class fill_table<Jacobian, Jacobian_information>{
     *
     * @param chain Target Jacobian chain containing sequence metadata.
     */
-   fill_table(const jacobian_chain<Jacobian, Jacobian_information>& chain):
+   fill_table(const Jacobian_chain<Jacobian, Jacobian_information>& chain):
       table(chain.size()){
 
       fill(chain);
@@ -96,35 +96,35 @@ class fill_table<Jacobian, Jacobian_information>{
    }
 
    /**
-    * @brief Accesses non-owning cell reference to an elemental Jacobian in the chain.
+    * @brief Accesses non-owning Cell reference to an elemental Jacobian in the chain.
     *
     * @param index 0-based position in the chain.
-    * @return Const reference to 'cell_with_pointer<Jacobian>' object.
+    * @return Const reference to 'Cell_with_pointer<Jacobian>' object.
     */
-   const cell_with_pointer<Jacobian>& get_cell(std::size_t index){
+   const Cell_with_pointer<Jacobian>& get_cell(std::size_t index){
 
       return table.get_cell(index);
    }
 
    /**
-    * @brief Accesses matrix cell at \f$(j,i)\f$ containing subproblem optimal data.
+    * @brief Accesses matrix Cell at \f$(j,i)\f$ containing subproblem optimal data.
     *
     * @param j End index of subchain.
     * @param i Start index of subchain.
-    * @return Const reference to 'cell<Jacobian>' object.
+    * @return Const reference to 'Cell<Jacobian>' object.
     */
-   const cell<Jacobian>& get_cell(std::size_t j, std::size_t i){
+   const Cell<Jacobian>& get_cell(std::size_t j, std::size_t i){
 
       return table.get_cell(j,i);
    }
 
    /**
-    * @brief Access the last cell in the DP table.
+    * @brief Access the last Cell in the DP table.
     *
     * @pre fill method must be executed first before calling this method.
-    * @return Const reference to 'cell<Jacobian>' object.
+    * @return Const reference to 'Cell<Jacobian>' object.
     */
-   const cell<Jacobian>& back(){
+   const Cell<Jacobian>& back(){
       return table.back();
    }
 
@@ -146,20 +146,20 @@ class fill_table<Jacobian, Jacobian_information>{
     * subproblems lengths. 
     *
     * Steps:
-    * 1. Initializes cell_with_pointer objects with non-owning pointers to chain elements.
-    * 2. Initializes cell objects with subchain optimal costs and split positions.
+    * 1. Initializes Cell_with_pointer objects with non-owning pointers to chain elements.
+    * 2. Initializes Cell objects with subchain optimal costs and split positions.
     * 
     * Subproblems are evaluated in the following order:
     * (1,0)
     * (2,1) (2,0)
     * @param chain Target Jacobian chain instance.
     */
-   void fill(const jacobian_chain<Jacobian, Jacobian_information>& chain);
+   void fill(const Jacobian_chain<Jacobian, Jacobian_information>& chain);
 };
 
 
 void fill_table<Jacobian, Jacobian_information>::fill(
-      const jacobian_chain<Jacobian, Jacobian_information>& chain){
+      const Jacobian_chain<Jacobian, Jacobian_information>& chain){
 
    //Filling cells with pointers
    for(std::size_t elemental_idx = 0; elemental_idx < chain.size(); elemental_idx++){
@@ -305,7 +305,7 @@ namespace tool_box_dense{
                                     std::size_t i){
 
       std::size_t accumulated_cost_lhs, accumulated_cost_rhs;
-      //Access cell_with_pointer
+      //Access Cell_with_pointer
       if(k == i){
          
          accumulated_cost_rhs = table.get_cell(i).accumulated_cost();
@@ -315,7 +315,7 @@ namespace tool_box_dense{
          accumulated_cost_rhs = table.get_cell(k,i).accumulated_cost();
       }
 
-      //Access cell_with_pointer
+      //Access Cell_with_pointer
       if(j == k+1){
          
          accumulated_cost_lhs = table.get_cell(j).accumulated_cost();
@@ -349,7 +349,7 @@ class fill_table<Dense_Jacobian, Matrix_free_information>{
     *
     * @param chain Sequence of elemental Jacobians to optimize.
     */
-   fill_table(const jacobian_chain<Dense_Jacobian, Matrix_free_information>& chain):
+   fill_table(const Jacobian_chain<Dense_Jacobian, Matrix_free_information>& chain):
       table(chain.size()){
 
       fill(chain);
@@ -361,7 +361,7 @@ class fill_table<Dense_Jacobian, Matrix_free_information>{
     * @param chain Sequence of elemental Jacobians to optimize.
     * @memory_bound_ Maximum allowed edge storage limit for executing Adjoint mode accumulation.
     */
-   fill_table(const jacobian_chain<Dense_Jacobian, Matrix_free_information>& chain,
+   fill_table(const Jacobian_chain<Dense_Jacobian, Matrix_free_information>& chain,
                std::size_t memory_bound_):
       table(chain.size()), memory_bound(memory_bound_){
 
@@ -439,7 +439,7 @@ class fill_table<Dense_Jacobian, Matrix_free_information>{
    std::optional<std::size_t> adjoint_cost(std::size_t j, std::size_t k, std::size_t i) const{
 
       std::size_t total_edges = accumulate_edges(k,i);
-      //Access a cell_with_pointer
+      //Access a Cell_with_pointer
       if(j == k+1){
          
          //If memory bound is set
@@ -455,14 +455,14 @@ class fill_table<Dense_Jacobian, Matrix_free_information>{
             //If memory bound is exceeded.
             return {};
          }
-         //Access a normal cell
+         //Access a normal Cell
          else{
             
             return table.get_cell(j).accumulated_cost() +
                table.get_cell(j).codomain_dim() * total_edges; 
          }
       }
-      //Access normal cell
+      //Access normal Cell
       else{
          
          if(memory_bound){
@@ -510,35 +510,35 @@ class fill_table<Dense_Jacobian, Matrix_free_information>{
    }
 
    /**
-    * @brief Accesses dynamic programming cell with non-owning pointer to elemental Jacobian at a given index.
+    * @brief Accesses dynamic programming Cell with non-owning pointer to elemental Jacobian at a given index.
     *
     * @param index Jacobian matrix index in the chain.
-    * @return Const reference to 'cell_with_pointer<Dense_Jacobian>' object.
+    * @return Const reference to 'Cell_with_pointer<Dense_Jacobian>' object.
     */
-   const cell_with_pointer<Dense_Jacobian>& get_cell(std::size_t index){
+   const Cell_with_pointer<Dense_Jacobian>& get_cell(std::size_t index){
       
       return table.get_cell(index);
    }
 
    /**
-    * @brief .Accesses dynamic programming cell at \f$(j, i)\f$ storing optimal subproblem result.
+    * @brief .Accesses dynamic programming Cell at \f$(j, i)\f$ storing optimal subproblem result.
     *
     * @param j End index of the subchain (1-based, $j > i$).
     * @param i Start index of the subchain (0-based).
-    * @return Const reference to 'cell<Dense_Jacobian>' object.
+    * @return Const reference to 'Cell<Dense_Jacobian>' object.
     */
-   const cell<Dense_Jacobian>& get_cell(std::size_t j, std::size_t i){
+   const Cell<Dense_Jacobian>& get_cell(std::size_t j, std::size_t i){
 
       return table.get_cell(j,i);
    }
 
    /**
-    * @brief Access the last cell in the DP table.
+    * @brief Access the last Cell in the DP table.
     *
     * @pre fill method must be executed first before calling this method.
-    * @return Const reference to 'cell<Dense_Jacobian>' object.
+    * @return Const reference to 'Cell<Dense_Jacobian>' object.
     */
-   const cell<Dense_Jacobian>& back(){
+   const Cell<Dense_Jacobian>& back(){
       return table.back();
    }
 
@@ -562,9 +562,9 @@ class fill_table<Dense_Jacobian, Matrix_free_information>{
     * subproblems lengths.
     *
     * @details Steps:
-    * 1. Initializes cell_with_pointer objects with base optimal costs for preaccumulation of 
+    * 1. Initializes Cell_with_pointer objects with base optimal costs for preaccumulation of 
     * elemental Jacobians and corresponding non-owning pointers to chain elements.
-    * 2. Initializes cell objects with subchain optimal costs and split positions. 
+    * 2. Initializes Cell objects with subchain optimal costs and split positions. 
     *
     * @details Subproblems are evaluated in the following order:
     * (1, 0)
@@ -573,11 +573,11 @@ class fill_table<Dense_Jacobian, Matrix_free_information>{
     *
     * @param chain Target Jacobian chain instance.
     */
-   void fill(const jacobian_chain<Dense_Jacobian, Matrix_free_information>& chain);
+   void fill(const Jacobian_chain<Dense_Jacobian, Matrix_free_information>& chain);
 };
 
 void fill_table<Dense_Jacobian, Matrix_free_information>::fill(
-      const jacobian_chain<Dense_Jacobian, Matrix_free_information>& chain){
+      const Jacobian_chain<Dense_Jacobian, Matrix_free_information>& chain){
 
    table.clear();
 
@@ -734,7 +734,7 @@ namespace tool_box_sparse{
    template<class Jacobian_T>
    std::size_t accumulate_edges(const Table<Jacobian_T>& table, std::size_t j_or_k,
                                  std::size_t k_plus_1_or_i){
-      //Access cell with pointer
+      //Access Cell with pointer
       if(j_or_k == k_plus_1_or_i){
 
          return table.get_cell(j_or_k).number_edges();
@@ -765,7 +765,7 @@ namespace tool_box_sparse{
         return table.get_cell(i).accumulated_cost() +
                j_i_column_number_colors * accumulate_edges(table, j, k+1);
      }
-     //Access normal cell
+     //Access normal Cell
      else{
 
          return table.get_cell(k, i).accumulated_cost() +
@@ -795,7 +795,7 @@ namespace tool_box_sparse{
 
       std::size_t accumulated_cost_lhs, accumulated_cost_rhs;
       std::size_t max_number_nnz_row, max_number_nnz_column;
-      //Access cell_with_pointer
+      //Access Cell_with_pointer
       if(k == i){
 
          accumulated_cost_rhs = table.get_cell(i).accumulated_cost();
@@ -807,7 +807,7 @@ namespace tool_box_sparse{
          max_number_nnz_column = table.get_cell(k, i).max_number_nnz_column();
       }
 
-      //Access cell_with_pointer
+      //Access Cell_with_pointer
       if(j == k+1){
 
          accumulated_cost_lhs = table.get_cell(j).accumulated_cost();
@@ -867,7 +867,7 @@ class fill_table<Sparse_Jacobian, Matrix_free_sparse_information>{
     *
     * @param chain Sequence of sparse Jacobians to optimize.
     */
-   fill_table(const jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain):
+   fill_table(const Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain):
       table(chain.size()){
       
       fill(chain);
@@ -879,7 +879,7 @@ class fill_table<Sparse_Jacobian, Matrix_free_sparse_information>{
     * @param chain Sequence of sparse Jacobians to optimize.
     * @param memory_bound_ Maximum allowed graph edges active during reversal-mode (adjoint). 
     */
-   fill_table(const jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain,
+   fill_table(const Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain,
                   std::size_t memory_bound_):
       table(chain.size()), memory_bound(memory_bound_){
 
@@ -957,7 +957,7 @@ class fill_table<Sparse_Jacobian, Matrix_free_sparse_information>{
                                              std::size_t j_i_row_number_colors) const{
       
       std::size_t total_edges = accumulate_edges(k, i);
-      //Access a cell_with_pointer
+      //Access a Cell_with_pointer
       if(j == k+1){
 
          //If memory bound is set
@@ -1034,13 +1034,13 @@ class fill_table<Sparse_Jacobian, Matrix_free_sparse_information>{
    }
 
    /**
-    * @brief Access cell with non owning pointer to elemental sparse Jacobian at index 'index' in 
+    * @brief Access Cell with non owning pointer to elemental sparse Jacobian at index 'index' in 
     * the chain.
     *
     * @param index sparse Jacobian matrix index in the chain.
-    * @return Const reference to 'cell_with_pointer<Sparse_Jacobian>' object.
+    * @return Const reference to 'Cell_with_pointer<Sparse_Jacobian>' object.
     */
-   const cell_with_pointer<Sparse_Jacobian>& get_cell(std::size_t index){
+   const Cell_with_pointer<Sparse_Jacobian>& get_cell(std::size_t index){
       
       return table.get_cell(index);
    }
@@ -1052,18 +1052,18 @@ class fill_table<Sparse_Jacobian, Matrix_free_sparse_information>{
     * @param i Start index of the subchain (0-based).
     * @return Const reference to 'cell<Sparse_Jacobian>' object.
     */
-   const cell<Sparse_Jacobian>& get_cell(std::size_t j, std::size_t i){
+   const Cell<Sparse_Jacobian>& get_cell(std::size_t j, std::size_t i){
 
       return table.get_cell(j,i);
    }
 
    /**
-    * @brief Access the last cell in the DP table.
+    * @brief Access the last Cell in the DP table.
     *
     * @pre fill method must be executed first before calling this method.
-    * @return Const reference to 'cell<Sparse_Jacobian>' object.
+    * @return Const reference to 'Cell<Sparse_Jacobian>' object.
     */
-   const cell<Sparse_Jacobian>& back(){
+   const Cell<Sparse_Jacobian>& back(){
       return table.back();
    }
 
@@ -1089,9 +1089,9 @@ class fill_table<Sparse_Jacobian, Matrix_free_sparse_information>{
     * subproblems lengths.
     *
     * @details Steps:
-    * 1. Initializes cell_with_pointer objects with base optimal costs for preaccumulation of 
+    * 1. Initializes Cell_with_pointer objects with base optimal costs for preaccumulation of 
     * elemental Jacobians and corresponding non-owning pointers to chain elements.
-    * 2. Initializes cell objects with subchain optimal costs and split positions. 
+    * 2. Initializes Cell objects with subchain optimal costs and split positions. 
     *
     * @details Subproblems are evaluated in the following order:
     * (1, 0)
@@ -1100,15 +1100,15 @@ class fill_table<Sparse_Jacobian, Matrix_free_sparse_information>{
     *
     * @param chain Target Jacobian chain instance.
     */
-   void fill(const jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain);
+   void fill(const Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain);
 };
 
 void fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::fill(
-      const jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain){
+      const Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain){
 
    table.clear();
 
-   //Initializing cells with pointer.
+   //Initializing Cells with pointer.
    for(std::size_t elemental_idx = 0; elemental_idx < chain.size(); elemental_idx++){
 
       if(chain[elemental_idx].get_column_number_colors() <=

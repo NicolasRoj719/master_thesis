@@ -28,7 +28,7 @@ class test_chain{
  public:
   test_chain(const std::string& case_name, const std::string& validate_name){
 
-    jacobian_chain<Jacobian_T, Basic_info_T> chain(case_to_path_with_data(case_name));
+    Jacobian_chain<Jacobian_T, Basic_info_T> chain(case_to_path_with_data(case_name));
 
     test_constructor =
       is_data_from_file_equal_data_from_chain(case_to_validate_path(validate_name),
@@ -49,7 +49,7 @@ class test_chain{
       Generator<Jacobian_information> generator{chain_length, dimension_lower_bound,
       dimension_upper_bound, is_deterministic, seed};
 
-      jacobian_chain<Jacobian_T, Basic_info_T> 
+      Jacobian_chain<Jacobian_T, Basic_info_T> 
         chain{generator.generate_jacobian_information()};
 
       test_constructor =
@@ -72,7 +72,7 @@ class test_chain{
       dimension_upper_bound, number_edges_lower_bound, number_edges_upper_bound,
       is_deterministic, seed};
 
-      jacobian_chain<Jacobian_T, Basic_info_T> 
+      Jacobian_chain<Jacobian_T, Basic_info_T> 
         chain{generator.generate_jacobian_information()};
 
       test_constructor =
@@ -107,7 +107,7 @@ class test_chain{
   std::string case_to_validate_path_generator();
 
   bool is_data_from_file_equal_data_from_chain(const std::string& path_to_validate,
-      const jacobian_chain<Jacobian_T, Basic_info_T>& chain);
+      const Jacobian_chain<Jacobian_T, Basic_info_T>& chain);
 };
 
 template<class Jacobian_T,class Basic_info_T>
@@ -181,7 +181,7 @@ std::string test_chain<Jacobian_T, Basic_info_T>::case_to_validate_path_generato
 template <class Jacobian_T, class Basic_info_T>
 bool test_chain<Jacobian_T, Basic_info_T>::is_data_from_file_equal_data_from_chain(
   const std::string& path_to_validate,
-  const jacobian_chain<Jacobian_T, Basic_info_T>& chain){
+  const Jacobian_chain<Jacobian_T, Basic_info_T>& chain){
 
   std::ifstream file;
   file.open(path_to_validate);
@@ -234,7 +234,7 @@ template<>
 class test_chain<Sparse_Jacobian, Matrix_free_sparse_information>{
  public:
   test_chain(const std::string& case_name, const std::string& validate_name){
-    jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>
+    Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>
       chain{case_to_path_with_data(case_name)};
 
     test_jacobian_information = 
@@ -268,7 +268,7 @@ class test_chain<Sparse_Jacobian, Matrix_free_sparse_information>{
       generator{chain_length, dimension_lb, dimension_ub, number_edges_lb, number_edges_ub,
       density_lb, density_ub, is_deterministic, seed};
 
-    jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information> 
+    Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information> 
       chain{generator.generate_data()};
 
     test_jacobian_information =
@@ -319,10 +319,10 @@ class test_chain<Sparse_Jacobian, Matrix_free_sparse_information>{
 
   bool is_jacobian_information_correctly_initialized(
       const std::string& validate_name,
-      const jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain);
+      const Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain);
 
   bool is_jacobian_information_correctly_initialized_generator(
-      const jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain);
+      const Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain);
 
 
   bool is_array_data_equal_validate_data(
@@ -335,10 +335,10 @@ class test_chain<Sparse_Jacobian, Matrix_free_sparse_information>{
 
   bool are_CSR_CSC_formats_correctly_initialized(
       const std::string& validate_name,
-      const jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain);
+      const Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain);
 
   bool are_CSR_CSC_formats_correctly_initialized_generator(
-      const jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain);
+      const Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain);
 
   bool test_jacobian_information;
 
@@ -437,7 +437,7 @@ bool test_chain<Sparse_Jacobian, Matrix_free_sparse_information>::
 bool test_chain<Sparse_Jacobian, Matrix_free_sparse_information>::
   is_jacobian_information_correctly_initialized(
       const std::string& validate_name,
-      const jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain){
+      const Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain){
 
   for(std::size_t jacobian_idx = 0; jacobian_idx < chain.size();
       jacobian_idx++){
@@ -455,7 +455,7 @@ bool test_chain<Sparse_Jacobian, Matrix_free_sparse_information>::
 
 bool test_chain<Sparse_Jacobian, Matrix_free_sparse_information>::
   is_jacobian_information_correctly_initialized_generator(
-    const jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain){
+    const Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain){
   
   for(std::size_t jacobian_idx = 0; jacobian_idx < chain.size();
       jacobian_idx++){
@@ -555,7 +555,7 @@ bool test_chain<Sparse_Jacobian, Matrix_free_sparse_information>::
 bool test_chain<Sparse_Jacobian, Matrix_free_sparse_information>::
   are_CSR_CSC_formats_correctly_initialized(
       const std::string& validate_name,
-      const jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain){
+      const Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain){
 
   for(std::size_t jacobian_idx = 0; jacobian_idx < chain.size();
       jacobian_idx++){
@@ -573,7 +573,7 @@ bool test_chain<Sparse_Jacobian, Matrix_free_sparse_information>::
 
 bool test_chain<Sparse_Jacobian, Matrix_free_sparse_information>::
   are_CSR_CSC_formats_correctly_initialized_generator(
-      const jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain){
+      const Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>& chain){
 
   for(std::size_t jacobian_idx = 0; jacobian_idx < chain.size();
       jacobian_idx++){

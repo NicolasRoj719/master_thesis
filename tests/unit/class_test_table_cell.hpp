@@ -128,24 +128,24 @@ class test_table_cell{
     }
   }
 
-  bool check_cell_initialization(const cell<Jacobian>& cell,
+  bool check_cell_initialization(const Cell<Jacobian>& cell,
       std::size_t cost, std::size_t split_position);
 
-  bool check_cell_initialization(const cell<Dense_Jacobian>& cell,
+  bool check_cell_initialization(const Cell<Dense_Jacobian>& cell,
       std::size_t cost, std::size_t split_position, Operation operation);
 
-  bool check_cell_initialization(const cell<Sparse_Jacobian>& cell,
+  bool check_cell_initialization(const Cell<Sparse_Jacobian>& cell,
         const Sparse_Jacobian& jacobian, std::size_t cost,
         std::size_t split_position, Operation operation);
 
-  bool check_cell_initialization(const cell_with_pointer<Jacobian>& cell,
+  bool check_cell_initialization(const Cell_with_pointer<Jacobian>& cell,
         const Jacobian& jacobian);
 
-  bool check_cell_initialization(const cell_with_pointer<Dense_Jacobian>& cell,
+  bool check_cell_initialization(const Cell_with_pointer<Dense_Jacobian>& cell,
         const Dense_Jacobian& jacobian, std::size_t cost,
         Operation operation);
 
-  bool check_cell_initialization(const cell_with_pointer<Sparse_Jacobian>& cell,
+  bool check_cell_initialization(const Cell_with_pointer<Sparse_Jacobian>& cell,
         const Sparse_Jacobian& jacobian, std::size_t cost,
         Operation operation);
 
@@ -185,12 +185,12 @@ class test_table_cell{
           const Sparse_Jacobian& jacobian);
 
 
-  bool check_cell_sparse_basic_information(const cell<Sparse_Jacobian>& cell,
+  bool check_cell_sparse_basic_information(const Cell<Sparse_Jacobian>& cell,
         const Sparse_Jacobian& jacobian);
 
 
   template<class Jacobian_T>
-    bool check_cell_jacobian_basic_information(const cell_with_pointer<Jacobian_T>& cell,
+    bool check_cell_jacobian_basic_information(const Cell_with_pointer<Jacobian_T>& cell,
         const Jacobian& jacobian);
 
   bool are_arrays_equal(const std::vector<std::size_t>& array_0,
@@ -264,7 +264,7 @@ template <class Cell_type, class Jacobian_T>
 bool test_table_cell::check_cell_jacobian_information(const Cell_type& cell,
             const Jacobian_T& jacobian){
 
-    if constexpr(std::is_same_v<Cell_type, cell_with_pointer<Jacobian>> &&
+    if constexpr(std::is_same_v<Cell_type, Cell_with_pointer<Jacobian>> &&
                     std::is_same_v<Jacobian_T, Jacobian>){
 
         if(cell.domain_dim() != jacobian.domain_dim() ||
@@ -275,7 +275,7 @@ bool test_table_cell::check_cell_jacobian_information(const Cell_type& cell,
 
     }
 
-    else if constexpr(std::is_same_v<Cell_type, cell_with_pointer<Dense_Jacobian>> &&
+    else if constexpr(std::is_same_v<Cell_type, Cell_with_pointer<Dense_Jacobian>> &&
                         std::is_same_v<Jacobian_T, Dense_Jacobian>){
 
         if(cell.domain_dim() != jacobian.domain_dim() ||
@@ -287,7 +287,7 @@ bool test_table_cell::check_cell_jacobian_information(const Cell_type& cell,
 
     }
 
-    //Cell_type = cell<Sparse_Jacobian> or cell_with_pointer<Sparse_Jacobian>
+    //Cell_type = Cell<Sparse_Jacobian> or Cell_with_pointer<Sparse_Jacobian>
     //Jacobian_T = Sparse_Jacobian
     else{
 
@@ -325,20 +325,20 @@ bool test_table_cell::check_cell_sparse_data(const Cell_type& cell,
 }
 
 // Implementation of check_cell_initialization for cells without pointer
-bool test_table_cell::check_cell_initialization(const cell<Jacobian>& cell,
+bool test_table_cell::check_cell_initialization(const Cell<Jacobian>& cell,
         std::size_t cost, std::size_t split_position){
 
     return check_cell_data(cell, cost, split_position);
 }
 
-bool test_table_cell::check_cell_initialization(const cell<Dense_Jacobian>& cell,
+bool test_table_cell::check_cell_initialization(const Cell<Dense_Jacobian>& cell,
             std::size_t cost, std::size_t split_position,
             Operation operation){
 
     return(check_cell_data(cell, cost, split_position, operation));
 }
 
-bool test_table_cell::check_cell_initialization(const cell<Sparse_Jacobian>& cell,
+bool test_table_cell::check_cell_initialization(const Cell<Sparse_Jacobian>& cell,
         const Sparse_Jacobian& jacobian, std::size_t cost,
         std::size_t split_position, Operation operation){
 
@@ -361,13 +361,13 @@ bool test_table_cell::check_cell_initialization(const cell<Sparse_Jacobian>& cel
 }
 
 //Implementation of check_cell_initialization for cells with pointers
-bool test_table_cell::check_cell_initialization(const cell_with_pointer<Jacobian>& cell,
+bool test_table_cell::check_cell_initialization(const Cell_with_pointer<Jacobian>& cell,
             const Jacobian& jacobian){
 
     return check_cell_jacobian_information(cell, jacobian);
 }
 
-bool test_table_cell::check_cell_initialization(const cell_with_pointer<Dense_Jacobian>& cell,
+bool test_table_cell::check_cell_initialization(const Cell_with_pointer<Dense_Jacobian>& cell,
             const Dense_Jacobian& jacobian, std::size_t cost,
             Operation operation){
 
@@ -384,7 +384,7 @@ bool test_table_cell::check_cell_initialization(const cell_with_pointer<Dense_Ja
     return true;
 }
 
-bool test_table_cell::check_cell_initialization(const cell_with_pointer<Sparse_Jacobian>& cell,
+bool test_table_cell::check_cell_initialization(const Cell_with_pointer<Sparse_Jacobian>& cell,
             const Sparse_Jacobian& jacobian, std::size_t cost,
             Operation operation){
 

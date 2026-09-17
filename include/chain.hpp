@@ -26,7 +26,7 @@
  *
  */
 template<class Jacobian_type, class Basic_information_type>
-class jacobian_chain{
+class Jacobian_chain{
  public:
   /**
    * @brief Initializes the Jacobian chain using an array of metadata objects.
@@ -35,7 +35,7 @@ class jacobian_chain{
    *
    * @throws std::runtime_error If adjacent matrix dimensions are incompatible for multiplication.
    */
-  jacobian_chain(std::vector<Basic_information_type> basic_information){
+  Jacobian_chain(std::vector<Basic_information_type> basic_information){
     if(!basic_information_dimension_check(basic_information)){
       throw std::runtime_error("Mismatching vector space dimension.\n"
           "Error encountered during jacobian chain initialization.");
@@ -50,7 +50,7 @@ class jacobian_chain{
    * @throws std::runtime_error If file cannot be opened or parsed, or if adjacent matrix dimensions
    * are incompatible for multiplication.
    */
-  jacobian_chain(const std::string& file_name){
+  Jacobian_chain(const std::string& file_name){
    file_to_chain(file_name);
   }
 
@@ -118,7 +118,7 @@ class jacobian_chain{
 };
 
 template<class Jacobian_type, class Basic_information_type>
-void jacobian_chain<Jacobian_type, Basic_information_type>::file_to_chain(const std::string& file_name){
+void Jacobian_chain<Jacobian_type, Basic_information_type>::file_to_chain(const std::string& file_name){
 
   std::ifstream file;
   file.open(file_name);
@@ -190,10 +190,10 @@ void jacobian_chain<Jacobian_type, Basic_information_type>::file_to_chain(const 
 
 
 /**
- * @brief Specialization of jacobian_chain for Sparse_Jacobian objects.
+ * @brief Specialization of Jacobian_chain for Sparse_Jacobian objects.
  */
 template<>
-class jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>{
+class Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>{
  public:
   /**
    * @brief Constructs Sparse Jacobian chain from a composite generator data structure. 
@@ -201,7 +201,7 @@ class jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>{
    * @param data Generator structure containing metadata and non-zero patterns.
    * @thros std::runtime_error If non-zero metadata or dimensions are incoherent.
    */
-  jacobian_chain(Generator_data data){
+  Jacobian_chain(Generator_data data){
 
     coherency_basic_information_sparse_data(
         data.jacobian_information, data.sparse_data);
@@ -215,7 +215,7 @@ class jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>{
    * @param file_name Path to file containing sparse metadata and sparsity patterns.
    * @param std::runtime_error If file cannot be read or cannot be parsed.
    */
-  jacobian_chain(const std::string& file_name){
+  Jacobian_chain(const std::string& file_name){
 
     std::vector<Matrix_free_sparse_information> basic_information_;
     std::vector<std::vector<NNZ>> sparse_data_;
