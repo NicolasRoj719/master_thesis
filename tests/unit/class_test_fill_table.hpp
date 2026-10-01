@@ -31,22 +31,17 @@ class test_fill_table{
    test_cost_tangent_adjoint_cell = arg;
   }
 
-  void set_test_subprograms_cost_accumulation(bool arg){
-    test_subprograms_cost_accumulation = arg;
-  }
-
-  void set_test_split_reversed_chain(bool arg){
-    test_split_reversed_chain = arg;
-  }
-
   void set_test_is_split_reversable(bool arg){
     test_is_split_reversable = arg;
   }
 
-  /* void set_test_seed_memory_load(bool arg){ */
+  void set_test_adjoint_chain_partition(bool arg){
+    test_adjoint_chain_partition = arg;
+  }
 
-  /*  test_seed_memory_load = arg; */
-  /* } */
+  void set_test_build_subchain_execution_costs_array(bool arg){
+    test_build_subchain_execution_costs_array = arg;
+  }
 
   void run_test_cases(std::size_t memory_limit = std::numeric_limits<std::size_t>::max()){
     
@@ -103,20 +98,20 @@ class test_fill_table{
     }
     else{std::cout<<"failed.\n";}
 
-    std::cout << "test_subprograms_cost_accumulation: ";
-    if(test_subprograms_cost_accumulation){
-      std::cout<<"successful.\n";
-    }
-    else{std::cout<<"failed.\n";}
-
-    std::cout << "test_split_reversed_chain: ";
-    if(test_split_reversed_chain){
-      std::cout<<"successful.\n";
-    }
-    else{std::cout<<"failed.\n";}
-
     std::cout << "test_is_split_reversable: ";
     if(test_is_split_reversable){
+      std::cout<<"successful.\n";
+    }
+    else{std::cout<<"failed.\n";}
+
+    std::cout << "test_adjoint_chain_partition: ";
+    if(test_adjoint_chain_partition){
+      std::cout<<"successful.\n";
+    }
+    else{std::cout<<"failed.\n";}
+
+    std::cout << "test_build_subchain_execution_costs_array: ";
+    if(test_build_subchain_execution_costs_array){
       std::cout<<"successful.\n";
     }
     else{std::cout<<"failed.\n";}
@@ -138,9 +133,9 @@ class test_fill_table{
         test_multiplication &&
         test_accumulate_number_edges &&
         test_cases &&
-        test_subprograms_cost_accumulation &&
-        test_split_reversed_chain &&
-        test_is_split_reversable){
+        test_is_split_reversable &&
+        test_adjoint_chain_partition&&
+        test_build_subchain_execution_costs_array){
       
       were_all_test_successful_ = true;
     }
@@ -202,11 +197,11 @@ class test_fill_table{
   bool test_cases;
 
   //Mixed formulation.
-  bool test_subprograms_cost_accumulation;
-
-  bool test_split_reversed_chain;
-
   bool test_is_split_reversable;
+
+  bool test_adjoint_chain_partition;
+
+  bool test_build_subchain_execution_costs_array;
 
   bool were_all_test_successful_;
 

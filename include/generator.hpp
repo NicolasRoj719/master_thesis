@@ -479,7 +479,7 @@ class Generator<Matrix_free_sparse_information>{
       (domain_dimension > codomain_dimension)? domain_dimension : codomain_dimension;
 
     number_of_zeros_lower_bound = 
-    static_cast<std::size_t>(std::ceil(density_lower_bound * domain_dimension * codomain_dimension / max_domain_codomain));
+    static_cast<std::size_t>(std::ceil(density_lower_bound * domain_dimension * codomain_dimension));
 
     // Lower bound for the number of edges must be at least equal to the maximum 
     // between domain and codomain dimension.
@@ -488,7 +488,7 @@ class Generator<Matrix_free_sparse_information>{
     }
 
     number_of_zeros_upper_bound =
-    static_cast<std::size_t>(std::floor(density_upper_bound * domain_dimension * codomain_dimension / max_domain_codomain));
+    static_cast<std::size_t>(std::floor(density_upper_bound * domain_dimension * codomain_dimension));
 
     // Lower bound for the number of edges must be at least equal to the maximum 
     // between domain and codomain dimension.

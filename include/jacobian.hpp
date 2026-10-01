@@ -41,6 +41,16 @@ class Jacobian: public Jacobian_information{
    */
   Jacobian(std::size_t domain_dimension, std::size_t codomain_dimension):
     Jacobian_information{domain_dimension, codomain_dimension}{}
+
+  /**
+   * @brief Prints Jacobian data
+   *
+   * @param out_stream reference to an ostream object.
+   */
+  void print(std::ostream& out_stream){
+
+    out_stream << domain_dimension_ << ' ' << codomain_dimension_ << '\n';
+  }
 };
 
 /**
@@ -66,6 +76,16 @@ class Dense_Jacobian: public Matrix_free_information{
   Dense_Jacobian(std::size_t domain_dimension, std::size_t codomain_dimension,
       std::size_t number_of_edges):
     Matrix_free_information{domain_dimension, codomain_dimension, number_of_edges}{}
+
+  /**
+   * @brief Prints Matrix_free_sparse_information data.
+   *
+   * @param out_stream reference to an ostream object.
+   */
+  void print(std::ostream& out_stream){
+
+    out_stream << domain_dimension_ << ' ' << codomain_dimension_ << ' ' << number_of_edges_ << '\n'; 
+  }
 };
 
 /**
@@ -292,6 +312,19 @@ class Sparse_Jacobian: public Matrix_free_sparse_information{
    */
   friend void mul_CSR_CSC_2_CSC(const Sparse_Jacobian& lhs, const Sparse_Jacobian& rhs,
       std::vector<size_t>& row_idx, std::vector<std::size_t>& col_ptr);
+
+  /**
+   * @brief Prints Matrix_free_sparse_information data plus column and row number of colors and 
+   * column and row maximum number of non zeros.
+   *
+   * @param out_stream reference to an ostream object.
+   */
+  void print(std::ostream& out_stream){
+
+    out_stream << domain_dimension_ << ' ' << codomain_dimension_ << ' ' << number_of_edges_ << ' '
+      << number_of_nonzeros_ << ' ' << column_number_colors << ' ' << max_number_nnz_row << ' '
+      << row_number_colors << ' ' << max_number_nnz_column << '\n';
+  }
 
  private:
   /// Sorts non-zero entries and removes duplicate coordinates.

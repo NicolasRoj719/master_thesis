@@ -19,12 +19,6 @@ class test_binomial{
     }
     else{std::cout << "failed.\n";}
 
-    std::cout << "test_view_chain: ";
-    if(test_view_chain){
-      std::cout << "successful.\n";
-    }
-    else{std::cout << "failed.\n";}
-
     std::cout << "test_table_emplace_back: ";
     if(test_table_emplace_back){
       std::cout << "successful.\n";
@@ -119,10 +113,6 @@ class test_binomial{
     test_binomial_cell = argument;
   }
 
-  void set_test_view_chain(bool argument){
-    test_view_chain = argument;
-  }
-
   void set_test_additional_cost_without_table(bool argument){
     test_additional_cost_without_table = argument;
   }
@@ -149,7 +139,6 @@ class test_binomial{
 
  private:
   bool test_binomial_cell;
-  bool test_view_chain;
   bool test_table_emplace_back;
   bool test_get_cell;
   bool test_additional_cost_without_table;

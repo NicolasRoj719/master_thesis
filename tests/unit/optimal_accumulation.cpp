@@ -341,17 +341,6 @@ int main(){
     const std::size_t available_checkpoints = 2;
     Binomial_table table{chain_length, available_checkpoints};
 
-    std::vector<Matrix_free_information> problem_dense_data;
-    problem_dense_data.reserve(chain_length);
-
-    //Matrix_free_information constructor arguments: domain space dimension, codomian space dimension,
-    // number of edges.
-    problem_dense_data.emplace_back(10, 15, 150);
-    problem_dense_data.emplace_back(15, 13, 200);
-    problem_dense_data.emplace_back(13, 20, 180);
-    problem_dense_data.emplace_back(20, 23, 280);
-    problem_dense_data.emplace_back(23, 18, 250);
-
     //Subprograms execution cost estimate
     std::vector<std::size_t> execution_costs;
     execution_costs.reserve(chain_length);
@@ -361,12 +350,9 @@ int main(){
     execution_costs.emplace_back(400);
     execution_costs.emplace_back(500);
 
-    //Build Split dense.
-    Jacobian_chain<Dense_Jacobian, Matrix_free_information> chain{problem_dense_data};
-
     //Call dynamic programming algorithm to fill the look up table.
     Binomial_checkpointing 
-      algorithm{execution_costs, chain_length - 1, 0, available_checkpoints, 0};
+      algorithm{execution_costs, available_checkpoints};
 
     //Accumulate operation nodes.
     //operation_sequence_accumulation arguments: reference to lookup table, chain length, number of
@@ -393,17 +379,6 @@ int main(){
     const std::size_t available_checkpoints = 2;
     Binomial_table table{chain_length, available_checkpoints};
 
-    std::vector<Matrix_free_information> problem_dense_data;
-    problem_dense_data.reserve(chain_length);
-
-    //Matrix_free_information constructor arguments: domain space dimension, codomian space dimension,
-    // number of edges.
-    problem_dense_data.emplace_back(10, 15, 150);
-    problem_dense_data.emplace_back(15, 13, 200);
-    problem_dense_data.emplace_back(13, 20, 180);
-    problem_dense_data.emplace_back(20, 23, 280);
-    problem_dense_data.emplace_back(23, 18, 250);
-
     //Subprograms execution cost estimate
     std::vector<std::size_t> execution_costs;
     execution_costs.reserve(chain_length);
@@ -413,12 +388,9 @@ int main(){
     execution_costs.emplace_back(200);
     execution_costs.emplace_back(100);
 
-    //Build Split dense.
-    Jacobian_chain<Dense_Jacobian, Matrix_free_information> chain{problem_dense_data};
-
     //Call dynamic programming algorithm to fill the look up table.
     Binomial_checkpointing 
-      algorithm{execution_costs, chain_length - 1, 0, available_checkpoints, 0};
+      algorithm{execution_costs, available_checkpoints};
 
     //Accumulate operation nodes.
     //operation_sequence_accumulation arguments: reference to lookup table, chain length, number of
@@ -445,18 +417,6 @@ int main(){
     const std::size_t available_checkpoints = 2;
     Binomial_table table{chain_length, available_checkpoints};
 
-    std::vector<Matrix_free_information> problem_dense_data;
-    problem_dense_data.reserve(chain_length);
-
-    //Matrix_free_information constructor arguments: domain space dimension, codomian space dimension,
-    // number of edges.
-    problem_dense_data.emplace_back(10, 15, 150);
-    problem_dense_data.emplace_back(15, 13, 200);
-    problem_dense_data.emplace_back(13, 20, 180);
-    problem_dense_data.emplace_back(20, 23, 280);
-    problem_dense_data.emplace_back(23, 18, 250);
-    problem_dense_data.emplace_back(18, 18, 350);
-
     //Subprograms execution cost estimate
     std::vector<std::size_t> execution_costs;
     execution_costs.reserve(chain_length);
@@ -467,12 +427,9 @@ int main(){
     execution_costs.emplace_back(500);
     execution_costs.emplace_back(600);
 
-    //Build Split dense.
-    Jacobian_chain<Dense_Jacobian, Matrix_free_information> chain{problem_dense_data};
-
     //Call dynamic programming algorithm to fill the look up table.
     Binomial_checkpointing
-      algorithm{execution_costs, chain_length - 1, 0, available_checkpoints, 0};
+      algorithm{execution_costs, available_checkpoints};
 
     //Accumulate operation nodes.
     //operation_sequence_accumulation arguments: reference to lookup table, chain length, number of

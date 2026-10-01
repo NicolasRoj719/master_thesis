@@ -1,0 +1,3 @@
+digraph G {
+"( 4 , 0 ) ADJ" -> "( 4 ) ADJ"
+}

@@ -20,103 +20,6 @@ int main(){
     else{test.set_test_binomial_cell(false);}
   }
 
-  //Reversal_chain
-  {
-    //Creating a split_dense chain from data.
-    std::vector<std::size_t> subprograms_cost=
-      Binomial_checkpointing::read_subprograms_cost_from_file(std::string(FIXTURE_DIR) + 
-          "/binomial_test_case/functions_cost", 5);
-
-
-    bool test_view_3_1;
-    {
-      std::size_t j = 3, i = 1;
-      Reversal_chain view_subchain_j_i{subprograms_cost, j, i};
-
-      if(view_subchain_j_i.size() != j - i + 1){
-        test_view_3_1 = false;
-      }
-      else{
-
-        if(view_subchain_j_i[0] != 222 ||
-            view_subchain_j_i[1] != 333 ||
-            view_subchain_j_i[2] != 444){
-          
-          test_view_3_1 = false;
-        }
-        else{test_view_3_1 = true;}
-      }
-    }
-
-    bool test_view_4_2;
-    {
-      std::size_t j = 4, i = 2;
-      Reversal_chain view_subchain_j_i{subprograms_cost, j, i};
-
-      if(view_subchain_j_i.size() != j - i + 1){
-        test_view_4_2 = false;
-      }
-      else{
-
-        if(view_subchain_j_i[0] != 333 ||
-            view_subchain_j_i[1] != 444 ||
-            view_subchain_j_i[2] !=  555){
-          
-          test_view_4_2 = false;
-        }
-        else{test_view_4_2 = true;}
-      }
-
-    }
-
-    bool test_view_2_0;
-    {
-      std::size_t j = 2, i = 0;
-      Reversal_chain view_subchain_j_i{subprograms_cost, j, i};
-
-      if(view_subchain_j_i.size() != j - i + 1){
-        test_view_2_0 = false;
-      }
-      else{
-
-        if(view_subchain_j_i[0] != 111 ||
-            view_subchain_j_i[1] != 222 ||
-            view_subchain_j_i[2] !=  333){
-          
-          test_view_2_0 = false;
-        }
-        else{test_view_2_0 = true;}
-      }
-    }
-
-    bool test_view_with_ptr;
-    {
-      std::size_t j = 2, i = 0;
-      Reversal_chain view_subchain_j_i{subprograms_cost, j, i, subprograms_cost[j+1]};
-
-      if(view_subchain_j_i.size() != j - i + 2){
-        test_view_with_ptr = false;
-      }
-      else{
-
-        if(view_subchain_j_i[0] != 111 ||
-            view_subchain_j_i[1] != 222 ||
-            view_subchain_j_i[2] !=  333 ||
-            view_subchain_j_i[3] != 444){
-          
-          test_view_with_ptr = false;
-        }
-        else{test_view_with_ptr = true;}
-      }
-    }
-
-    if(test_view_3_1 && test_view_4_2 && test_view_2_0 && test_view_with_ptr){
-      test.set_test_view_chain(true);
-    }
-
-    else{test.set_test_view_chain(false);}
-  }
-
   //Testing emplace_back and get_cell
   {
     std::size_t chain_length = 2, checkpoints = 1;
@@ -184,7 +87,7 @@ int main(){
           "/binomial_test_case/functions_cost", 5);
 
     //Problem instance (4, 0, 0)
-    Binomial_checkpointing binomial_algorithm{subprograms_cost, 4, 0};
+    Binomial_checkpointing binomial_algorithm{subprograms_cost};
 
     if(binomial_algorithm.advancing_cost(1, 0) != 111 + 222||
         binomial_algorithm.advancing_cost(3, 2) != 333 + 444||
@@ -261,7 +164,7 @@ int main(){
     
     //Transfering data ownership to table inside algorithm
     //Probelm instance (2,0,1)
-    Binomial_checkpointing algorithm{subprograms_cost, std::move(table), 2, 0};
+    Binomial_checkpointing algorithm{subprograms_cost, std::move(table)};
 
     if(algorithm.additional_cost(1, 0, 0, 1) != 111 ||
         algorithm.additional_cost(2, 1, 1, 1) != 222 ||
@@ -276,7 +179,7 @@ int main(){
   //Test full binomial checkpoiting algorithm
   {
     //Initializing the jacobian chain
-    std::vector<std::size_t> subprograms_cost = 
+    std::vector<std::size_t> complete_subprograms_cost = 
       Binomial_checkpointing::read_subprograms_cost_from_file(std::string(FIXTURE_DIR) 
           + "/binomial_test_case/functions_cost");
 
@@ -286,6 +189,9 @@ int main(){
 
     //Problem instance (2,0,1)
     {
+      const std::vector<std::size_t> subprograms_cost{complete_subprograms_cost[0], 
+                                                        complete_subprograms_cost[1],
+                                                        complete_subprograms_cost[2]};
       //Step by step calculation:
       //Ground floor c = 0. With c available_checkpoints
       //emplace_back(additional_cost, available_checkpoints)
@@ -326,7 +232,7 @@ int main(){
       //table.emplace_back(333, 1, 0)
       
       //Run the optimization algorithm with the constructor.
-      Binomial_checkpointing binomial_algorithm{subprograms_cost, 2, 0, 1};
+      Binomial_checkpointing binomial_algorithm{subprograms_cost, 1};
 
       if(test.check_cell(binomial_algorithm.get_cell(0, 0, 0), 0, 0) &&
           test.check_cell(binomial_algorithm.get_cell(1, 1, 0), 0, 0) &&
@@ -349,6 +255,9 @@ int main(){
     //Problem instance (4, 2, 1) chain point of view.
     //Problem instance (2, 0, 1)
     {
+      const std::vector<std::size_t> subprograms_cost{complete_subprograms_cost[2],
+                                                        complete_subprograms_cost[3],
+                                                        complete_subprograms_cost[4]};
       //Ground floor c = 0
       //Table entry: (0, 0, 0)
       //emplace_back(0, 0)
@@ -385,7 +294,7 @@ int main(){
       //emplace_back(777, 1, 0)
       //Run the optimization algorithm with the constructor.
 
-      Binomial_checkpointing binomial_algorithm{subprograms_cost, 4, 2, 1};
+      Binomial_checkpointing binomial_algorithm{subprograms_cost, 1};
 
       if(test.check_cell(binomial_algorithm.get_cell(0, 0, 0), 0, 0) &&
           test.check_cell(binomial_algorithm.get_cell(1, 1, 0), 0, 0) &&
@@ -407,6 +316,10 @@ int main(){
 
     //Problem instance (3,0,1)
     {
+      const std::vector<std::size_t> subprograms_cost{complete_subprograms_cost[0],
+                                                        complete_subprograms_cost[1],
+                                                        complete_subprograms_cost[2],
+                                                        complete_subprograms_cost[3]};
       //Ground floor c = 0.
       //Table entry: (0, 0, 0)
       //emplace_back(0, 0)
@@ -473,7 +386,7 @@ int main(){
       //emplace_back(777, 1, 1)
       
       //Run the optimization algorithm with the constructor.
-      Binomial_checkpointing binomial_algorithm{subprograms_cost, 3, 0, 1};
+      Binomial_checkpointing binomial_algorithm{subprograms_cost, 1};
 
       if(test.check_cell(binomial_algorithm.get_cell(0, 0, 0), 0, 0) &&
           test.check_cell(binomial_algorithm.get_cell(1, 1, 0), 0, 0) &&

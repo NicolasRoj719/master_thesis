@@ -13,7 +13,7 @@ target_include_directories(master_thesis_lib INTERFACE
 )
 
 #-----------------------------------------------------------------------
-# 2. COnfigure Unit Test Executable
+# 2. Configure Unit Test Executable
 #-----------------------------------------------------------------------
 enable_testing()
 
@@ -46,26 +46,38 @@ foreach(TEST_SOURCE ${TEST_SOURCES})
 
 endforeach()
 
+#-----------------------------------------------------------------------
+# 3. Configure Benchmark Target 
+#-----------------------------------------------------------------------
+set(BENCHMARK_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/results/")
+
+add_executable(report_benchmarks benchmarks/report_benchmarks.cpp)
+
+target_link_libraries(report_benchmarks PRIVATE master_thesis_lib)
+
+target_compile_definitions(report_benchmarks PRIVATE
+    RESULTS_DIR="${BENCHMARK_OUTPUT_DIR}"
+)
 # ---------------------------------------------------------------------
-# 3. Setup Doxygen Target
+# 4. Setup Doxygen Target
 # ---------------------------------------------------------------------
-find_package(Doxygen)
-if(DOXYGEN_FOUND)
-  set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
-  set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+# find_package(Doxygen)
+# if(DOXYGEN_FOUND)
+#   set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
+#   set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
 
-  # Replace @VARIABLES@ in Doxyfile.in and output Doxyfile in build/
-  configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+#   # Replace @VARIABLES@ in Doxyfile.in and output Doxyfile in build/
+#   configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
 
-  # Generate Doxyfile if it does not exist yet, or configure target
-  add_custom_target(doc
-    COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Generating API documentation with Doxygen..."
-    VERBATIM
-  )
+#   # Generate Doxyfile if it does not exist yet, or configure target
+#   add_custom_target(doc
+#     COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+#     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+#     COMMENT "Generating API documentation with Doxygen..."
+#     VERBATIM
+#   )
 
-else()
-  message(STATUS "Doxygen not found. 'doc' target will not be available.")
-endif()
+# else()
+#   message(STATUS "Doxygen not found. 'doc' target will not be available.")
+# endif()
 

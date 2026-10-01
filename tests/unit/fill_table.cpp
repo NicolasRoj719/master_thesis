@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <iostream>
 #include <string>
 
 #include "class_test_fill_table.hpp"
@@ -541,7 +542,7 @@ int main(){
 
     //Emplace back cells with pointers
     //table(0)
-      table.emplace_back(&chain[0],
+    table.emplace_back(&chain[0],
                           chain[0].codomain_dim() * chain[0].number_edges(),
                           Operation::ADJOINT);
     //table(1)
@@ -552,18 +553,6 @@ int main(){
     table.emplace_back(&chain[2],
                         chain[2].domain_dim() * chain[2].number_edges(),
                         Operation::TANGENT);
-
-    //test accumulate_subprograms_cost
-    if(tool_box_split::accumulate_subprograms_cost(subprograms_cost, 0, 0) != 222 ||
-        tool_box_split::accumulate_subprograms_cost(subprograms_cost, 1, 1) != 111 ||
-        tool_box_split::accumulate_subprograms_cost(subprograms_cost, 2, 2) != 99 ||
-        tool_box_split::accumulate_subprograms_cost(subprograms_cost, 1, 0) != 222 + 111 ||
-        tool_box_split::accumulate_subprograms_cost(subprograms_cost, 2, 1) != 111 + 99 ||
-        tool_box_split::accumulate_subprograms_cost(subprograms_cost, 2, 0) != 222 + 111 + 99){
-
-      test.set_test_subprograms_cost_accumulation(false);
-    }
-    else{test.set_test_subprograms_cost_accumulation(true);}
 
     //test is_split_reversable
     if(tool_box_split::is_split_reversable(table, 2, 0, 200) != true ||
@@ -584,24 +573,191 @@ int main(){
     }
     else{test.set_test_is_split_reversable(true);}   
 
-    //test split_reversed_chain
-    if(tool_box_split::split_reversed_chain(table, 2, 0, 80 + 150 + 100 -1) != 0 ||
-        tool_box_split::split_reversed_chain(table, 2, 0, 80 + 150) != 0 ||
-        tool_box_split::split_reversed_chain(table, 2, 0, 80 + 150 -1) != 1 ||
-        tool_box_split::split_reversed_chain(table, 2, 0, 80 + 1) != 1 ||
-        tool_box_split::split_reversed_chain(table, 2, 1, 80 + 150 - 1) != 1 ||
-        tool_box_split::split_reversed_chain(table, 2, 1, 80) != 1){
-      
-      test.set_test_split_reversed_chain(false);
-    }
-    else{test.set_test_split_reversed_chain(true);}
+    //Test adjoint chain partition 
+    {
+      //Test array representing the number of edges of subprograms.
+      std::vector<std::size_t> test_arr{70, 60, 40, 35, 30, 20, 10};
 
-    /* if(tool_box_split::split_reversed_chain(table, 0, 80 + 150 + 100, 80 + 150 + 100 -1) != 0 || */
-    /*     tool_box_split::split_reversed_chain(table, 0, 80 + 150 + 100, 80 + 150) != 0 || */
-    /*     tool_box_split::split_reversed_chain(table, 0, 80 + 150 + 100, 80 + 150 -1) != 1 || */
-    /*     tool_box_split::split_reversed_chain(table, 0, 80 + 150 + 100, 80 + 1) != 1 || */
-    /*     tool_box_split::split_reversed_chain(table, 1, 80 + 150, 80 + 150 - 1) != 1 || */
-    /*     tool_box_split::split_reversed_chain(table, 1, 80 + 150, 80) != 1){ */
+      //Test result of each one of the tests carried out to validate the correctness of 
+      //the method adjoint_chain_partition.
+      bool test_1, test_2, test_3;
+      {
+
+        std::size_t memory_limit = 40;
+        std::size_t last_idx = test_arr.size() - 1;
+        std::size_t first_idx = 2;
+
+        //Arguments: const ref to arr, last index in range, first index in range, memory_limit
+        std::vector<std::size_t> split_positions = 
+          tool_box_split::adjoint_chain_partition(test_arr, last_idx, first_idx, memory_limit);
+
+        if(split_positions.size() != 5){
+          
+          test_1 = false;
+        }
+        else{
+
+          if(split_positions[0] != last_idx + 1 || split_positions[1] != 5 ||
+              split_positions[2] != 4 || split_positions[3] != 3 ||
+              split_positions[4] != first_idx){
+            
+            test_1 = false;
+          }
+          else{test_1 = true;}
+        }
+
+        /* tool_box_split::subchain_partition_parser(split_positions, &std::cout); */
+      }
+
+      {
+        std::size_t memory_limit = 80;
+        std::size_t last_idx = test_arr.size() - 1;
+        std::size_t first_idx = 1;
+
+        std::vector<std::size_t> split_positions = 
+          tool_box_split::adjoint_chain_partition(test_arr, last_idx, first_idx, memory_limit);
+
+        if(split_positions.size() != 4){
+
+          test_2 = false;
+        }
+        else{
+
+          if(split_positions[0] != last_idx + 1 || split_positions[1] != 4 ||
+              split_positions[2] != 2 || split_positions[3] != first_idx){
+            
+            test_2 = false;
+          }
+          else{test_2 = true;}
+        }
+
+        /* tool_box_split::subchain_partition_parser(split_positions, &std::cout); */
+      }
+
+      {
+        std::size_t memory_limit = 60;
+        std::size_t last_idx = 4;
+        std::size_t first_idx = 1;
+
+        std::vector<std::size_t> split_positions = 
+          tool_box_split::adjoint_chain_partition(test_arr, last_idx, first_idx, memory_limit);
+
+        if(split_positions.size() != 5){
+
+          test_3 = false;
+        }
+        else{
+
+          if(split_positions[0] != last_idx + 1 || split_positions[1] != 4 ||
+              split_positions[2] != 3 || split_positions[3] != 2 ||
+              split_positions[4] != first_idx){
+
+            test_3 = false;
+          }
+          else{test_3 = true;}
+        }
+
+        /* tool_box_split::subchain_partition_parser(split_positions, &std::cout); */
+      }
+
+      if(test_1 && test_2 && test_3){
+
+        test.set_test_adjoint_chain_partition(true);
+      }
+      else{test.set_test_adjoint_chain_partition(false);}
+    }
+  }
+
+  //Test build_subchain_execution_costs_array
+  {
+    //Test array representing the number of edges of subprograms.
+    std::vector<std::size_t> subchain_number_edges{70, 60, 40, 35, 30, 20, 10};
+
+    //Test arrar subprogram execution costs
+    std::vector<std::size_t> subprograms_execution_cost{100, 150, 200, 250, 300, 350, 400};
+
+    bool test_1, test_2, test_3;
+    {
+      std::size_t memory_limit = 40;
+      std::size_t last_idx = subchain_number_edges.size() - 1;
+      std::size_t first_idx = 2;
+
+      std::vector<std::size_t> split_positions =
+        tool_box_split::adjoint_chain_partition(subchain_number_edges, last_idx, first_idx, memory_limit);
+
+      std::vector<std::size_t> subchain_execution_costs =
+        tool_box_split::build_subchain_execution_costs_array(subprograms_execution_cost, split_positions);
+
+      if(subchain_execution_costs.size() != 4){
+        test_1 = false;  
+      }
+      else{
+
+        if(subchain_execution_costs[0] != 200 || subchain_execution_costs[1] != 250 ||
+            subchain_execution_costs[2] != 300 || subchain_execution_costs[3] != 350 + 400){
+
+          test_1 = false;
+        }
+        else{test_1 = true;}
+      }
+    }
+
+    {
+      std::size_t memory_limit = 80;
+      std::size_t last_idx = subchain_number_edges.size() - 1;
+      std::size_t first_idx = 1;
+
+      std::vector<std::size_t> split_positions = 
+        tool_box_split::adjoint_chain_partition(subchain_number_edges, last_idx, first_idx, memory_limit);
+
+      std::vector<std::size_t> subchain_execution_costs =
+        tool_box_split::build_subchain_execution_costs_array(subprograms_execution_cost, split_positions);
+
+      if(subchain_execution_costs.size() != 3){
+        test_2 = false;  
+      }
+      else{
+
+        if(subchain_execution_costs[0] != 150 || subchain_execution_costs[1] != 200 + 250||
+            subchain_execution_costs[2] != 300 + 350 + 400){
+
+          test_2 = false;
+        }
+        else{test_2 = true;}
+      }
+    }
+    
+    {
+      std::size_t memory_limit = 60;
+      std::size_t last_idx = 4;
+      std::size_t first_idx = 1;
+
+      std::vector<std::size_t> split_positions = 
+        tool_box_split::adjoint_chain_partition(subchain_number_edges, last_idx, first_idx, memory_limit);
+
+      std::vector<std::size_t> subchain_execution_costs =
+        tool_box_split::build_subchain_execution_costs_array(subprograms_execution_cost, split_positions);
+
+      if(subchain_execution_costs.size() != 4){
+        test_3 = false;  
+      }
+      else{
+
+        if(subchain_execution_costs[0] != 150 || subchain_execution_costs[1] != 200||
+            subchain_execution_costs[2] != 250 || subchain_execution_costs[3] != 300){
+
+          test_3 = false;
+        }
+        else{test_3 = true;}
+      }
+    }
+
+    if(test_1 && test_2 && test_3){
+
+      
+      test.set_test_build_subchain_execution_costs_array(true);
+    }
+    else{test.set_test_build_subchain_execution_costs_array(false);}
   }
 
   //Checking if all tests were successful.

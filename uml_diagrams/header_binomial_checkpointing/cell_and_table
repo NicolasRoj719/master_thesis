@@ -1,0 +1,51 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class Binomial_cell {
+  - additional_cost_: std::size_t
+  - available_checkpoints_: std::size_t
+  - split_position_: std::optional<std::size_t>
+  --
+  + Binomial_cell(additional_cost: std::size_t, available_checkpoints: std::size_t,
+  split_pos: std::optional<std::size_t> = std::nullopt)
+  + additional_cost(): std::size_t {const}
+  + number_checkpoints(): std::size_t {const}
+  + split_position(): std::optional<std::size_t> {const}
+}
+
+class Binomial_table {
+  - cells_per_floor: std::size_t
+  - table: std::vector<Binomial_cell>
+  --
+  + Binomial_table(chain_length: std::size_t, number_checkpoints: std::size_t)
+  + Binomial_table()
+  + get_cell(j: std::size_t, i: std::size_t, c: std::size_t): const Binomial_cell& {const}
+  + emplace_back(additional_cost: std::size_t, available_checkpoints: std::size_t, split_pos: std::size_t): void
+  + emplace_back(additional_cost: std::size_t, available_checkpoints: std::size_t): void
+  + size(): std::size_t {const}
+  + back() : const Binomial_cell&
+}
+
+class Binomial_checkpointing{
+  - chain : const std::vector<std::size_t>& 
+  - table : Binomial_table
+  --
+  + Binomial_checkpointing(subprograms_cost : const std::vector<std::size_t>&,
+  available_checkpoints : std::size_t)
+  + Binomial_checkpointing(subprograms_cost : const std::vector<std::size_t>&)
+  + Binomial_checkpointing(subprograms_cost : const std::vector<std::size_t>&,
+  table : Binomial_table)
+  + additional_cost(j : std::size_t, i : std::size_t) : std::size_t
+  + advancing_cost(split_pos : std::size_t, i : std::size_t) : std::size_t
+  + get_cell(j : std::size_t, i: std::size_t, std::size_t c) : const Binomial_cell&
+  + additional_cost(j : std::size_t, split_pos : std::size_t, i : std::size_t, available_checkpoints : std::size_t)
+  + get_additional_cost() : std::size_t
+  + get_table() : const Binomial_table&
+  - fill_table(chain_length : std::size_t, number_checkpoints : std::size_t) : void
+}
+
+Binomial_table  *-- "0..*" Binomial_cell : contains
+
+Binomial_checkpointing  *--  Binomial_table : owns
+
+@enduml

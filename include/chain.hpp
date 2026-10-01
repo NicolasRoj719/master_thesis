@@ -77,6 +77,25 @@ class Jacobian_chain{
   ///Gets the total number of Jacobians in the chain.
   std::size_t size() const {return chain.size();}
 
+  /**
+   * @brief Print Jacobian chain information
+   *
+   * @param out_stream reference to an ostream object.
+   */
+  void print(std::ostream& out_stream){
+    if(chain.size() == 0){
+
+      out_stream << "The chain has not been initialized.\n";
+    }
+    else{
+
+      for(std::size_t idx = 0; idx < chain.size(); idx++){
+
+        chain[idx].print(out_stream);
+      }
+    }
+  }
+
  protected:
   /// Storage sequence for Jacobian_type. objects.
   std::vector<Jacobian_type> chain;
@@ -249,6 +268,25 @@ class Jacobian_chain<Sparse_Jacobian, Matrix_free_sparse_information>{
   Sparse_Jacobian& get(std::size_t index){
     return chain[index];
    }
+
+  /**
+   * @brief Print Jacobian chain information
+   * 
+   * @param out_stream reference to an ostream object.
+   */
+  void print(std::ostream& out_stream){
+    if(chain.size() == 0){
+
+      out_stream << "The chain has not been initialized.\n";
+    }
+    else{
+
+      for(std::size_t idx = 0; idx < chain.size(); idx++){
+
+        chain[idx].print(out_stream);
+      }
+    }
+  }
 
  protected:
   /// Storage sequence for Sparse_Jacobian objects.

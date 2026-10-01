@@ -3,10 +3,9 @@
  * @brief Dynamic programming algorithm and lookup structures for optimal binomial checkpointing in
  * Algorithmic Differentiation.
  *
- * Provides classes and data structures (`Binomial_cell`, `Binomial_table`, `View_chain`, and 
+ * Provides classes and data structures (`Binomial_cell`, `Binomial_table`, and 
  * `binomial_checkpointing`)
- * to evaluate and store optimal checkpoint placement sequences and re-execution costs across 
- * Jacobian chain subranges.
+ * to evaluate optimal re-execution cost and optimal checkpoint placement sequences.
  */
 #ifndef BINOMIAL_CHECKPOINTING
 #define BINOMIAL_CHECKPOINTING
@@ -14,7 +13,6 @@
 #include <cassert>
 #include <limits>
 #include <optional>
-#include <span>
 #include <stdexcept>
 #include <vector>
 
@@ -159,134 +157,47 @@ class Binomial_table{
 };
 
 /**
- * @brief class wrapping the subvector containing function_cost[first_index] to 
- * function_cost[last_index] and eventually append_function_cost if is not set to zero.
- *
- */
-class Reversal_chain{
- public:
-   /**
-    * @brief constructs a subvector  
-    *
-    * @param chain_ Base Jacobian chain to reference. 
-    * @param first_index Starting index of the view.
-    * @param number_elements Number of elements included from the original chain.
-    * @param ptr Optional pointer to an extra 'Split_type' element to append logically to the end of 
-    * this view.
-    * @throws std::invalid_argument If the requested view of range falls outside the bounds of 'chain_'. 
-    */
-  Reversal_chain(const std::vector<std::size_t>& subprograms_execution_cost,
-                std::size_t last_index, std::size_t first_index,
-                std::size_t subprogram_cost_to_append= 0):
-    subprogram_cost_append(subprogram_cost_to_append){
-
-     if(subprograms_execution_cost.size() <= last_index){
-       
-       throw std::invalid_argument("Last index should be less than the size of functions_cost.");
-     }
-
-     view_subprograms_execution_cost = std::span<const std::size_t>(
-         subprograms_execution_cost.data() + first_index, last_index - first_index + 1);
-   }
-
-   /**
-    * @brief Accesses elementsi in the Reversal_chain by index. 
-    *
-    * @param index Zero-based element index within the view range. 
-    * @return std::size_t function_cost.
-    * @throws std::out_of_range If 'index' is out of bounds.
-    */
-   std::size_t operator[](std::size_t index) const{
-      if(index < view_subprograms_execution_cost.size()){
-        return view_subprograms_execution_cost[index];
-      }
-
-      if(index == view_subprograms_execution_cost.size() && subprogram_cost_append != 0){
-        return subprogram_cost_append;
-      }
-
-      throw std::out_of_range("Index out of bounds in Reversal_chain");
-   }
-
-   /**
-    * @brief Gets the total length of the active view range (including virtual appends). 
-    * @return Element count accessible through this view. 
-    */
-   std::size_t size() const{
-    
-     if(subprogram_cost_append == 0){
-      
-       return view_subprograms_execution_cost.size();
-     }
-
-     else{
-       return view_subprograms_execution_cost.size() + 1;
-     }
-   }
-
- private:
-  /// Non-owning view of the a subvector of the functions_cost vector.
-  std::span<const std::size_t> view_subprograms_execution_cost;
-  /// Last function cost in Reversal_chain if set to a non zero.
-  std::size_t subprogram_cost_append;
-};
-
-/**
  * @brief Dynamic programming solver for optimal binomial checkpointing in Algorithmic Differentiation 
  * (AD).
  *
- * Evaluates minimum re-execution overheads for split-reversal accumulation across Jacobian chain 
- * sequences.
+ * Evaluates minimum re-execution overheads for split-reversal accumulation across a Jacobian chain
+ * via the use of the execution cost of the subprograms given as a vector.
  *
  */
 class Binomial_checkpointing{
  public:
   /**
-   * @brief Solves the optimal checkpointing placement sequence and obtains minimum re-execution cost 
-   * over a subchain (j, i) with $c$ checkpoints.
+   * @brief Executes the dynamic programming algorithm given the execution cost of the 
+   * subprograms.
    *
-   * Evaluates problem instances defined as $t(j - i, 0, c)$ when 'split_pointer == nullptr', or 
-   * $t(j - i + 1, 0, c)$ when an additional element pointer is supplied.
-   *
-   * @param chain_ Base Jacobian chain. 
-   * @param j Upper bound index of the subchain (inclusive).
-   * @param i Lower bound index of the subchain (inclusive).
+   * @param subprograms_execution_cost Array with execution costs. 
    * @param checkpoints Available checkpoint capacity allocated to solve the problem instance.
-   * @param split_pointer Optional pointer to an extra 'Split_type' element appended to element $j$. 
    */
   Binomial_checkpointing(const std::vector<std::size_t>& subprograms_execution_cost,
-                          std::size_t last_index, std::size_t first_index, std::size_t checkpoints,
-                          const std::size_t subprogram_cost_to_append= 0):
-    chain{subprograms_execution_cost, last_index, first_index, subprogram_cost_to_append},
-    table{chain.size(), checkpoints}{
+                          std::size_t checkpoints):
+    chain{subprograms_execution_cost}, table{chain.size(), checkpoints}{
 
       fill_table(chain.size(), checkpoints);
   }
 
   /**
-   * @brief Constructs a view-only instance without solving the dynamic table (primarily for testing
-   * costs).
+   * @brief Testing purposes. 
    *
-   * @param chain_ Base Jacobian chain.
-   * @param j Upper bound index of the subchain (inclusive).
-   * @param i Lower bound index of the subchain (inclusive).
+   * @param subprograms_execution_cost Array with execution costs. 
    */
-  Binomial_checkpointing(const std::vector<std::size_t>& subprograms_execution_cost,
-                          std::size_t last_index, std::size_t first_index):
-    chain{subprograms_execution_cost, last_index, first_index}, table{}{}
+  Binomial_checkpointing(const std::vector<std::size_t>& subprograms_execution_cost):
+    chain{subprograms_execution_cost}, table{}{}
 
   //Constructor designed to test additional_cost
   /**
    * @brief Injects a custom or pre-populated table for testing cost functions.
    *
-   * @param chain_ Base Jacobian chain.
+   * @param subprograms_execution_cost Array with execution costs. 
    * @param table_ Pre-constructed lookup table moved into internal storage.
-   * @param j Upper bound index of the subchain (inclusive).
-   * @param i Lower bound index of the subchain (inclusive).
    */
   Binomial_checkpointing(const std::vector<std::size_t>& subprograms_execution_cost,
-                          Binomial_table table_, std::size_t last_index, std::size_t first_index):
-    chain{subprograms_execution_cost, last_index, first_index}, table{std::move(table_)}{}
+                          Binomial_table table_):
+    chain{subprograms_execution_cost}, table{std::move(table_)}{}
 
   /**
    * @brief Computes additional re-execution cost for subchain (j, i) assuming zero available checkpoints
@@ -402,8 +313,8 @@ class Binomial_checkpointing{
   }
 
  private:
-  /// Lightweight view over target subchain range. 
-  Reversal_chain chain;
+  /// Subprograms evaluation costs. 
+  const std::vector<std::size_t>& chain;
 
   /// Dynamic programming solution storage table. 
   Binomial_table table;

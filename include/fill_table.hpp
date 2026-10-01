@@ -136,6 +136,16 @@ class Fill_table<Jacobian, Jacobian_information>{
    const Table<Jacobian>& get_table(){
       return table;
    }
+
+   /**
+    * @brief Get optimal cost
+    *
+    * @return optimal accumulation cost.
+    */
+   std::size_t get_optimal_cost(){
+
+      return table.back().accumulated_cost();
+   }
  
  private:
    /// Internal DP lookup table.
@@ -549,6 +559,16 @@ class Fill_table<Dense_Jacobian, Matrix_free_information>{
     */
    const Table<Dense_Jacobian>& get_table(){
       return table;
+   }
+
+   /**
+    * @brief Get optimal cost
+    *
+    * @return optimal accumulation cost.
+    */
+   std::size_t get_optimal_cost(){
+
+      return table.back().accumulated_cost();
    }
 
  private:
@@ -1076,6 +1096,15 @@ class Fill_table<Sparse_Jacobian, Matrix_free_sparse_information>{
       return table;
    }
 
+   /**
+    * @brief Get optimal cost
+    *
+    * @return optimal accumulation cost.
+    */
+   std::size_t get_optimal_cost(){
+
+      return table.back().accumulated_cost();
+   }
 
  private:
    /// Dynamic programming table structure storing subproblems optimal results.
@@ -1219,26 +1248,6 @@ void Fill_table<Sparse_Jacobian, Matrix_free_sparse_information>::fill(
 namespace tool_box_split{
 
    /**
-    * @brief Sums the total execution cost across a subchain (j,i) (inclusive). 
-    *
-    * @param subprograms_execution_cost subprograms cost array in fmas.
-    * @param j Upper index bound of the subchain (inclusive).
-    * @param i Lower index bound of the subchain (inclusive).
-    * @return std::size_t Accumulated function execution cost.
-    */
-   std::size_t accumulate_subprograms_cost(const std::vector<size_t>& subprograms_execution_cost,
-                                          std::size_t j, std::size_t i){
-
-      std::size_t sum_function_cost = 0;
-      for(std::size_t idx = i; idx < j + 1; idx++){
-
-         sum_function_cost += subprograms_execution_cost[idx];
-      }
-
-      return sum_function_cost;
-   }
-
-   /**
     * @brief Determines wether a subchain (j,i) can be accumulated in reverse mode via split reversal.
     *
     * @details Checks if every single subprogram in the range [i, j] satisfies the memory constraint
@@ -1271,63 +1280,185 @@ namespace tool_box_split{
    }
 
    /**
-    * @brief Finds the minimal split index k_tilde such that the subchain (k, k_tilde + 1) fits 
-    * in memory.
+    * @brief Given a subchain that is optimally accumulated via adjoint mode will be partitioned 
+    * into groups whose accumulated edge count is less than the memory bound. The partition starts 
+    * from the last subprogram in the subchain to the first. 
     *
-    * @pre is_split_reversable must evaluate to true for the target subchain before calling this function.
-    * 
-    * @param table Reference to Dense_Jacobian dynamic programming (DP) lookup table.
-    * @param i Lower index bound of the subchain (inclusive).
-    * @param accumulated_edges_j_i Total accumulated edges across the subchain.
-    * @param memory_bound Maximum allowable edge capacity.
-    * @return std::size_t The resulting split index k_tilde.
+    * @pre The subchain must be split reversable.
+    * @tparam Look up DP table.
+    * @param j Last index of the subchain. (inclusive).
+    * @param i First index of the subchain. (inclusive).
+    * @param memory_bound Limit on the maximum number of edges that can be stored in the tape.
+    *
+    * @return array of natural numbers with the indices of the first element in each partition. The 
+    * first element is equal to one past the last index of the subchain.
     */
-   std::size_t split_reversed_chain(const Table<Dense_Jacobian>& table, std::size_t j,
-                                       std::size_t i, std::size_t memory_bound){
+   template <class Table_T>
+   std::vector<std::size_t> adjoint_chain_partition(const Table_T& table, std::size_t j,
+                                                   std::size_t i, std::size_t memory_bound){
 
-      std::size_t accumulated_edges_j_i = tool_box_dense::accumulate_edges(table, j, i);  
+      std::vector<std::size_t> split_positions;
+      std::size_t idx;
+      std::size_t edge_accumulation = 0;
 
-      std::size_t counter = 0;
+      split_positions.push_back(j+1);
 
-      while(memory_bound < accumulated_edges_j_i){
+      for(std::size_t aux_idx = 0; aux_idx < j - i + 1; aux_idx++){
 
-         accumulated_edges_j_i -= table.get_cell(i + counter).number_edges();
-         counter ++;
+         idx = j - aux_idx;
+         edge_accumulation += table.get_cell(idx).number_edges();
+
+         if(memory_bound < edge_accumulation){
+
+            split_positions.push_back(idx + 1);
+            edge_accumulation = table.get_cell(idx).number_edges();
+         }
       }
 
-      counter--;
+      split_positions.push_back(i);
 
-      return i + counter;
+      return split_positions;
    }
 
    /**
-    * @brief Finds the minimal split index k_tilde such that the subchain (k, k_tilde + 1) fits 
-    * in memory.
+    * @brief This overload method of adjoint_chain_partition(table, j, i, memory_bound) follows the 
+    * same logic but simplifies testing of the method via using an array of naturals instead of the 
+    * DP table.
     *
-    * @pre is_split_reversable must evaluate to true for the target subchain before calling this function.
-    * 
-    * @param table Reference to Sparse_Jacobian dynamic programming (DP) lookup table.
-    * @param i Lower index bound of the subchain (inclusive).
-    * @param accumulated_edges_j_i Total accumulated edges across the subchain.
-    * @param memory_bound Maximum allowable edge capacity.
-    * @return std::size_t The resulting split index k_tilde.
+    * @pre The naturals in arr must be less or equal to memory_bound.
+    *
+    * @param arr with naturals representing number of edges of the subprograms contained in the 
+    * subchain.
+    * @param j Last index of the subchain. (inclusive).
+    * @param i First index of the subchain. (inclusive).
+    * @param memory_bound Limit on the maximum number of edges that can be stored in the tape.
+    *
+    * @return array of natural numbers with the indices of the first element in each partition. The 
+    * first element is equal to one past the last index of the subchain.
     */
-   std::size_t split_reversed_chain(const Table<Sparse_Jacobian>& table, std::size_t j,
-                                       std::size_t i, std::size_t memory_bound){
+   std::vector<std::size_t> adjoint_chain_partition(const std::vector<std::size_t>& arr,
+         std::size_t j, std::size_t i, std::size_t memory_bound){
 
-      std::size_t accumulated_edges_j_i = tool_box_sparse::accumulate_edges(table, j, i);  
+      std::vector<std::size_t> split_positions;
+      std::size_t idx;
+      std::size_t edge_accumulation = 0;
 
-      std::size_t counter = 0;
+      split_positions.push_back(j + 1);
 
-      while(memory_bound < accumulated_edges_j_i){
+      for(std::size_t aux_idx = 0; aux_idx < j - i + 1; aux_idx++){
 
-         accumulated_edges_j_i -= table.get_cell(i + counter).number_edges();
-         counter ++;
+         idx = j - aux_idx;
+         edge_accumulation += arr[idx];
+
+         if(memory_bound < edge_accumulation){
+
+            split_positions.push_back(idx + 1);
+            edge_accumulation = arr[idx];
+         }
       }
 
-      counter--;
+      split_positions.push_back(i);
 
-      return i + counter;
+      return split_positions;
+   }
+
+   /**
+    * @brief For every partition the total partition execution cost is accumulated 
+    * and the accumulated values are stored in a vector that will be the input to the 
+    * binomial checkpointing algorithm.
+    *
+    * @param subprograms_execution_cost vector with the execution costs of all subprograms considered
+    * in the optimization of the specific variant of the Jacobian Chain Product Bracketing problem.
+    * 
+    * @param split_positions Array with the indices to the first element of each partition. This 
+    * array is stored in reversed order the first element contains the index of one past the last 
+    * index and the first index contains the index of the element in the first partition.
+    *
+    * @return Array with the accumulated cost of the partitions.
+    */
+   std::vector<std::size_t> build_subchain_execution_costs_array(
+         const std::vector<std::size_t>& subprograms_execution_cost,
+         const std::vector<std::size_t>& split_positions){
+
+      std::vector<std::size_t> binomial_chain;
+      binomial_chain.reserve(split_positions.size() - 1);
+      std::size_t accumulator = 0;
+
+      for(auto it = split_positions.rbegin(); it != split_positions.rend() - 1; it++){
+
+         for(std::size_t idx = *it; idx < *(it + 1); idx++){
+
+            accumulator += subprograms_execution_cost[idx];
+         }
+
+         binomial_chain.push_back(accumulator);
+
+         accumulator = 0;
+      }
+
+      return binomial_chain;
+   }
+
+   /**
+    * @brief Optimally accumulated adjoint chains are preprocessed to execute a binomial checkpointing
+    * to optimize the accumulation process. Use this method if the accumulated number of edges of 
+    * the subchain exceeded the memory_bound.
+    *
+    * @tparam Look table type.
+    * @param table Filled lookup table.
+    * @param subprograms_execution_cost Array with all subprograms execution cost for all subprograms 
+    * considered in the Jacobian chain.
+    * @param [out] chain_partition Array with indices of the first element in each partition. The 
+    * first element contains the index of one passed the last index of the subchain.
+    * @param last_idx Last index of the subchain. (inclusive).
+    * @param first_idx First index of the subchain. (inclusive).
+    * @param memory_bound Limit on the maximum number of edges that can be stored in the tape.
+    */
+   template<class Table_T>
+   std::vector<std::size_t> adjoint_subchain_preprocessing(const Table_T& table,
+         const std::vector<std::size_t>& subprograms_execution_cost, 
+         std::vector<std::size_t>& chain_partition, std::size_t last_idx,
+         std::size_t first_idx, std::size_t memory_bound){
+
+      if(!is_split_reversable(table, last_idx, first_idx, memory_bound)){
+
+         throw std::invalid_argument("The subchain (" + std::to_string(last_idx) +  " , " + 
+               std::to_string(first_idx) + ") (inclusive), must be split reversable.\n");
+      }
+
+      chain_partition.clear();
+      chain_partition = adjoint_chain_partition(table, last_idx, first_idx, memory_bound);
+
+
+      return build_subchain_execution_costs_array(subprograms_execution_cost, chain_partition);
+   }
+
+   /**
+    * @brief Sends to the outstream given as a pointer the relation between indices of 
+    * the chain used during the binomial checkpointing algorithm and the indices in the chain 
+    * correspoinding to the Jacobian Chain Bracketing Problem.
+    *
+    * @param chain_partition Array with indices of the first element in each partition. The 
+    * first element contains the index of one passed the last index of the subchain.
+    * @param [out] Pointer to outstream where the data is going to be sent to.
+    */
+   void subchain_partition_parser(const std::vector<std::size_t>& chain_partition, 
+                                    std::ostream* o_stream_ptr){
+
+      std::size_t counter = 0;
+      
+      for(auto it = chain_partition.rbegin(); it != chain_partition.rend() - 1; it++){
+
+         if(*it == *(it + 1) - 1){
+
+            *o_stream_ptr << counter << ": [" << *it << "]\n";
+         }
+         else{
+
+            *o_stream_ptr << counter << ": [" << *it << " , " << *(it + 1) -1 << "]\n";
+         }
+         counter++;
+      }
    }
 }
 

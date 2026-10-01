@@ -1,0 +1,50 @@
+top to bottom direction
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+' Namespaces
+
+    class "tool_box_dense" as tool_box_dense_ns << (N,#ADD1B2) Namespace >> {
+        + tangent_cost(elemental_jacobian_ptr : const Jacobian_T*) : std::size_t
+        + adjoint_cost(elemental_jacobian_ptr : const Jacobian_T*) : std::size_t
+        + accumulate_edges(table : const Table<Jacobian_T>&, j_or_k : std::size_t,
+        k_plus_1_or_i : std::size_t) : std::size_t
+        + tangent_cost(table : const Table<Jacobian_T>&, j : std::size_t, k : std::size_t,
+        i : std::size_t) : std::size_t
+        + multiplication_cost(table : const Table<Jacobian_T>&, j : std::size_t, k : std::size_t,
+        i : std::size_t) : std::size_t
+    }
+
+
+    class "tool_box_sparse" as tool_box_sparse_ns << (N,#ADD1B2) Namespace >> {
+        + tangent_cost(elemental_jacobian_ptr : const Jacobian_T*) : std::size_t
+        + adjoint_cost(elemental_jacobian_ptr : const Jacobian_T*) : std::size_t
+        + accumulate_edges(table : const Table<Jacobian_T>&, j_or_k : std::size_t,
+        k_plus_1_or_i : std::size_t) : std::size_t
+        + tangent_cost(table : const Table<Jacobian_T>&, j : std::size_t, k : std::size_t,
+        i : std::size_t, j_i_column_number_colors : std::size_t) : std::size_t
+        + multiplication_cost(table : const Table<Jacobian_T>&, j : std::size_t, k : std::size_t,
+        i : std::size_t, number_nnz : std::size_t) : std::size_t
+        + propagate_sparsity_pattern(table : const Table<Jacobian_T>&, j : std::size_t,
+        i : std::size_t) : const Jacobian_T
+    }
+
+    class "tool_box_split" as tool_box_split_ns << (N,#ADD1B2) Namespace >>{
+        + is_split_reversable<Table_T>(table: const Table_T&, j: std::size_t, i: std::size_t,
+        memory_bound : std::size_t) : bool
+        + adjoint_chain_partition(table : const Table_T&, j : std::size_t, i : std::size_t, 
+        memory_bound : std::size_t): std::vector<std::size_t>
+        + build_subchain_execution_costs_array(subprograms_cost : const std::vector<std::size_t>&,
+        split_pos : const std::vector<std::size_t>&) : std::vector<std::size_t>
+        + adjoint_subchain_preprocessing<Table_T>(table: const Table_T&,
+        subprograms_cost : const vector<std::size_t>&, last_idx : std::size_t, first_idx : std::size_t,
+        memory_bound : std::size_t) : std::vector<std::size_t>
+        + subchain_partition_parser(chain_partition : const std::vector<std::size_t>&,
+        o_stream_ptr : std::ostream*) : void
+    } 
+
+
+
+' Namespace Wrapper Dependencies
+Fill_table_Dense ..> tool_box_dense_ns : <<wraps>>
+Fill_table_Sparse ..> tool_box_sparse_ns : <<wraps>>
