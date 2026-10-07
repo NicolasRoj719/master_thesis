@@ -177,7 +177,7 @@ cmake --build build --target doc
 
 The generated HTML documentation will be placed in your build directory as specified by Doxyfile.
 
-Example Usages
+Usage Examples
 ```cpp
 #include <cstdint>
 #include <iostream>
