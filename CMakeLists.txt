@@ -53,7 +53,11 @@ set(BENCHMARK_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/results/")
 
 add_executable(report_benchmarks benchmarks/report_benchmarks.cpp)
 
+add_executable(readme_examples benchmarks/readme_use_examples.cpp)
+
 target_link_libraries(report_benchmarks PRIVATE master_thesis_lib)
+
+target_link_libraries(readme_examples PRIVATE master_thesis_lib)
 
 target_compile_definitions(report_benchmarks PRIVATE
     RESULTS_DIR="${BENCHMARK_OUTPUT_DIR}"

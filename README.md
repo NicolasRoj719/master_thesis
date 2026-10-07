@@ -13,14 +13,14 @@
 ## Overview
 A modern C++ 20 header-only template library designed to solve Dense Jacobian Chain Product 
 Bracketing, as well as Matrix-Free Dense and Sparse Jacobian Chain Product Bracketing (with and 
-without memory bound). Additionally, Binomial Checkpointing is implemented to extend the feasibility 
-of adjoint mode under memory-constrained scenarios. All supported problems are solved using tailored 
-dynamic programming formulations.
+without memory bound). Additionally, Binomial Checkpointing is implemented to optimally implement
+adjoint mode on subchains under memory constrained scenarios. All supported problems are solved 
+using tailored dynamic programming formulations.
 
 ## Key Features
-**Dynamic Programming Solvers:** Four distinct dynamic programming routines developed to compute 
-optimal operation accumulation sequences, or determine optimal checkpoint placement and reuse during 
-Algorithmic Differentiation (AD) split reversal process.
+**Dynamic Programming Solvers:** Three distinct dynamic programming routines developed to compute 
+optimal operation count Jacobian matrix accumulation sequences. A fourth routine is provided to make 
+efficient use of checkpoints during the accumulation of subchains via adjoint mode of AD. 
 
 **Sparse Matrix Representation:** Defines an overload of * to multiply Sparse Matrix objects. 
 Employs a greedy graph-coloring heuristic on column/row intersection graphs to identify structurally 
@@ -28,9 +28,11 @@ orthogonal column and row groups. Uses CSR and CSC formats for efficient sparsit
 propagation.
 
 **Cost Estimation Models:** Provides computational cost estimates for tangent and adjoint AD modes, 
-as well as matrix-matrix multiplications in terms of Fused Multiply-Add (FMA) operations. Since 
-runtime execution cost for general subprograms is code-dependent, checkpointing costs can be 
-customized by users with domain knowledge of the target code.
+as well as matrix-matrix multiplications in terms of Fused Multiply-Add (fma) operations.
+Underlaying subprograms execution cost in terms of fmas are to be set by the user, who has better 
+knowledge of the target program and subprograms. A simple cost model ready to use, would be to 
+assume that the execution cost of a subprogram is equal to the number of edges in its computational 
+graph.
 
 **Synthetic Data Generator:** Generates benchmark datasets and matrix metadata to test and evaluate 
 dynamic algorithm performance.
@@ -51,35 +53,50 @@ dynamic algorithm performance.
 │   │
 │   ├── generator.hpp               # Synthetic metadata & matrix generators
 │   │  
-│   ├── jacobian.hpp                # Jacobian matrix types & metadata classes
+│   ├── jacobian.hpp                # Jacobian matrix classes
 │   │  
-│   ├── optimal_accumulation.hpp    # Dynamic programming post-processing.
+│   ├── optimal_accumulation.hpp    # Dynamic programming post-processing
 │   │   
 │   ├── table.hpp                   # Dynamic programming lookup tables
 │   │
 │   ├── table_cell.hpp              # Dynamic programming table cell templates
 │   │   
 │   └── util_structs.hpp            # Metadata structures and helper utilities 
+│   │   
+│   └── external/# Metadata structures and helper utilities 
+│       │   
+│       └── json.hpp                # json header file to interface C++ and python (benchmarks). 
+│
 └── tests/                          # Unit testing suite
-    ├── fixture/                    # Test fixtures
-    └── unit/                       # Unit test source files
+│   │   
+│   └── fixture/                    # Test fixtures 
+│   │   
+│   └── unit/                       # Unit test source files 
+│
+└── benchmark/                      # Source file to execute benchmarks 
+│
+└── uml_diagrams/                   # Classes UML diagrams classified by header file
+│
+└── results/                        # Benchmarks results 
+
 ```
 
 ## Core API & Class Reference
 * **Dynamic Programming:**
 
-    fill_table<JacobianType, InformationType>: Dynamic programming solver for Dense Jacobian Chain
+    Jacobian_chain<JacobianType, InformationType>: Class incharge of initializing the Jacobian chain 
+    instance to be optimally accumulated with the dynamic programming solvers provided.
+
+    Fill_table<JacobianType, InformationType>: Dynamic programming solver for Dense Jacobian Chain
     Product Bracketing and Matrix-Free Dense and Sparse Jacobian Chain Product Bracketing.
 
-    binomial_checkpointing<SplitType, Information_Type>: Dynamic programming solver for Binomial 
-    Checkpointing.
+    Binomial_checkpointing: Dynamic programming solver for Binomial Checkpointing.
 
 * **Jacobians & Metadata**
 
     Jacobian_information: Base class containing domain and codomian space dimension information.
 
-    Matrix_free_information: Extends Jacobian_information with computational graph edge counts for 
-    matrix-free evaluations.
+    Matrix_free_information: Extends Jacobian_information with computational graph edge counts.
 
     Matrix_free_sparse_information: Extends Matrix_free_information with total non-zero (NNZ) entry 
     counts.
@@ -89,32 +106,29 @@ dynamic algorithm performance.
     Dense_Jacobian: Wrapper around Matrix_free_information. 
     
     Sparse_Jacobian: Contains a Matrix_free_sparse_information object, stores CSC/CSR formats, and 
-    computes structurally orthogonal row/column partitioning via greedy graph coloring.
-
-    Split_dense_Jacobian: Extends Dense_Jacobian with subprogram execution cost estimate in fused 
-    multiply-add operations.
-
-    Split_sparse_Jacobian: Extends Sparse_Jacobian with subprogram execution cost estimate in fused 
-    multiply-add operations.
+    computes structurally orthogonal row/column partitioning via greedy graph coloring. Overloads *
+    to multiply Sparse_Jacobian objects.
 
 * **Schedule & Generator**
 
-    Node_jacobian, Node_matrix_free: Nodes representing subchain operations in the optimal accumulation
-    sequence.
+    Node_jacobian, Node_matrix_free: Nodes representing subchain operations in the optimal Jacobian 
+    matrix accumulation sequence.
 
-    Node_binomial_checkpointing: Node representing optimal subproblems during checkpoint placement
+    Node_binomial_checkpointing: Nodes representing optimal subproblems during checkpoint placement
     and reuse in split-reversal AD.
 
     operation_sequence_accumulation: Reconstructs optimal accumulation operation sequence from lookup
-    table by storing them in Node_jacobian or Node_matrix_free objects.
+    table following a top-down left to right logic while storing optimal operations
+    (Node_jacobian or Node_matrix_free objects) in an array which is returned by the function.
 
     subproblem_sequence_accumulation: Reconstructs optimal Checkpointing subproblems from lookup 
-    tables storing them in Node_binomial_checkpointing objects.
+    table following a top-down left to right logic while storing optimal subproblems 
+    (Node_binomial_checkpointing objects) in an array which is returned by the function.
 
     Generator<Information_Type>: Synthetic chain data generator for Jacobian_information, 
-    Matrix_free_information, Matrix_free_sparse_information and Sparsity pattern coordinates.
+    Matrix_free_information, Matrix_free_sparse_information and Sparsity sturcture coordinates.
 
-    Generator_data: struct containing chain Matrix_free_sparse_information and corresponding sparsity 
+    Generator_data: Struct containing chain Matrix_free_sparse_information and corresponding sparsity 
     patterns.
 
 ## Requirements:
@@ -165,9 +179,9 @@ The generated HTML documentation will be placed in your build directory as speci
 
 Example Usages
 ```cpp
-#include <vector>
 #include <cstdint>
-#include "generator.hpp"
+#include <iostream>
+#include <vector>
 #include "chain.hpp"
 #include "fill_table.hpp"
 #include "optimal_accumulation.hpp"
@@ -185,7 +199,7 @@ int main(){
 
     for(std::size_t idx = 0; idx < number_edges.size(); idx++){
 
-    problem_data.emplace_back(dimension[idx], dimension[idx + 1], number_edges[idx]);
+        problem_data.emplace_back(dimension[idx], dimension[idx + 1], number_edges[idx]);
     }
 
     //Creating Jacobian Chain for the problem data
@@ -195,17 +209,27 @@ int main(){
     Fill_table<Dense_Jacobian, Matrix_free_information> solver{chain};
 
     std::size_t optimal_cost = solver.get_optimal_cost();
+
+    std::cout << "Optimal accumulation cost [fma]: " << optimal_cost << '\n';
+
+    std::cout << "Open a web browser and search for Graphviz online viewer. \n";
+
+    std::cout << "Copy the following lines to generate the optimal accumulation sequence ";
+    std::cout << "visualization:\n";
+
+    //Print DOT to terminal
+    std::vector<Node_matrix_free> optimal_accumulation_sequence =
+      operation_sequence_accumulation<Node_matrix_free>(solver.get_table(), chain.size(),
+                                                          &std::cout);
 }
 ```
 
 ```cpp
-#include <vector>
 #include <cstdint>
-#include "generator.hpp"
-#include "chain.hpp"
+#include <iostream>
+#include <vector>
 #include "fill_table.hpp"
 #include "optimal_accumulation.hpp"
-#include "util_structs.hpp"
 
 int main(){
 
@@ -214,21 +238,28 @@ int main(){
     std::vector<std::size_t> execution_costs{100,120,145, 150,122};
     std::size_t available_checkpoints = 2;
 
-    Binomial_checkpointing binomial_solver{binomial_problem, available_checkpoints};
+    Binomial_checkpointing binomial_solver{execution_costs, available_checkpoints};
     std::size_t additional_cost = binomial_solver.get_additional_cost();
+
+    std::cout << "Optimal additional cost [fma]: " << additional_cost << '\n';
+
+    std::cout << "Open a web browser and search for Graphviz online viewer. \n";
+
+    std::cout << "Copy the following lines to generate the optimal subproblem decomposition ";
+    std::cout << "tree visualization:\n";
 
     //Print DOT to terminal
     std::vector<Node_binomial_checkpointing> accumulation_sequence =
       subproblem_sequence_accumulation(binomial_solver.get_table(), execution_costs.size(),
                                         available_checkpoints, &std::cout);
+
 }
-
-
 ```
 
 ```cpp
-#include <vector>
 #include <cstdint>
+#include <iostream>
+#include <vector>
 #include "generator.hpp"
 #include "chain.hpp"
 #include "fill_table.hpp"
@@ -242,7 +273,7 @@ int main(){
     std::size_t number_edges_lb = 150, number_edges_ub = 300;
     double density_lb = 0.05, density_ub = 0.1;
 
-    //Optional if a deterministic generator si required.
+    //Optional if a deterministic generator is required.
     std::size_t seed = 68;
     bool is_deterministic = true;
 
@@ -257,15 +288,21 @@ int main(){
 
     //Construct sparse solver and fill look up table.
     Fill_table<Sparse_Jacobian, Matrix_free_sparse_information> solver{chain};
-    optimal_cost_sparse = solver.get_optimal_cost();
+
+    std::size_t optimal_cost = solver.get_optimal_cost();
+
+    std::cout << "Optimal accumulation cost [fma]: " << optimal_cost << '\n';
+
+    std::cout << "Open a web browser and search for Graphviz online viewer. \n";
+
+    std::cout << "Copy the following lines to generate the optimal accumulation sequence ";
+    std::cout << "visualization:\n";
 
     //Print DOT to terminal
     std::vector<Node_matrix_free> optimal_accumulation_sequence = 
       operation_sequence_accumulation<Node_matrix_free>(solver.get_table(), chain.size(),
                                                           &std::cout);
-
 }
-
 ```
 
 
